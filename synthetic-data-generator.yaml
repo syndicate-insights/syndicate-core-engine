@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: qe-hack-syndicate-svc@project-61358164-b71e-4422-a5c.iam.gserviceaccount.com
+  name: qe-hack-syndicate-k8s-sa
+  namespace: qe-hack-syndicate
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: csv-generator-cronjob
+  namespace: qe-hack-syndicate
+spec:
+  schedule: "0 */4 * * *" # Runs every 4hours
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: qe-hack-syndicate-k8s-sa
+          restartPolicy: OnFailure
+          containers:
+          - name: csv-generator
+            image: python:3.11-slim
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                pip install google-cloud-storage faker
+                python -c '
+                import csv
+                import os
+                import datetime
+                import random
+                import io
+                from google.cloud import storage
+                from faker import Faker
+
+                fake = Faker()
+
+                # Environment variables
+                GCS_BUCKET_NAME = os.environ.get("GCS_BUCKET_NAME")
+                PROJECT_ID = os.environ.get("PROJECT_ID")
+
+                # Timestamp for unique files
+                ts = datetime.datetime.now().strftime("%Y%m%d%H%M")
+
+                # GCS paths
+                CUSTOMER_PATH = f"qe_hack_syndicate_raw/customer/customer_{ts}_raw.csv"
+                ADDRESS_PATH = f"qe_hack_syndicate_raw/address/address_{ts}_raw.csv"
+                ACCOUNT_PATH = f"qe_hack_syndicate_raw/account/account_{ts}_raw.csv"
+
+                def generate_customer_data(num_lines):
+                    header = ["customer_id", "first_name", "last_name", "dob_raw", "email", "phone"]
+                    data = [header]
+                    for i in range(1, num_lines + 1):
+                        customer_id = f"CUST{i:03d}"
+                        first_name = fake.first_name()
+                        last_name = fake.last_name()
+                        dob_raw = fake.date_of_birth(minimum_age=18, maximum_age=85).strftime("%d-%m-%Y")
+                        email = fake.ascii_free_email()
+                        phone = fake.phone_number()
+                        data.append([customer_id, first_name, last_name, dob_raw, email, phone])
+                    return data
+
+                def generate_address_data(num_lines):
+                    header = ["address_id", "customer_id", "line1", "city", "postcode", "country"]
+                    data = [header]
+                    for i in range(1, num_lines + 1):
+                        address_id = f"ADDR{i:03d}"
+                        customer_id = f"CUST{i:03d}"
+                        line1 = fake.street_address()
+                        city = fake.city()
+                        postcode = fake.postcode()
+                        country = fake.country()
+                        data.append([address_id, customer_id, line1, city, postcode, country])
+                    return data
+
+                def generate_account_data(num_lines):
+                    header = ["account_id", "customer_id", "account_type", "sort_code", "account_number", "opened_date_raw"]
+                    data = [header]
+                    account_types = ["CURRENT", "SAVINGS"]
+                    for i in range(1, num_lines + 1):
+                        account_id = f"ACC{i:03d}"
+                        customer_id = f"CUST{i:03d}"
+                        account_type = random.choice(account_types)
+                        sort_code = f"{random.randint(10,99)}-{random.randint(10,99)}-{random.randint(10,99)}"
+                        account_number = f"{random.randint(10000000, 99999999)}"
+                        opened_date_raw = fake.date_between(start_date="-20y", end_date="today").strftime("%d-%m-%Y")
+                        data.append([account_id, customer_id, account_type, sort_code, account_number, opened_date_raw])
+                    return data
+
+                def upload_to_gcs(bucket_name, destination_blob_name, data):
+                    """Uploads a file to the bucket."""
+                    storage_client = storage.Client(project=PROJECT_ID)
+                    bucket = storage_client.bucket(bucket_name)
+                    blob = bucket.blob(destination_blob_name)
+
+                    output = io.StringIO()
+                    writer = csv.writer(output)
+                    writer.writerows(data)
+                    blob.upload_from_string(output.getvalue(), content_type="text/csv")
+                    print(f"Uploaded {destination_blob_name} to {bucket_name}.")
+
+                if __name__ == "__main__":
+                    num_lines = 1000
+
+                    # Generate and upload customer data
+                    customer_data = generate_customer_data(num_lines)
+                    upload_to_gcs(GCS_BUCKET_NAME, CUSTOMER_PATH, customer_data)
+
+                    # Generate and upload address data
+                    address_data = generate_address_data(num_lines)
+                    upload_to_gcs(GCS_BUCKET_NAME, ADDRESS_PATH, address_data)
+
+                    # Generate and upload account data
+                    account_data = generate_account_data(num_lines)
+                    upload_to_gcs(GCS_BUCKET_NAME, ACCOUNT_PATH, account_data)
+                '
+            env:
+            - name: GCS_BUCKET_NAME
+              value: "qe_hack_syndicate_raw" # TODO: Replace with your actual GCS bucket name
+            - name: PROJECT_ID
+              value: "project-61358164-b71e-4422-a5c" # TODO: Replace with your actual GCP Project ID
