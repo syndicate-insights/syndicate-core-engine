@@ -1,0 +1,12 @@
+syndicate_address_transform:
+  target: prod
+  outputs:
+    prod:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT') }}"
+      dataset: "{{ env_var('BQ_DATASET') }}"
+      threads: 4
+      timeout_seconds: 300
+      location: europe-west2
+      retries: 1

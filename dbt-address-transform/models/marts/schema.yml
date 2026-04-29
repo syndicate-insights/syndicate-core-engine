@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: address_enriched
+    description: >
+      Final enriched address table with a composite full_address field.
+      Built incrementally — only new (unprocessed) CSV files from GCS are ingested each run.
+    columns:
+      - name: address_id
+        description: Unique address identifier.
+        tests:
+          - not_null
+      - name: customer_id
+        description: Customer identifier linked to this address.
+        tests:
+          - not_null
+      - name: line1
+        description: First line of the address.
+      - name: city
+        description: City name.
+      - name: postcode
+        description: Postal code.
+      - name: country
+        description: Country name.
+      - name: full_address
+        description: >
+          Composite field combining line1, city, postcode, and country
+          separated by commas.
+        tests:
+          - not_null
+      - name: source_file
+        description: GCS file URI this row was loaded from.
+      - name: processed_at
+        description: Timestamp when the row was processed.

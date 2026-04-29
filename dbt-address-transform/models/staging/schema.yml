@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: processed_files_metadata
+    description: >
+      Tracks which GCS CSV files have been processed to avoid re-ingesting
+      the same data on subsequent dbt runs.
+    columns:
+      - name: file_name
+        description: Full GCS URI of the processed CSV file.
+        tests:
+          - unique
+          - not_null
+      - name: processed_at
+        description: Timestamp when the file was processed.
+        tests:
+          - not_null
+
+  - name: stg_address_raw
+    description: >
+      Staging model that reads address data from the GCS external table,
+      filtering out files that have already been processed.
+    columns:
+      - name: address_id
+        description: Unique address identifier.
+        tests:
+          - not_null
+      - name: customer_id
+        description: Customer identifier linked to this address.
+        tests:
+          - not_null
+      - name: line1
+        description: First line of the address.
+      - name: city
+        description: City name.
+      - name: postcode
+        description: Postal code.
+      - name: country
+        description: Country name.
+      - name: source_file
+        description: GCS file URI this row was loaded from.

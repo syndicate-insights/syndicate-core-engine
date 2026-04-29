@@ -1,0 +1,80 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dbt-address-transform-cronjob
+  namespace: qe-hack-syndicate
+spec:
+  schedule: "0 18 * * *" # Runs every day at 6pm
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          serviceAccountName: qe-hack-syndicate-k8s-sa
+          restartPolicy: OnFailure
+          containers:
+          - name: dbt-address-transform
+            image: python:3.11-slim
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -e
+                pip install --quiet dbt-bigquery==1.8.*
+
+                # Write profiles.yml to expected location
+                mkdir -p /root/.dbt
+                cat <<'EOF' > /root/.dbt/profiles.yml
+                syndicate_address_transform:
+                  target: prod
+                  outputs:
+                    prod:
+                      type: bigquery
+                      method: oauth
+                      project: "${GCP_PROJECT}"
+                      dataset: "${BQ_DATASET}"
+                      threads: 4
+                      timeout_seconds: 300
+                      location: europe-west2
+                      retries: 1
+                EOF
+
+                # Substitute env vars into profiles.yml
+                sed -i "s/\${GCP_PROJECT}/$GCP_PROJECT/g" /root/.dbt/profiles.yml
+                sed -i "s/\${BQ_DATASET}/$BQ_DATASET/g" /root/.dbt/profiles.yml
+
+                # Clone the repo and navigate to dbt project
+                pip install --quiet google-cloud-storage
+                apt-get update -qq && apt-get install -y -qq git > /dev/null 2>&1
+
+                git clone https://${GIT_TOKEN}@github.com/syndicate-insights/syndicate-core-engine.git /tmp/repo
+                cd /tmp/repo/dbt-address-transform
+
+                # Install dbt packages and run
+                dbt deps
+                dbt run-operation stage_external_sources --vars "{bq_dataset: $BQ_DATASET}"
+                dbt run --vars "{bq_dataset: $BQ_DATASET}"
+
+                echo "dbt address transform completed successfully."
+            env:
+            - name: GCP_PROJECT
+              value: "project-61358164-b71e-4422-a5c"
+            - name: BQ_DATASET
+              value: "qe_hack_syndicate" # Override with your target BQ dataset
+            - name: GCS_BUCKET_NAME
+              value: "qe_hack_syndicate_raw"
+            - name: GIT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: git-credentials
+                  key: token
+                  optional: true
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"
