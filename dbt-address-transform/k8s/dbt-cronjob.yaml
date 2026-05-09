@@ -100,9 +100,54 @@ spec:
                 load_job = client.load_table_from_uri(uris, table_id, job_config=job_config)
                 load_job.result()
                 print(f"Loaded {len(uris)} file(s) into {table_id}")
+
+                # Persist loaded URI list so we can record lineage after dbt creates/updates metadata table.
+                with open("/tmp/loaded_address_uris.txt", "w", encoding="utf-8") as fh:
+                  for uri in uris:
+                    fh.write(uri + "\n")
                 PY
 
                 dbt run --vars "{$DBT_VARS}"
+
+                # Record processed files metadata from the loaded URI list.
+                python - <<'PY'
+                import os
+                from google.cloud import bigquery
+
+                proj = os.environ["GCP_PROJECT"]
+                dataset = os.environ["BQ_DATASET"]
+                metadata_table = f"{proj}.{dataset}.processed_files_metadata"
+
+                with open("/tmp/loaded_address_uris.txt", "r", encoding="utf-8") as fh:
+                  uris = [line.strip() for line in fh if line.strip()]
+
+                if not uris:
+                  print("No loaded URIs found to record in processed_files_metadata")
+                else:
+                  values_sql = ",\n".join(
+                    [
+                      "struct('{}' as file_name, current_timestamp() as processed_at)".format(
+                        uri.replace("'", "''")
+                      )
+                      for uri in uris
+                    ]
+                  )
+                  sql = f"""
+                    merge `{metadata_table}` t
+                    using (
+                      select x.file_name, x.processed_at
+                      from unnest([
+                        {values_sql}
+                      ]) as x
+                    ) s
+                    on t.file_name = s.file_name
+                    when not matched then
+                      insert (file_name, processed_at) values (s.file_name, s.processed_at)
+                  """
+                  client = bigquery.Client(project=proj)
+                  client.query(sql).result()
+                  print(f"Upserted {len(uris)} file(s) into {metadata_table}")
+                PY
 
                 echo "dbt address transform completed successfully."
             env:
