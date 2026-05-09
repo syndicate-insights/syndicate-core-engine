@@ -1,21 +1,62 @@
+gate-upgrader-job   0 */1 * * *   <none>     False     0        26m             25d
+lloydsaiagent@cloudshell:~/qe-hack-syndicate-k8s (project-61358164-b71e-4422-a5c)$ kubectl -n qe-hack-syndicate  get cj
+NAME                              SCHEDULE      TIMEZONE   SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+csv-generator-cronjob             0 */4 * * *   <none>     False     0        146m            18d
+dbt-address-transform-cronjob     */2 * * * *   <none>     False     1        2s              69s
+syndicate-delegate-upgrader-job   0 */1 * * *   <none>     False     0        26m             25d
+lloydsaiagent@cloudshell:~/qe-hack-syndicate-k8s (project-61358164-b71e-4422-a5c)$ kubectl -n qe-hack-syndicate  get pods
+NAME                                             READY   STATUS      RESTARTS   AGE
+csv-generator-cronjob-29638560-jz7j8             0/1     Completed   0          10h
+csv-generator-cronjob-29638800-sdqxv             0/1     Completed   0          6h26m
+csv-generator-cronjob-29639040-f9f9w             0/1     Completed   0          146m
+dbt-address-transform-cronjob-29639186-4npfm     1/1     Running     0          5s
+syndicate-delegate-7954cd65d5-6whxj              1/1     Running     0          9d
+syndicate-delegate-upgrader-job-29639040-6p55m   0/1     Completed   0          146m
+syndicate-delegate-upgrader-job-29639100-zln9l   0/1     Completed   0          86m
+syndicate-delegate-upgrader-job-29639160-5td9c   0/1     Completed   0          26m
+lloydsaiagent@cloudshell:~/qe-hack-syndicate-k8s (project-61358164-b71e-4422-a5c)$ kubectl -n qe-hack-syndicate  logs dbt-address-transform-cronjob-29639186-4npfm -f
 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
 
 [notice] A new release of pip is available: 24.0 -> 26.1.1
 [notice] To update, run: pip install --upgrade pip
 Cloning into '/tmp/repo'...
 Using detected profile name: syndicate_address_transform
-18:02:05  Running with dbt=1.11.9
-18:02:06  Updating lock file in file path: /tmp/repo/dbt-address-transform/package-lock.yml
-18:02:06  Installing dbt-labs/dbt_external_tables
-18:02:06  Installed from version 0.9.0
-18:02:06  Updated version available: 0.12.2
-18:02:06  
-18:02:06  Updates available for packages: ['dbt-labs/dbt_external_tables']                 
+18:28:03  Running with dbt=1.11.9
+18:28:04  Updating lock file in file path: /tmp/repo/dbt-address-transform/package-lock.yml
+18:28:04  Installing dbt-labs/dbt_external_tables
+18:28:04  Installed from version 0.9.0
+18:28:04  Updated version available: 0.12.2
+18:28:04  
+18:28:04  Updates available for packages: ['dbt-labs/dbt_external_tables']                 
 Update your versions in packages.yml, then run dbt deps
-18:02:13  Running with dbt=1.11.9
-18:02:16  Registered adapter: bigquery=1.8.3
-18:02:16  Unable to do partial parsing because saved manifest not found. Starting full parse.
-18:02:22  Found 3 models, 8 data tests, 1 source, 571 macros
-18:02:22  1 of 1 START external source qe_hack_syndicate_insight.address_raw_external
-18:02:22  Encountered an error while running operation: Database Error
-  Invalid resource name projects/qe_hack_syndicate_insight; Project id: qe_hack_syndicate_insight
+18:28:10  Running with dbt=1.11.9
+18:28:13  Registered adapter: bigquery=1.8.3
+18:28:14  Unable to do partial parsing because saved manifest not found. Starting full parse.
+18:28:19  Found 3 models, 8 data tests, 1 source, 571 macros
+18:28:19  1 of 1 START external source qe_hack_syndicate_insight.address_raw_external
+18:28:21  1 of 1 (1) create or replace external table `project-61358164-b71e-4422-a5c`.`qe_hack_syndi...  
+18:28:22  1 of 1 (1) None (0 processed)
+18:28:28  Running with dbt=1.11.9
+18:28:32  Registered adapter: bigquery=1.8.3
+18:28:33  Found 3 models, 8 data tests, 1 source, 571 macros
+18:28:33  
+18:28:33  Concurrency: 4 threads (target='prod')
+18:28:33  
+18:28:34  1 of 3 START sql incremental model qe_hack_syndicate_insight.processed_files_metadata  [RUN]
+18:28:35  BigQuery adapter: https://console.cloud.google.com/bigquery?project=project-61358164-b71e-4422-a5c&j=bq:us-central1:91150792-d7dd-4d87-b597-0891f453722a&page=queryresults
+18:28:35  1 of 3 ERROR creating sql incremental model qe_hack_syndicate_insight.processed_files_metadata  [ERROR in 1.69s]
+18:28:35  2 of 3 SKIP relation qe_hack_syndicate_insight.stg_address_raw ................. [SKIP]
+18:28:35  3 of 3 SKIP relation qe_hack_syndicate_insight.address_enriched ................ [SKIP]
+18:28:35  
+18:28:35  Finished running 2 incremental models, 1 view model in 0 hours 0 minutes and 2.22 seconds (2.22s).
+18:28:36  
+18:28:36  Completed with 1 error, 0 partial successes, and 0 warnings:
+18:28:36  
+18:28:36  Failure in model processed_files_metadata (models/staging/processed_files_metadata.sql)
+18:28:36    Database Error in model processed_files_metadata (models/staging/processed_files_metadata.sql)
+  Query without FROM clause cannot have a WHERE clause at [25:5]
+  compiled code at target/run/syndicate_address_transform/models/staging/processed_files_metadata.sql
+18:28:36  
+18:28:36    compiled code at target/compiled/syndicate_address_transform/models/staging/processed_files_metadata.sql
+18:28:36  
+18:28:36  Done. PASS=0 WARN=0 ERROR=1 SKIP=2 NO-OP=0 TOTAL=3
