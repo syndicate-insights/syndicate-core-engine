@@ -4,16 +4,16 @@ WARNING: Running pip as the 'root' user can result in broken permissions and con
 [notice] To update, run: pip install --upgrade pip
 Cloning into '/tmp/repo'...
 Using detected profile name: syndicate_address_transform
-19:18:08  Running with dbt=1.11.9
-19:18:09  Updating lock file in file path: /tmp/repo/dbt-address-transform/package-lock.yml
-19:18:09  Installing dbt-labs/dbt_external_tables
-19:18:09  Installed from version 0.9.0
-19:18:09  Updated version available: 0.12.2
-19:18:09  
-19:18:09  Updates available for packages: ['dbt-labs/dbt_external_tables']                 
+19:24:02  Running with dbt=1.11.9
+19:24:03  Updating lock file in file path: /tmp/repo/dbt-address-transform/package-lock.yml
+19:24:03  Installing dbt-labs/dbt_external_tables
+19:24:03  Installed from version 0.9.0
+19:24:03  Updated version available: 0.12.2
+19:24:03  
+19:24:03  Updates available for packages: ['dbt-labs/dbt_external_tables']                 
 Update your versions in packages.yml, then run dbt deps
 Traceback (most recent call last):
-  File "<stdin>", line 26, in <module>
+  File "<stdin>", line 49, in <module>
   File "/usr/local/lib/python3.11/site-packages/google/cloud/bigquery/job/base.py", line 1047, in result
     return super(_AsyncJob, self).result(timeout=timeout, retry=retry)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
