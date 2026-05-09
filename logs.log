@@ -1,3 +1,23 @@
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
 
-
-
+[notice] A new release of pip is available: 24.0 -> 26.1.1
+[notice] To update, run: pip install --upgrade pip
+Cloning into '/tmp/repo'...
+Using detected profile name: syndicate_address_transform
+18:56:04  Running with dbt=1.11.9
+18:56:04  Updating lock file in file path: /tmp/repo/dbt-address-transform/package-lock.yml
+18:56:04  Installing dbt-labs/dbt_external_tables
+18:56:04  Installed from version 0.9.0
+18:56:05  Updated version available: 0.12.2
+18:56:05  
+18:56:05  Updates available for packages: ['dbt-labs/dbt_external_tables']                 
+Update your versions in packages.yml, then run dbt deps
+18:56:11  Running with dbt=1.11.9
+18:56:14  Registered adapter: bigquery=1.8.3
+18:56:15  Unable to do partial parsing because saved manifest not found. Starting full parse.
+18:56:20  Found 3 models, 8 data tests, 1 source, 571 macros
+18:56:20  1 of 1 START external source qe_hack_syndicate_insight.address_raw_external
+18:56:22  1 of 1 (1) create or replace external table `project-61358164-b71e-4422-a5c`.`qe_hack_syndi...  
+18:56:23  BigQuery adapter: https://console.cloud.google.com/bigquery?project=project-61358164-b71e-4422-a5c&j=bq:us-central1:00bfe703-e6d6-4688-a4be-6920107332ab&page=queryresults
+18:56:23  Encountered an error while running operation: Database Error
+  Error while reading table: address_raw_external, error message: The table address_raw_external cannot be read because uris did not match any data. File: gs://qe_hack_syndicate_raw/address/*.csv
