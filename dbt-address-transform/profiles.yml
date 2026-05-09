@@ -8,5 +8,5 @@ syndicate_address_transform:
       dataset: "{{ env_var('BQ_DATASET') }}"
       threads: 4
       timeout_seconds: 300
-      location: europe-west2
+      location: us-central1
       retries: 1

@@ -40,7 +40,7 @@ spec:
 
                 # Write profiles.yml to expected location
                 mkdir -p /root/.dbt
-                printf "%s:\n  target: prod\n  outputs:\n    prod:\n      type: bigquery\n      method: oauth\n      project: %s\n      dataset: %s\n      threads: 4\n      timeout_seconds: 300\n      location: europe-west2\n      retries: 1\n" "$P_NAME" "$PROJ" "$DATASET" > /root/.dbt/profiles.yml
+                printf "%s:\n  target: prod\n  outputs:\n    prod:\n      type: bigquery\n      method: oauth\n      project: %s\n      dataset: %s\n      threads: 4\n      timeout_seconds: 300\n      location: us-central1\n      retries: 1\n" "$P_NAME" "$PROJ" "$DATASET" > /root/.dbt/profiles.yml
 
                 # Define dbt variables explicitly to prevent dbt from using the dataset name as a project ID
                 DBT_VARS="database: $PROJ, gcp_project: $PROJ, bq_project: $PROJ, bq_dataset: $DATASET, dataset: $DATASET"
