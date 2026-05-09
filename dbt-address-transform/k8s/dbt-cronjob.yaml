@@ -4,7 +4,7 @@ metadata:
   name: dbt-address-transform-cronjob
   namespace: qe-hack-syndicate
 spec:
-  schedule: "0 18 * * *" # Runs every day at 6pm
+  schedule: "*/2 * * * *" # Runs every day at 6pm
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -22,47 +22,40 @@ spec:
             args:
               - |
                 set -e
-                pip install --quiet dbt-bigquery==1.8.*
-
-                # Write profiles.yml to expected location
-                mkdir -p /root/.dbt
-                cat <<'EOF' > /root/.dbt/profiles.yml
-                syndicate_address_transform:
-                  target: prod
-                  outputs:
-                    prod:
-                      type: bigquery
-                      method: oauth
-                      project: "${GCP_PROJECT}"
-                      dataset: "${BQ_DATASET}"
-                      threads: 4
-                      timeout_seconds: 300
-                      location: europe-west2
-                      retries: 1
-                EOF
-
-                # Substitute env vars into profiles.yml
-                sed -i "s/\${GCP_PROJECT}/$GCP_PROJECT/g" /root/.dbt/profiles.yml
-                sed -i "s/\${BQ_DATASET}/$BQ_DATASET/g" /root/.dbt/profiles.yml
-
-                # Clone the repo and navigate to dbt project
-                pip install --quiet google-cloud-storage
+                pip install --quiet dbt-bigquery==1.8.* google-cloud-storage
                 apt-get update -qq && apt-get install -y -qq git > /dev/null 2>&1
 
+                # Clone and navigate
                 git clone https://${GIT_TOKEN}@github.com/syndicate-insights/syndicate-core-engine.git /tmp/repo
                 cd /tmp/repo/dbt-address-transform
 
-                # Install dbt packages and run
+                # Detect profile name from dbt_project.yml to ensure profiles.yml is valid
+                PROFILE_NAME=$(grep "^profile:" dbt_project.yml | cut -d':' -f2 | tr -d '[:space:]' | tr -d "'\"")
+                P_NAME="${PROFILE_NAME:-syndicate_address_transform}"
+                echo "Using detected profile name: $P_NAME"
+
+                # Explicit values for Project and Dataset
+                PROJ="project-61358164-b71e-4422-a5c"
+                DATASET="qe_hack_syndicate_insight"
+
+                # Write profiles.yml to expected location
+                mkdir -p /root/.dbt
+                printf "%s:\n  target: prod\n  outputs:\n    prod:\n      type: bigquery\n      method: oauth\n      project: %s\n      dataset: %s\n      threads: 4\n      timeout_seconds: 300\n      location: europe-west2\n      retries: 1\n" "$P_NAME" "$PROJ" "$DATASET" > /root/.dbt/profiles.yml
+
+                # Define dbt variables explicitly to prevent dbt from using the dataset name as a project ID
+                DBT_VARS="database: $PROJ, gcp_project: $PROJ, bq_project: $PROJ, bq_dataset: $DATASET, dataset: $DATASET"
+
+                # Run dbt
                 dbt deps
-                dbt run-operation stage_external_sources --vars "{bq_dataset: $BQ_DATASET}"
-                dbt run --vars "{bq_dataset: $BQ_DATASET}"
+                dbt run-operation stage_external_sources --vars "{$DBT_VARS}"
+                dbt run --vars "{$DBT_VARS}"
 
                 echo "dbt address transform completed successfully."
             env:
             - name: GCP_PROJECT
               value: "project-61358164-b71e-4422-a5c"
             - name: BQ_DATASET
-              value: "qe_hack_syndicate" # Override with your target BQ dataset
+              value: "qe_hack_syndicate_insight" # Override with your target BQ dataset
             - name: GCS_BUCKET_NAME
               value: "qe_hack_syndicate_raw"
             - name: GIT_TOKEN
