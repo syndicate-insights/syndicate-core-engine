@@ -59,28 +59,28 @@ spec:
                 bucket = os.environ["GCS_BUCKET_NAME"]
                 table_id = f"{proj}.{dataset}.address_raw_data"
 
-                # Support both possible key layouts:
-                # 1) address/*.csv
-                # 2) qe_hack_syndicate_raw/address/*.csv
+                # Support both possible key layouts and gather concrete CSV objects:
+                # 1) address/<file>.csv
+                # 2) qe_hack_syndicate_raw/address/<file>.csv
                 candidate_prefixes = [
                   "address/",
                   f"{bucket}/address/",
                 ]
 
                 storage_client = storage.Client(project=proj)
-                found_prefix = None
+                uris = []
                 for prefix in candidate_prefixes:
-                  blobs = list(storage_client.list_blobs(bucket, prefix=prefix, max_results=1))
-                  if blobs:
-                    found_prefix = prefix
-                    break
+                  for blob in storage_client.list_blobs(bucket, prefix=prefix):
+                    if blob.name.lower().endswith(".csv"):
+                      uris.append(f"gs://{bucket}/{blob.name}")
 
-                if not found_prefix:
+                if not uris:
                   raise RuntimeError(
                     f"No address CSV files found in gs://{bucket}/address/ or gs://{bucket}/{bucket}/address/"
                   )
 
-                uri = f"gs://{bucket}/{found_prefix}*.csv"
+                # Deduplicate and sort for deterministic loading.
+                uris = sorted(set(uris))
 
                 client = bigquery.Client(project=proj)
                 job_config = bigquery.LoadJobConfig(
@@ -97,9 +97,9 @@ spec:
                   ],
                 )
 
-                load_job = client.load_table_from_uri(uri, table_id, job_config=job_config)
+                load_job = client.load_table_from_uri(uris, table_id, job_config=job_config)
                 load_job.result()
-                print(f"Loaded data into {table_id} from {uri}")
+                print(f"Loaded {len(uris)} file(s) into {table_id}")
                 PY
 
                 dbt run --vars "{$DBT_VARS}"
