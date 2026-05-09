@@ -52,12 +52,35 @@ spec:
                 python - <<'PY'
                 import os
                 from google.cloud import bigquery
+                from google.cloud import storage
 
                 proj = os.environ["GCP_PROJECT"]
                 dataset = os.environ["BQ_DATASET"]
                 bucket = os.environ["GCS_BUCKET_NAME"]
                 table_id = f"{proj}.{dataset}.address_raw_data"
-                uri = f"gs://{bucket}/address/*.csv"
+
+                # Support both possible key layouts:
+                # 1) address/*.csv
+                # 2) qe_hack_syndicate_raw/address/*.csv
+                candidate_prefixes = [
+                  "address/",
+                  f"{bucket}/address/",
+                ]
+
+                storage_client = storage.Client(project=proj)
+                found_prefix = None
+                for prefix in candidate_prefixes:
+                  blobs = list(storage_client.list_blobs(bucket, prefix=prefix, max_results=1))
+                  if blobs:
+                    found_prefix = prefix
+                    break
+
+                if not found_prefix:
+                  raise RuntimeError(
+                    f"No address CSV files found in gs://{bucket}/address/ or gs://{bucket}/{bucket}/address/"
+                  )
+
+                uri = f"gs://{bucket}/{found_prefix}*.csv"
 
                 client = bigquery.Client(project=proj)
                 job_config = bigquery.LoadJobConfig(
