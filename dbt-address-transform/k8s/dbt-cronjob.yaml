@@ -47,7 +47,13 @@ spec:
 
                 # Run dbt
                 dbt deps
-                dbt run-operation stage_external_sources --vars "{$DBT_VARS}"
+
+                # Load GCS CSV data into regular table
+                bq load --source_format=CSV --skip_leading_rows=1 \
+                  "$PROJ:$DATASET.address_raw_data" \
+                  "gs://$GCS_BUCKET_NAME/address/*.csv" \
+                  address_id:STRING,customer_id:STRING,line1:STRING,city:STRING,postcode:STRING,country:STRING
+
                 dbt run --vars "{$DBT_VARS}"
 
                 echo "dbt address transform completed successfully."
