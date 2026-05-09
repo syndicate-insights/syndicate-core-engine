@@ -4,7 +4,7 @@ metadata:
   name: dbt-address-transform-cronjob
   namespace: qe-hack-syndicate
 spec:
-  schedule: "*/2 * * * *" # Runs every day at 6pm
+  schedule: "0 0 * * *" # Runs every day at 12 am
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
