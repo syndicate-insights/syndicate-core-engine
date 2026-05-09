@@ -10,7 +10,7 @@ sources:
           External table pointing to address CSV files in GCS bucket.
           Each CSV contains: address_id, customer_id, line1, city, postcode, country.
         external:
-          location: "gs://{{ env_var('GCS_BUCKET_NAME') }}/qe_hack_syndicate_raw/address/*.csv"
+          location: "gs://{{ env_var('GCS_BUCKET_NAME') }}/address/*.csv"
           options:
             format: CSV
             skip_leading_rows: 1
