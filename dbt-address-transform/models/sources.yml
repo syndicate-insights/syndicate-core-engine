@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: gcs_raw
-    database: "{{ var('bq_dataset') }}"
+    database: "{{ var('bq_project') }}"
     schema: "{{ var('bq_dataset') }}"
     tables:
       - name: address_raw_external
