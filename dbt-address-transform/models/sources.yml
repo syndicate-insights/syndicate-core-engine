@@ -16,14 +16,14 @@ sources:
             skip_leading_rows: 1
           columns:
             - name: address_id
-              data_type: STRING
+              data_type: string
             - name: customer_id
-              data_type: STRING
+              data_type: string
             - name: line1
-              data_type: STRING
+              data_type: string
             - name: city
-              data_type: STRING
+              data_type: string
             - name: postcode
-              data_type: STRING
+              data_type: string
             - name: country
-              data_type: STRING
+              data_type: string
