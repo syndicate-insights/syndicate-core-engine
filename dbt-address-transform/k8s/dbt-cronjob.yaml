@@ -22,7 +22,7 @@ spec:
             args:
               - |
                 set -e
-                pip install --quiet dbt-bigquery==1.8.* google-cloud-storage
+                pip install --quiet dbt-bigquery==1.8.* google-cloud-storage google-cloud-bigquery
                 apt-get update -qq && apt-get install -y -qq git > /dev/null 2>&1
 
                 # Clone and navigate
@@ -48,11 +48,36 @@ spec:
                 # Run dbt
                 dbt deps
 
-                # Load GCS CSV data into regular table
-                bq load --source_format=CSV --skip_leading_rows=1 \
-                  "$PROJ:$DATASET.address_raw_data" \
-                  "gs://$GCS_BUCKET_NAME/address/*.csv" \
-                  address_id:STRING,customer_id:STRING,line1:STRING,city:STRING,postcode:STRING,country:STRING
+                # Load GCS CSV data into regular table without requiring bq CLI.
+                python - <<'PY'
+                import os
+                from google.cloud import bigquery
+
+                proj = os.environ["GCP_PROJECT"]
+                dataset = os.environ["BQ_DATASET"]
+                bucket = os.environ["GCS_BUCKET_NAME"]
+                table_id = f"{proj}.{dataset}.address_raw_data"
+                uri = f"gs://{bucket}/address/*.csv"
+
+                client = bigquery.Client(project=proj)
+                job_config = bigquery.LoadJobConfig(
+                  source_format=bigquery.SourceFormat.CSV,
+                  skip_leading_rows=1,
+                  write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
+                  schema=[
+                    bigquery.SchemaField("address_id", "STRING"),
+                    bigquery.SchemaField("customer_id", "STRING"),
+                    bigquery.SchemaField("line1", "STRING"),
+                    bigquery.SchemaField("city", "STRING"),
+                    bigquery.SchemaField("postcode", "STRING"),
+                    bigquery.SchemaField("country", "STRING"),
+                  ],
+                )
+
+                load_job = client.load_table_from_uri(uri, table_id, job_config=job_config)
+                load_job.result()
+                print(f"Loaded data into {table_id} from {uri}")
+                PY
 
                 dbt run --vars "{$DBT_VARS}"
 
