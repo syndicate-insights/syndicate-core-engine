@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: account_enriched
+    description: >
+      Final enriched account table that flags accounts where the sort code's
+      last digit is a prime number (2, 3, 5, 7) and the account number's
+      last two digits are both even numbers.
+    columns:
+      - name: account_id
+        description: Unique account identifier.
+        tests:
+          - not_null
+      - name: customer_id
+        description: Customer identifier linked to this account.
+        tests:
+          - not_null
+      - name: account_type
+        description: Type of account (SAVINGS, CURRENT, etc).
+      - name: sort_code
+        description: Original bank sort code in XX-XX-XX format.
+      - name: account_number
+        description: Original bank account number.
+      - name: opened_date_raw
+        description: Date the account was opened in raw string format.
+      - name: sort_code_last_digit
+        description: Last digit of the sort code (dashes removed).
+      - name: account_number_penultimate_digit
+        description: Second-to-last digit of the account number.
+      - name: account_number_last_digit
+        description: Last digit of the account number.
+      - name: is_flagged
+        description: >
+          Boolean flag. True when sort code's last digit is prime (2, 3, 5, 7)
+          AND account number's last two digits are both even.
+        tests:
+          - not_null
+      - name: processed_at
+        description: Timestamp when the row was processed.

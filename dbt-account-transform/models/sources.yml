@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: gcs_raw
+    database: "{{ var('bq_project') }}"
+    schema: "{{ var('bq_dataset') }}"
+    tables:
+      - name: account_raw_data
+        description: >
+          Table loaded from account CSV files in GCS bucket.
+          Each CSV contains: account_id, customer_id, account_type, sort_code, account_number, opened_date_raw.
+        columns:
+          - name: account_id
+            data_type: string
+          - name: customer_id
+            data_type: string
+          - name: account_type
+            data_type: string
+          - name: sort_code
+            data_type: string
+          - name: account_number
+            data_type: string
+          - name: opened_date_raw
+            data_type: string

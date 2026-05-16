@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: processed_files_metadata
+    description: >
+      Tracks which GCS CSV files have been processed to avoid re-ingesting
+      the same data on subsequent dbt runs.
+    columns:
+      - name: file_name
+        description: Full GCS URI of the processed CSV file.
+        tests:
+          - unique
+          - not_null
+      - name: processed_at
+        description: Timestamp when the file was processed.
+        tests:
+          - not_null
+
+  - name: stg_account_raw
+    description: >
+      Staging model that reads account data from the loaded raw account table.
+    columns:
+      - name: account_id
+        description: Unique account identifier.
+        tests:
+          - not_null
+      - name: customer_id
+        description: Customer identifier linked to this account.
+        tests:
+          - not_null
+      - name: account_type
+        description: Type of account (SAVINGS, CURRENT, etc).
+      - name: sort_code
+        description: Bank sort code in XX-XX-XX format.
+      - name: account_number
+        description: Bank account number.
+      - name: opened_date_raw
+        description: Date the account was opened in raw string format.
