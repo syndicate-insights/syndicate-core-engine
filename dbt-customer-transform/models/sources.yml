@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: gcs_raw
+    database: "{{ var('bq_project') }}"
+    schema: "{{ var('bq_dataset') }}"
+    tables:
+      - name: customer_raw_data
+        description: >
+          Table loaded from customer CSV files in GCS bucket.
+          Each CSV contains: customer_id, first_name, last_name, dob_raw, email, phone.
+        columns:
+          - name: customer_id
+            data_type: string
+          - name: first_name
+            data_type: string
+          - name: last_name
+            data_type: string
+          - name: dob_raw
+            data_type: string
+          - name: email
+            data_type: string
+          - name: phone
+            data_type: string

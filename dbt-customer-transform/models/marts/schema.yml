@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: customer_enriched
+    description: >
+      Final enriched customer table with a cleaned phone_number field.
+      Built incrementally from staged customer rows loaded from GCS.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - not_null
+      - name: first_name
+        description: Customer first name.
+        tests:
+          - not_null
+      - name: last_name
+        description: Customer last name.
+        tests:
+          - not_null
+      - name: dob_raw
+        description: Date of birth in raw string format.
+      - name: email
+        description: Customer email address.
+      - name: phone
+        description: Original raw phone number as provided.
+      - name: phone_number
+        description: >
+          Cleaned phone number with all non-digit characters removed.
+          Contains only numeric digits.
+        tests:
+          - not_null
+      - name: processed_at
+        description: Timestamp when the row was processed.

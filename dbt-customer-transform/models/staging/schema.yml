@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: processed_files_metadata
+    description: >
+      Tracks which GCS CSV files have been processed to avoid re-ingesting
+      the same data on subsequent dbt runs.
+    columns:
+      - name: file_name
+        description: Full GCS URI of the processed CSV file.
+        tests:
+          - unique
+          - not_null
+      - name: processed_at
+        description: Timestamp when the file was processed.
+        tests:
+          - not_null
+
+  - name: stg_customer_raw
+    description: >
+      Staging model that reads customer data from the loaded raw customer table.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - not_null
+      - name: first_name
+        description: Customer first name.
+      - name: last_name
+        description: Customer last name.
+      - name: dob_raw
+        description: Date of birth in raw string format.
+      - name: email
+        description: Customer email address.
+      - name: phone
+        description: Raw phone number as provided.
