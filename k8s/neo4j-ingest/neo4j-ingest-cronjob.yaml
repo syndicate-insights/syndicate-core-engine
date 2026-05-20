@@ -26,9 +26,19 @@ spec:
 
                 python - <<'PY'
                 import os
+                import logging
                 from datetime import datetime, timezone
                 from google.cloud import bigquery
                 from neo4j import GraphDatabase
+
+                logging.basicConfig(
+                    level=logging.INFO,
+                    format="%(asctime)s [%(levelname)s] %(message)s",
+                    datefmt="%Y-%m-%dT%H:%M:%SZ",
+                )
+                log = logging.getLogger("neo4j-ingest")
+
+                log.info("=== Neo4j Ingest Job Starting ===")
 
                 bq_project = os.environ["GCP_PROJECT"]
                 bq_dataset = os.environ["BQ_DATASET"]
@@ -37,14 +47,23 @@ spec:
                 neo4j_auth = os.environ["NEO4J_AUTH"]
                 neo4j_user, neo4j_password = neo4j_auth.split("/", 1)
 
+                log.info(f"BQ project: {bq_project}, dataset: {bq_dataset}")
+                log.info(f"Neo4j URI: {neo4j_uri}, user: {neo4j_user}")
+
+                log.info("Initialising BigQuery client...")
                 bq_client = bigquery.Client(project=bq_project)
+
+                log.info("Initialising Neo4j driver...")
                 driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+                driver.verify_connectivity()
+                log.info("Neo4j connection verified")
 
                 WATERMARK_TABLE = f"{bq_project}.{bq_dataset}.neo4j_ingest_watermark"
 
 
                 def ensure_watermark_table():
                     """Create the watermark table if it does not exist."""
+                    log.info(f"Ensuring watermark table exists: {WATERMARK_TABLE}")
                     ddl = f"""
                     CREATE TABLE IF NOT EXISTS `{WATERMARK_TABLE}` (
                       entity_type STRING NOT NULL,
@@ -52,6 +71,7 @@ spec:
                     )
                     """
                     bq_client.query(ddl).result()
+                    log.info("Watermark table ready")
 
 
                 def get_watermark(entity_type):
@@ -68,12 +88,16 @@ spec:
                     )
                     rows = list(bq_client.query(query, job_config=job_config).result())
                     if rows:
-                        return rows[0].last_processed_at
+                        ts = rows[0].last_processed_at
+                        log.info(f"Watermark for '{entity_type}': {ts}")
+                        return ts
+                    log.info(f"No watermark found for '{entity_type}' — will perform full load")
                     return None
 
 
                 def update_watermark(entity_type, last_processed_at):
                     """Upsert the watermark for an entity type."""
+                    log.info(f"Updating watermark for '{entity_type}' to {last_processed_at}")
                     query = f"""
                     MERGE `{WATERMARK_TABLE}` t
                     USING (SELECT @entity_type AS entity_type, @ts AS last_processed_at) s
@@ -88,12 +112,14 @@ spec:
                         ]
                     )
                     bq_client.query(query, job_config=job_config).result()
+                    log.info(f"Watermark for '{entity_type}' updated successfully")
 
 
                 def fetch_new_rows(table_name, entity_type):
                     """Fetch only rows processed after the last watermark."""
                     watermark = get_watermark(entity_type)
                     if watermark:
+                        log.info(f"Fetching rows from '{table_name}' where processed_at > {watermark}")
                         query = f"""
                         SELECT * FROM `{bq_project}.{bq_dataset}.{table_name}`
                         WHERE processed_at > @watermark
@@ -106,16 +132,20 @@ spec:
                         )
                         results = bq_client.query(query, job_config=job_config).result()
                     else:
+                        log.info(f"Full load from '{table_name}'")
                         query = f"""
                         SELECT * FROM `{bq_project}.{bq_dataset}.{table_name}`
                         ORDER BY processed_at ASC
                         """
                         results = bq_client.query(query).result()
 
-                    return [dict(row) for row in results]
+                    rows = [dict(row) for row in results]
+                    log.info(f"Fetched {len(rows)} row(s) from '{table_name}'")
+                    return rows
 
 
                 def create_constraints(session):
+                    log.info("Creating Neo4j uniqueness constraints...")
                     session.run(
                         "CREATE CONSTRAINT customer_id IF NOT EXISTS "
                         "FOR (c:Customer) REQUIRE c.customer_id IS UNIQUE"
@@ -128,9 +158,11 @@ spec:
                         "CREATE CONSTRAINT address_id IF NOT EXISTS "
                         "FOR (d:Address) REQUIRE d.address_id IS UNIQUE"
                     )
+                    log.info("Constraints applied")
 
 
                 def ingest_customers(session, customers):
+                    log.info(f"Ingesting {len(customers)} Customer node(s) into Neo4j...")
                     query = """
                     UNWIND $rows AS row
                     MERGE (c:Customer {customer_id: row.customer_id})
@@ -142,10 +174,11 @@ spec:
                         c.phone_number = row.phone_number
                     """
                     session.run(query, rows=customers)
-                    print(f"Ingested {len(customers)} Customer nodes")
+                    log.info(f"Customer nodes ingested successfully")
 
 
                 def ingest_accounts(session, accounts):
+                    log.info(f"Ingesting {len(accounts)} Account node(s) into Neo4j...")
                     query = """
                     UNWIND $rows AS row
                     MERGE (a:Account {account_id: row.account_id})
@@ -158,10 +191,11 @@ spec:
                     MERGE (c)-[:HAS_ACCOUNT]->(a)
                     """
                     session.run(query, rows=accounts)
-                    print(f"Ingested {len(accounts)} Account nodes with HAS_ACCOUNT relationships")
+                    log.info(f"Account nodes and HAS_ACCOUNT relationships ingested successfully")
 
 
                 def ingest_addresses(session, addresses):
+                    log.info(f"Ingesting {len(addresses)} Address node(s) into Neo4j...")
                     query = """
                     UNWIND $rows AS row
                     MERGE (d:Address {address_id: row.address_id})
@@ -175,24 +209,27 @@ spec:
                     MERGE (c)-[:HAS_ADDRESS]->(d)
                     """
                     session.run(query, rows=addresses)
-                    print(f"Ingested {len(addresses)} Address nodes with HAS_ADDRESS relationships")
+                    log.info(f"Address nodes and HAS_ADDRESS relationships ingested successfully")
 
 
                 # Ensure watermark table exists
                 ensure_watermark_table()
 
                 # Fetch only new rows from enriched tables since last run
-                print("Fetching new rows from BigQuery enriched tables...")
+                log.info("--- Fetching new rows from BigQuery enriched tables ---")
                 customers = fetch_new_rows("customer_enriched", "customer")
                 accounts = fetch_new_rows("account_enriched", "account")
                 addresses = fetch_new_rows("address_enriched", "address")
 
-                print(f"New rows: {len(customers)} customers, {len(accounts)} accounts, {len(addresses)} addresses")
+                log.info(
+                    f"Rows to ingest — customers: {len(customers)}, "
+                    f"accounts: {len(accounts)}, addresses: {len(addresses)}"
+                )
 
                 if not customers and not accounts and not addresses:
-                    print("No new rows to ingest. Exiting.")
+                    log.info("No new rows to ingest. Exiting.")
                 else:
-                    print("Ingesting into Neo4j...")
+                    log.info("--- Ingesting into Neo4j ---")
                     with driver.session() as session:
                         create_constraints(session)
 
@@ -200,20 +237,27 @@ spec:
                             ingest_customers(session, customers)
                             max_ts = max(r["processed_at"] for r in customers)
                             update_watermark("customer", max_ts)
+                        else:
+                            log.info("No new Customer rows — skipping")
 
                         if accounts:
                             ingest_accounts(session, accounts)
                             max_ts = max(r["processed_at"] for r in accounts)
                             update_watermark("account", max_ts)
+                        else:
+                            log.info("No new Account rows — skipping")
 
                         if addresses:
                             ingest_addresses(session, addresses)
                             max_ts = max(r["processed_at"] for r in addresses)
                             update_watermark("address", max_ts)
+                        else:
+                            log.info("No new Address rows — skipping")
 
-                    print("Neo4j ingest completed successfully.")
+                    log.info("=== Neo4j ingest completed successfully ===")
 
                 driver.close()
+                log.info("Neo4j driver closed")
                 PY
             env:
             - name: GCP_PROJECT
