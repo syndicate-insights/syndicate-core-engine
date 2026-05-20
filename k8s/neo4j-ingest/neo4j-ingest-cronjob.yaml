@@ -1,0 +1,237 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: neo4j-ingest-cronjob
+  namespace: qe-hack-syndicate
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          serviceAccountName: qe-hack-syndicate-k8s-sa
+          restartPolicy: OnFailure
+          containers:
+          - name: neo4j-ingest
+            image: python:3.11-slim
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -e
+                pip install --quiet google-cloud-bigquery neo4j
+
+                python - <<'PY'
+                import os
+                from datetime import datetime, timezone
+                from google.cloud import bigquery
+                from neo4j import GraphDatabase
+
+                bq_project = os.environ["GCP_PROJECT"]
+                bq_dataset = os.environ["BQ_DATASET"]
+                neo4j_uri = os.environ["NEO4J_URI"]
+                neo4j_user = os.environ.get("NEO4J_USER", "neo4j")
+                neo4j_password = os.environ["NEO4J_PASSWORD"]
+
+                bq_client = bigquery.Client(project=bq_project)
+                driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+
+                WATERMARK_TABLE = f"{bq_project}.{bq_dataset}.neo4j_ingest_watermark"
+
+
+                def ensure_watermark_table():
+                    """Create the watermark table if it does not exist."""
+                    ddl = f"""
+                    CREATE TABLE IF NOT EXISTS `{WATERMARK_TABLE}` (
+                      entity_type STRING NOT NULL,
+                      last_processed_at TIMESTAMP NOT NULL
+                    )
+                    """
+                    bq_client.query(ddl).result()
+
+
+                def get_watermark(entity_type):
+                    """Get the last processed_at timestamp for an entity type."""
+                    query = f"""
+                    SELECT last_processed_at
+                    FROM `{WATERMARK_TABLE}`
+                    WHERE entity_type = @entity_type
+                    """
+                    job_config = bigquery.QueryJobConfig(
+                        query_parameters=[
+                            bigquery.ScalarQueryParameter("entity_type", "STRING", entity_type)
+                        ]
+                    )
+                    rows = list(bq_client.query(query, job_config=job_config).result())
+                    if rows:
+                        return rows[0].last_processed_at
+                    return None
+
+
+                def update_watermark(entity_type, last_processed_at):
+                    """Upsert the watermark for an entity type."""
+                    query = f"""
+                    MERGE `{WATERMARK_TABLE}` t
+                    USING (SELECT @entity_type AS entity_type, @ts AS last_processed_at) s
+                    ON t.entity_type = s.entity_type
+                    WHEN MATCHED THEN UPDATE SET t.last_processed_at = s.last_processed_at
+                    WHEN NOT MATCHED THEN INSERT (entity_type, last_processed_at) VALUES (s.entity_type, s.last_processed_at)
+                    """
+                    job_config = bigquery.QueryJobConfig(
+                        query_parameters=[
+                            bigquery.ScalarQueryParameter("entity_type", "STRING", entity_type),
+                            bigquery.ScalarQueryParameter("ts", "TIMESTAMP", last_processed_at),
+                        ]
+                    )
+                    bq_client.query(query, job_config=job_config).result()
+
+
+                def fetch_new_rows(table_name, entity_type):
+                    """Fetch only rows processed after the last watermark."""
+                    watermark = get_watermark(entity_type)
+                    if watermark:
+                        query = f"""
+                        SELECT * FROM `{bq_project}.{bq_dataset}.{table_name}`
+                        WHERE processed_at > @watermark
+                        ORDER BY processed_at ASC
+                        """
+                        job_config = bigquery.QueryJobConfig(
+                            query_parameters=[
+                                bigquery.ScalarQueryParameter("watermark", "TIMESTAMP", watermark)
+                            ]
+                        )
+                        results = bq_client.query(query, job_config=job_config).result()
+                    else:
+                        query = f"""
+                        SELECT * FROM `{bq_project}.{bq_dataset}.{table_name}`
+                        ORDER BY processed_at ASC
+                        """
+                        results = bq_client.query(query).result()
+
+                    return [dict(row) for row in results]
+
+
+                def create_constraints(session):
+                    session.run(
+                        "CREATE CONSTRAINT customer_id IF NOT EXISTS "
+                        "FOR (c:Customer) REQUIRE c.customer_id IS UNIQUE"
+                    )
+                    session.run(
+                        "CREATE CONSTRAINT account_id IF NOT EXISTS "
+                        "FOR (a:Account) REQUIRE a.account_id IS UNIQUE"
+                    )
+                    session.run(
+                        "CREATE CONSTRAINT address_id IF NOT EXISTS "
+                        "FOR (d:Address) REQUIRE d.address_id IS UNIQUE"
+                    )
+
+
+                def ingest_customers(session, customers):
+                    query = """
+                    UNWIND $rows AS row
+                    MERGE (c:Customer {customer_id: row.customer_id})
+                    SET c.first_name = row.first_name,
+                        c.last_name = row.last_name,
+                        c.dob_raw = row.dob_raw,
+                        c.email = row.email,
+                        c.phone = row.phone,
+                        c.phone_number = row.phone_number
+                    """
+                    session.run(query, rows=customers)
+                    print(f"Ingested {len(customers)} Customer nodes")
+
+
+                def ingest_accounts(session, accounts):
+                    query = """
+                    UNWIND $rows AS row
+                    MERGE (a:Account {account_id: row.account_id})
+                    SET a.account_type = row.account_type,
+                        a.sort_code = row.sort_code,
+                        a.account_number = row.account_number,
+                        a.opened_date_raw = row.opened_date_raw
+                    WITH a, row
+                    MATCH (c:Customer {customer_id: row.customer_id})
+                    MERGE (c)-[:HAS_ACCOUNT]->(a)
+                    """
+                    session.run(query, rows=accounts)
+                    print(f"Ingested {len(accounts)} Account nodes with HAS_ACCOUNT relationships")
+
+
+                def ingest_addresses(session, addresses):
+                    query = """
+                    UNWIND $rows AS row
+                    MERGE (d:Address {address_id: row.address_id})
+                    SET d.line1 = row.line1,
+                        d.city = row.city,
+                        d.postcode = row.postcode,
+                        d.country = row.country,
+                        d.full_address = row.full_address
+                    WITH d, row
+                    MATCH (c:Customer {customer_id: row.customer_id})
+                    MERGE (c)-[:HAS_ADDRESS]->(d)
+                    """
+                    session.run(query, rows=addresses)
+                    print(f"Ingested {len(addresses)} Address nodes with HAS_ADDRESS relationships")
+
+
+                # Ensure watermark table exists
+                ensure_watermark_table()
+
+                # Fetch only new rows from enriched tables since last run
+                print("Fetching new rows from BigQuery enriched tables...")
+                customers = fetch_new_rows("customer_enriched", "customer")
+                accounts = fetch_new_rows("account_enriched", "account")
+                addresses = fetch_new_rows("address_enriched", "address")
+
+                print(f"New rows: {len(customers)} customers, {len(accounts)} accounts, {len(addresses)} addresses")
+
+                if not customers and not accounts and not addresses:
+                    print("No new rows to ingest. Exiting.")
+                else:
+                    print("Ingesting into Neo4j...")
+                    with driver.session() as session:
+                        create_constraints(session)
+
+                        if customers:
+                            ingest_customers(session, customers)
+                            max_ts = max(r["processed_at"] for r in customers)
+                            update_watermark("customer", max_ts)
+
+                        if accounts:
+                            ingest_accounts(session, accounts)
+                            max_ts = max(r["processed_at"] for r in accounts)
+                            update_watermark("account", max_ts)
+
+                        if addresses:
+                            ingest_addresses(session, addresses)
+                            max_ts = max(r["processed_at"] for r in addresses)
+                            update_watermark("address", max_ts)
+
+                    print("Neo4j ingest completed successfully.")
+
+                driver.close()
+                PY
+            env:
+            - name: GCP_PROJECT
+              value: "project-61358164-b71e-4422-a5c"
+            - name: BQ_DATASET
+              value: "qe_hack_syndicate_insight"
+            - name: NEO4J_URI
+              value: "bolt://neo4j-neo4j:7687"
+            - name: NEO4J_USER
+              value: "neo4j"
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: neo4j-credentials
+                  key: password
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"
