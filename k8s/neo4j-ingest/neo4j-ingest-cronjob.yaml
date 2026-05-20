@@ -33,8 +33,9 @@ spec:
                 bq_project = os.environ["GCP_PROJECT"]
                 bq_dataset = os.environ["BQ_DATASET"]
                 neo4j_uri = os.environ["NEO4J_URI"]
-                neo4j_user = os.environ.get("NEO4J_USER", "neo4j")
-                neo4j_password = os.environ["NEO4J_PASSWORD"]
+                # NEO4J_AUTH is in the format "username/password" as set by the Neo4j Helm chart
+                neo4j_auth = os.environ["NEO4J_AUTH"]
+                neo4j_user, neo4j_password = neo4j_auth.split("/", 1)
 
                 bq_client = bigquery.Client(project=bq_project)
                 driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
@@ -220,14 +221,12 @@ spec:
             - name: BQ_DATASET
               value: "qe_hack_syndicate_insight"
             - name: NEO4J_URI
-              value: "bolt://neo4j-neo4j:7687"
-            - name: NEO4J_USER
-              value: "neo4j"
-            - name: NEO4J_PASSWORD
+              value: "bolt://34.69.104.67:7687"
+            - name: NEO4J_AUTH
               valueFrom:
                 secretKeyRef:
-                  name: neo4j-credentials
-                  key: password
+                  name: neo4j-auth
+                  key: NEO4J_AUTH
             resources:
               requests:
                 memory: "512Mi"
