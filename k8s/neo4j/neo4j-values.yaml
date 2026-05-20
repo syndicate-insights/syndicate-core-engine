@@ -1,0 +1,65 @@
+# Neo4j Helm Deployment
+#
+# Prerequisites:
+#   helm repo add neo4j https://helm.neo4j.com/neo4j
+#   helm repo update
+#
+# Deploy:
+#   helm install neo4j neo4j/neo4j \
+#     --namespace qe-hack-syndicate \
+#     --values neo4j-values.yaml
+#
+# Upgrade:
+#   helm upgrade neo4j neo4j/neo4j \
+#     --namespace qe-hack-syndicate \
+#     --values neo4j-values.yaml
+
+neo4j:
+  name: neo4j
+  # Set a strong password — override via --set neo4j.password=<value> at install time
+  # or store in a Kubernetes secret and reference below.
+  password: "changeme-strong-password"
+  edition: "community"
+  acceptLicenseAgreement: "yes"
+
+# Use a single replica for community edition
+replicas: 1
+
+image:
+  customImage: neo4j:5.20.0-community
+
+volumes:
+  data:
+    mode: defaultStorageClass
+    defaultStorageClass:
+      requests:
+        storage: 10Gi
+
+services:
+  # Expose Neo4j via a LoadBalancer so it gets an external IP.
+  neo4j:
+    enabled: true
+    spec:
+      type: LoadBalancer
+    # Uncomment and set to lock down access to specific CIDR ranges:
+    # loadBalancerSourceRanges:
+    #   - "0.0.0.0/0"
+
+  # Bolt (7687) is the primary driver protocol.
+  # HTTP (7474) and HTTPS (7473) are the browser/REST interfaces.
+  # Both are included in the default neo4j service above.
+
+config:
+  # Allow connections from any address inside the cluster and externally.
+  server.default_listen_address: "0.0.0.0"
+  server.bolt.listen_address: "0.0.0.0:7687"
+  server.http.listen_address: "0.0.0.0:7474"
+  server.https.listen_address: "0.0.0.0:7473"
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "1000m"
+    memory: "4Gi"
