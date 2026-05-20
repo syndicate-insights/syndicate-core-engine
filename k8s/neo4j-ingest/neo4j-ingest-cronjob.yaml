@@ -115,11 +115,18 @@ spec:
                     log.info(f"Watermark for '{entity_type}' updated successfully")
 
 
-                def fetch_new_rows(table_name, entity_type):
-                    """Fetch only rows processed after the last watermark."""
+                BATCH_SIZE = int(os.environ.get("BATCH_SIZE", "500"))
+
+
+                def stream_batches(table_name, entity_type):
+                    """
+                    Stream rows from BigQuery in micro-batches of BATCH_SIZE using the
+                    BQ Storage API page iterator. Rows are never all held in memory at once.
+                    Yields (batch, max_processed_at) tuples.
+                    """
                     watermark = get_watermark(entity_type)
                     if watermark:
-                        log.info(f"Fetching rows from '{table_name}' where processed_at > {watermark}")
+                        log.info(f"Incremental load from '{table_name}' where processed_at > {watermark}")
                         query = f"""
                         SELECT * FROM `{bq_project}.{bq_dataset}.{table_name}`
                         WHERE processed_at > @watermark
@@ -130,18 +137,25 @@ spec:
                                 bigquery.ScalarQueryParameter("watermark", "TIMESTAMP", watermark)
                             ]
                         )
-                        results = bq_client.query(query, job_config=job_config).result()
                     else:
                         log.info(f"Full load from '{table_name}'")
                         query = f"""
                         SELECT * FROM `{bq_project}.{bq_dataset}.{table_name}`
                         ORDER BY processed_at ASC
                         """
-                        results = bq_client.query(query).result()
+                        job_config = bigquery.QueryJobConfig()
 
-                    rows = [dict(row) for row in results]
-                    log.info(f"Fetched {len(rows)} row(s) from '{table_name}'")
-                    return rows
+                    result = bq_client.query(query, job_config=job_config).result(page_size=BATCH_SIZE)
+                    total = 0
+                    for page in result.pages:
+                        batch = [dict(row) for row in page]
+                        if not batch:
+                            continue
+                        total += len(batch)
+                        max_ts = max(r["processed_at"] for r in batch)
+                        log.info(f"  Streaming batch of {len(batch)} row(s) from '{table_name}' (total so far: {total})")
+                        yield batch, max_ts
+                    log.info(f"Finished streaming '{table_name}': {total} row(s) total")
 
 
                 def create_constraints(session):
@@ -161,8 +175,7 @@ spec:
                     log.info("Constraints applied")
 
 
-                def ingest_customers(session, customers):
-                    log.info(f"Ingesting {len(customers)} Customer node(s) into Neo4j...")
+                def ingest_customers_batch(session, batch):
                     query = """
                     UNWIND $rows AS row
                     MERGE (c:Customer {customer_id: row.customer_id})
@@ -173,12 +186,10 @@ spec:
                         c.phone = row.phone,
                         c.phone_number = row.phone_number
                     """
-                    session.run(query, rows=customers)
-                    log.info(f"Customer nodes ingested successfully")
+                    session.run(query, rows=batch)
 
 
-                def ingest_accounts(session, accounts):
-                    log.info(f"Ingesting {len(accounts)} Account node(s) into Neo4j...")
+                def ingest_accounts_batch(session, batch):
                     query = """
                     UNWIND $rows AS row
                     MERGE (a:Account {account_id: row.account_id})
@@ -190,12 +201,10 @@ spec:
                     MATCH (c:Customer {customer_id: row.customer_id})
                     MERGE (c)-[:HAS_ACCOUNT]->(a)
                     """
-                    session.run(query, rows=accounts)
-                    log.info(f"Account nodes and HAS_ACCOUNT relationships ingested successfully")
+                    session.run(query, rows=batch)
 
 
-                def ingest_addresses(session, addresses):
-                    log.info(f"Ingesting {len(addresses)} Address node(s) into Neo4j...")
+                def ingest_addresses_batch(session, batch):
                     query = """
                     UNWIND $rows AS row
                     MERGE (d:Address {address_id: row.address_id})
@@ -208,53 +217,46 @@ spec:
                     MATCH (c:Customer {customer_id: row.customer_id})
                     MERGE (c)-[:HAS_ADDRESS]->(d)
                     """
-                    session.run(query, rows=addresses)
-                    log.info(f"Address nodes and HAS_ADDRESS relationships ingested successfully")
+                    session.run(query, rows=batch)
+
+
+                def process_entity(table_name, entity_type, ingest_fn):
+                    """Stream-batch an entity table into Neo4j, updating the watermark after each batch."""
+                    batch_num = 0
+                    any_rows = False
+                    with driver.session() as session:
+                        for batch, max_ts in stream_batches(table_name, entity_type):
+                            any_rows = True
+                            batch_num += 1
+                            log.info(f"[{entity_type}] Ingesting batch {batch_num} ({len(batch)} rows)...")
+                            ingest_fn(session, batch)
+                            update_watermark(entity_type, max_ts)
+                            log.info(f"[{entity_type}] Batch {batch_num} committed, watermark → {max_ts}")
+                    if not any_rows:
+                        log.info(f"[{entity_type}] No new rows — skipping")
 
 
                 # Ensure watermark table exists
                 ensure_watermark_table()
 
-                # Fetch only new rows from enriched tables since last run
-                log.info("--- Fetching new rows from BigQuery enriched tables ---")
-                customers = fetch_new_rows("customer_enriched", "customer")
-                accounts = fetch_new_rows("account_enriched", "account")
-                addresses = fetch_new_rows("address_enriched", "address")
+                # Set up Neo4j constraints once before streaming
+                with driver.session() as session:
+                    create_constraints(session)
 
-                log.info(
-                    f"Rows to ingest — customers: {len(customers)}, "
-                    f"accounts: {len(accounts)}, addresses: {len(addresses)}"
-                )
+                # Stream-batch each entity type, committing watermark per batch
+                log.info("--- Starting micro-batch ingest ---")
+                log.info(f"Batch size: {BATCH_SIZE}")
 
-                if not customers and not accounts and not addresses:
-                    log.info("No new rows to ingest. Exiting.")
-                else:
-                    log.info("--- Ingesting into Neo4j ---")
-                    with driver.session() as session:
-                        create_constraints(session)
+                log.info("--- Processing customers ---")
+                process_entity("customer_enriched", "customer", ingest_customers_batch)
 
-                        if customers:
-                            ingest_customers(session, customers)
-                            max_ts = max(r["processed_at"] for r in customers)
-                            update_watermark("customer", max_ts)
-                        else:
-                            log.info("No new Customer rows — skipping")
+                log.info("--- Processing accounts ---")
+                process_entity("account_enriched", "account", ingest_accounts_batch)
 
-                        if accounts:
-                            ingest_accounts(session, accounts)
-                            max_ts = max(r["processed_at"] for r in accounts)
-                            update_watermark("account", max_ts)
-                        else:
-                            log.info("No new Account rows — skipping")
+                log.info("--- Processing addresses ---")
+                process_entity("address_enriched", "address", ingest_addresses_batch)
 
-                        if addresses:
-                            ingest_addresses(session, addresses)
-                            max_ts = max(r["processed_at"] for r in addresses)
-                            update_watermark("address", max_ts)
-                        else:
-                            log.info("No new Address rows — skipping")
-
-                    log.info("=== Neo4j ingest completed successfully ===")
+                log.info("=== Neo4j ingest completed successfully ===")
 
                 driver.close()
                 log.info("Neo4j driver closed")
@@ -271,6 +273,8 @@ spec:
                 secretKeyRef:
                   name: neo4j-auth
                   key: NEO4J_AUTH
+            - name: BATCH_SIZE
+              value: "500"
             resources:
               requests:
                 memory: "512Mi"
