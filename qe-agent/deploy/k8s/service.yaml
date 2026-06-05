@@ -1,0 +1,17 @@
+# ClusterIP Service — reachable by the in-namespace Harness delegate at
+# http://qe-quality-agent.qe-hack-syndicate.svc.cluster.local:8080
+apiVersion: v1
+kind: Service
+metadata:
+  name: qe-quality-agent
+  namespace: qe-hack-syndicate
+  labels:
+    app: qe-quality-agent
+spec:
+  type: ClusterIP
+  selector:
+    app: qe-quality-agent
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

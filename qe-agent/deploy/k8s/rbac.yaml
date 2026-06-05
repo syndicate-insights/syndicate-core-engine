@@ -1,0 +1,32 @@
+# Least-privilege namespace RBAC for the QE Quality Agent.
+# Read access to pods/jobs/cronjobs + pod logs for observability, and create
+# rights on jobs ONLY so it can trigger an ephemeral `dbt test` run.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: qe-quality-agent-role
+  namespace: qe-hack-syndicate
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "create"]
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: qe-quality-agent-rolebinding
+  namespace: qe-hack-syndicate
+subjects:
+  - kind: ServiceAccount
+    name: qe-quality-agent-sa
+    namespace: qe-hack-syndicate
+roleRef:
+  kind: Role
+  name: qe-quality-agent-role
+  apiGroup: rbac.authorization.k8s.io

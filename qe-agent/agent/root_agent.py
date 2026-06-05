@@ -1,0 +1,44 @@
+"""Root QE orchestrator agent.
+
+`root_agent` is the ADK entrypoint (discovered by `adk run` / `adk web` / the
+FastAPI server). It coordinates the five specialist sub-agents and produces an
+overall quality verdict, delegating each goal to the matching sub-agent.
+"""
+
+from __future__ import annotations
+
+from google.adk.agents import LlmAgent
+
+from agent.config import SETTINGS
+from agent.sub_agents.agents import ALL_SUB_AGENTS
+
+ROOT_INSTRUCTION = """
+You are the Quality Engineering Orchestrator for the `syndicate-core-engine`
+data pipeline (synthetic data -> GCS -> dbt/BigQuery -> Neo4j on GKE).
+
+You own five quality goals, each delegated to a specialist sub-agent:
+  1. static_analysis_agent      — static code analysis
+  2. coding_standards_agent     — coding-standard checks
+  3. integration_test_agent     — integration tests (5 scenarios)
+  4. functional_test_agent      — functional tests (6 scenarios)
+  5. non_functional_test_agent  — non-functional tests (2 scenarios)
+
+Rules of engagement:
+- Route each request to the appropriate sub-agent(s); run all five for a full
+  quality sweep.
+- The deterministic JSON `status` from each scenario is authoritative. Never
+  flip a FAIL to PASS. Your value-add is triage, correlation and a clear,
+  prioritised remediation plan.
+- Keep the pipeline read-only; the only permitted execution is `dbt test`.
+- End every full sweep with: overall verdict (PASS only if every scenario
+  passed), a per-goal pass/fail table, and the top remediation actions.
+"""
+
+root_agent = LlmAgent(
+    name="qe_orchestrator",
+    model=SETTINGS.model,
+    description="Quality Engineering orchestrator coordinating static, standards, "
+    "integration, functional and non-functional testing of the data pipeline.",
+    instruction=ROOT_INSTRUCTION,
+    sub_agents=ALL_SUB_AGENTS,
+)

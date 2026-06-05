@@ -1,0 +1,9 @@
+# Exclude local artefacts from the build context.
+**/__pycache__/
+**/*.pyc
+.venv/
+venv/
+.pytest_cache/
+tests/
+*.md
+deploy/k8s/

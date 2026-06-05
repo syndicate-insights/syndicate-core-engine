@@ -1,0 +1,66 @@
+# QE Quality Agent — long-running Deployment exposing the ADK + /qe API.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qe-quality-agent
+  namespace: qe-hack-syndicate
+  labels:
+    app: qe-quality-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qe-quality-agent
+  template:
+    metadata:
+      labels:
+        app: qe-quality-agent
+    spec:
+      serviceAccountName: qe-quality-agent-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: qe-quality-agent
+          # Replace with your pushed image, e.g.
+          # us-central1-docker.pkg.dev/project-61358164-b71e-4422-a5c/qe/qe-quality-agent:0.1.0
+          image: REPLACE_WITH_IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: qe-quality-agent-config
+          env:
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: qe-quality-agent-secrets
+                  key: NEO4J_PASSWORD
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
