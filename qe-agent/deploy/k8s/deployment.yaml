@@ -22,6 +22,35 @@ spec:
         runAsUser: 10001
         seccompProfile:
           type: RuntimeDefault
+      # The static-analysis, coding-standards and dbt suites lint the repository
+      # source at REPO_ROOT (/workspace/syndicate-core-engine). The agent image
+      # only ships agent/ + cli/, so an init container clones the repo into a
+      # shared volume — mirroring how the dbt cronjobs pull the source. Restart
+      # the Deployment to re-pull the latest main before a fresh quality sweep.
+      initContainers:
+        - name: git-clone
+          image: alpine/git:2.45.2
+          env:
+            - name: GIT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: git-credentials
+                  key: token
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              rm -rf /workspace/syndicate-core-engine
+              git clone --depth 1 \
+                "https://${GIT_TOKEN}@github.com/syndicate-insights/syndicate-core-engine.git" \
+                /workspace/syndicate-core-engine
+          volumeMounts:
+            - name: repo-src
+              mountPath: /workspace
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
       containers:
         - name: qe-quality-agent
           # Replace with your pushed image, e.g.
@@ -40,6 +69,9 @@ spec:
                 secretKeyRef:
                   name: qe-quality-agent-secrets
                   key: NEO4J_PASSWORD
+          volumeMounts:
+            - name: repo-src
+              mountPath: /workspace
           resources:
             requests:
               cpu: "250m"
@@ -64,3 +96,6 @@ spec:
             readOnlyRootFilesystem: false
             capabilities:
               drop: ["ALL"]
+      volumes:
+        - name: repo-src
+          emptyDir: {}

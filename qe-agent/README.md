@@ -251,6 +251,17 @@ kubectl create secret generic qe-quality-agent-secrets \
   --from-literal=NEO4J_PASSWORD='<neo4j-password>'
 ```
 
+> The agent's `git-clone` init container also needs the existing
+> `git-credentials` secret (key `token`) — the same one the dbt cronjobs use — to
+> clone the repo source into `REPO_ROOT` for the static-analysis, coding-standards
+> and dbt suites. It already exists in the namespace; create it only if missing:
+>
+> ```bash
+> kubectl create secret generic git-credentials \
+>   --namespace qe-hack-syndicate \
+>   --from-literal=token='<github-pat>'
+> ```
+
 ### 4. Apply config + workload
 
 ```bash
