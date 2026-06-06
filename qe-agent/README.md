@@ -183,22 +183,42 @@ ephemeral `dbt test`). No data-mutation permissions.
   `bolt://neo4j.qe-hack-syndicate.svc.cluster.local:7687`. If you only have the
   external `bolt://34.69.104.67:7687`, set `NEO4J_URI` accordingly in the
   ConfigMap.
-- `gcloud`, `kubectl`, `docker` installed locally.
+- `gcloud` + `kubectl`. Docker is **not** required locally — the image is built
+  with Cloud Build (handy behind a corporate proxy where local `docker push`
+  fails with `connection refused`).
 
 ---
 
 ## Deploy to Kubernetes
 
-### 1. Build & push the image
+### 1. Build & push the image (Cloud Build)
+
+Builds and pushes from Google's side via Cloud Build — no local Docker daemon,
+so it sidesteps corporate-proxy egress issues (`dial tcp ...: connection
+refused`). The Dockerfile lives at `deploy/Dockerfile`, so we use the
+`deploy/cloudbuild.yaml` config rather than a bare `--tag`.
 
 ```bash
 cd qe-agent
 PROJECT=project-61358164-b71e-4422-a5c
 IMAGE=us-central1-docker.pkg.dev/$PROJECT/qe/qe-quality-agent:0.1.0
 
-docker build -f deploy/Dockerfile -t "$IMAGE" .
-docker push "$IMAGE"
+# One-time: enable APIs and create the Artifact Registry repo.
+gcloud services enable cloudbuild.googleapis.com artifactregistry.googleapis.com \
+  --project "$PROJECT"
+gcloud artifacts repositories create qe \
+  --repository-format=docker --location=us-central1 \
+  --project "$PROJECT" 2>/dev/null || true
+
+# Build + push from the qe-agent/ context.
+gcloud builds submit --config deploy/cloudbuild.yaml \
+  --substitutions _IMAGE="$IMAGE" \
+  --project "$PROJECT" .
 ```
+
+> Prefer a local build instead? `docker build -f deploy/Dockerfile -t "$IMAGE" .`
+> then `docker push "$IMAGE"` — but behind a proxy you must configure the Docker
+> daemon's proxy (`~/.docker/config.json`), which Cloud Build avoids entirely.
 
 ### 2. Ensure the shared GCP SA has the required roles
 

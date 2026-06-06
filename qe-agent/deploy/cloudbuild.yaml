@@ -1,0 +1,25 @@
+# Cloud Build config for the QE Quality Agent image.
+# Builds from the qe-agent/ build context (so agent/, cli/, pyproject.toml and
+# README.md are present) using deploy/Dockerfile, then pushes to Artifact
+# Registry. Pushing happens from Google's side, avoiding local Docker daemon /
+# corporate-proxy egress issues.
+#
+# Usage (from the qe-agent/ directory):
+#   gcloud builds submit --config deploy/cloudbuild.yaml \
+#     --substitutions _IMAGE=us-central1-docker.pkg.dev/$PROJECT/qe/qe-quality-agent:0.1.0 \
+#     --project "$PROJECT" .
+substitutions:
+  _IMAGE: us-central1-docker.pkg.dev/project-61358164-b71e-4422-a5c/qe/qe-quality-agent:0.1.0
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - deploy/Dockerfile
+      - -t
+      - ${_IMAGE}
+      - .
+images:
+  - ${_IMAGE}
+options:
+  logging: CLOUD_LOGGING_ONLY
