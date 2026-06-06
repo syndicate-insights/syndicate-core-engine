@@ -69,6 +69,7 @@ qe-agent/
   cli/qe_cli.py                # Harness client
   deploy/
     Dockerfile
+    cloudbuild.yaml            # Cloud Build config (build + push image)
     k8s/                       # rbac, configmap, secret.example,
                                # deployment, service
 .harness/                      # Harness Git Experience pipeline
@@ -253,13 +254,13 @@ kubectl create secret generic qe-quality-agent-secrets \
 ### 4. Apply config + workload
 
 ```bash
-# Set the image in the Deployment (replace placeholder).
-sed -i '' "s#REPLACE_WITH_IMAGE#$IMAGE#" deploy/k8s/deployment.yaml   # macOS sed
+# Render the image into the Deployment and apply (works on Linux/Cloud Shell and
+# macOS; does not modify the tracked manifest).
+sed "s#REPLACE_WITH_IMAGE#$IMAGE#" deploy/k8s/deployment.yaml | kubectl apply -f -
 
 kubectl apply -f deploy/k8s/rbac.yaml
 kubectl apply -f deploy/k8s/configmap.yaml
 kubectl apply -f deploy/k8s/service.yaml
-kubectl apply -f deploy/k8s/deployment.yaml
 
 kubectl -n qe-hack-syndicate rollout status deploy/qe-quality-agent
 ```
