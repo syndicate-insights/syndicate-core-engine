@@ -13,8 +13,8 @@
 pipeline:
   name: QE Quality Gate
   identifier: qe_quality_gate
-  projectIdentifier: <PROJECT>
-  orgIdentifier: <ORG>
+  projectIdentifier: QE_HACK
+  orgIdentifier: default
   tags: {}
   variables:
     - name: QE_AGENT_URL
