@@ -1,42 +1,76 @@
-WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+lloydsaiagent@cloudshell:~/qe-hack-syndicate-k8s (project-61358164-b71e-4422-a5c)$ cd qe-agent
+PROJECT=project-61358164-b71e-4422-a5c
+IMAGE=us-central1-docker.pkg.dev/$PROJECT/qe/qe-quality-agent:0.1.0
 
-[notice] A new release of pip is available: 24.0 -> 26.1.1
-[notice] To update, run: pip install --upgrade pip
-Cloning into '/tmp/repo'...
-Using detected profile name: syndicate_address_transform
-19:30:01  Running with dbt=1.11.9
-19:30:02  Updating lock file in file path: /tmp/repo/dbt-address-transform/package-lock.yml
-19:30:02  Installing dbt-labs/dbt_external_tables
-19:30:02  Installed from version 0.9.0
-19:30:02  Updated version available: 0.12.2
-19:30:02  
-19:30:02  Updates available for packages: ['dbt-labs/dbt_external_tables']                 
-Update your versions in packages.yml, then run dbt deps
-Loaded 118 file(s) into project-61358164-b71e-4422-a5c.qe_hack_syndicate_insight.address_raw_data
-19:30:20  Running with dbt=1.11.9
-19:30:23  Registered adapter: bigquery=1.8.3
-19:30:24  Unable to do partial parsing because saved manifest not found. Starting full parse.
-19:30:29  Found 3 models, 8 data tests, 1 source, 571 macros
-19:30:29  
-19:30:29  Concurrency: 4 threads (target='prod')
-19:30:29  
-19:30:29  1 of 3 START sql incremental model qe_hack_syndicate_insight.processed_files_metadata  [RUN]
-19:30:29  2 of 3 START sql view model qe_hack_syndicate_insight.stg_address_raw .......... [RUN]
-19:30:30  2 of 3 OK created sql view model qe_hack_syndicate_insight.stg_address_raw ..... [CREATE VIEW (0 processed) in 0.98s]
-19:30:30  3 of 3 START sql incremental model qe_hack_syndicate_insight.address_enriched .. [RUN]
-19:30:33  BigQuery adapter: https://console.cloud.google.com/bigquery?project=project-61358164-b71e-4422-a5c&j=bq:us-central1:22f6c38c-3b15-47b9-b9f1-106922bc664d&page=queryresults
-19:30:33  3 of 3 ERROR creating sql incremental model qe_hack_syndicate_insight.address_enriched  [ERROR in 2.10s]
-19:30:35  1 of 3 OK created sql incremental model qe_hack_syndicate_insight.processed_files_metadata  [MERGE (0.0 rows, 0 processed) in 5.44s]
-19:30:35  
-19:30:35  Finished running 2 incremental models, 1 view model in 0 hours 0 minutes and 5.93 seconds (5.93s).
-19:30:35  
-19:30:35  Completed with 1 error, 0 partial successes, and 0 warnings:
-19:30:35  
-19:30:35  Failure in model address_enriched (models/marts/address_enriched.sql)
-19:30:35    Database Error in model address_enriched (models/marts/address_enriched.sql)
-  Unrecognized name: source_file at [30:5]
-  compiled code at target/run/syndicate_address_transform/models/marts/address_enriched.sql
-19:30:35  
-19:30:35    compiled code at target/compiled/syndicate_address_transform/models/marts/address_enriched.sql
-19:30:35  
-19:30:35  Done. PASS=2 WARN=0 ERROR=1 SKIP=0 NO-OP=0 TOTAL=3
+docker build -f deploy/Dockerfile -t "$IMAGE" .
+docker push "$IMAGE"
+[+] Building 244.5s (4/12)                                                                                                                                         docker:default
+[+] Building 805.8s (9/12)                                                                                                                                         docker:default
+ => [internal] load build definition from Dockerfile                                                                                                                         0.1s
+ => => transferring dockerfile: 955B                                                                                                                                         0.0s
+ => [internal] load metadata for docker.io/library/python:3.11-slim                                                                                                          0.6s
+ => [internal] load .dockerignore                                                                                                                                            0.0s
+ => => transferring context: 167B                                                                                                                                            0.0s
+ => [1/8] FROM docker.io/library/python:3.11-slim@sha256:a3ab0b966bc4e91546a033e22093cb840908979487a9fc0e6e38295747e49ac0                                                  788.1s
+ => => resolve docker.io/library/python:3.11-slim@sha256:a3ab0b966bc4e91546a033e22093cb840908979487a9fc0e6e38295747e49ac0                                                    0.0s
+ => => sha256:45006ceeeea9e2ca59a046b6f4ac9a212e4b27b3d8d6e7d348b03f0aaccdac99 250B / 250B                                                                                   0.1s
+ => => sha256:797d495f2c68eb4664df918d39078ca04612d7ef47c57b5c784f7f6eedd42bf5 14.37MB / 14.37MB                                                                           787.2s
+ => => sha256:8649771fee179d7c2590c94f533aaa5fceb70e36e25dec83672fe836d99577c5 1.29MB / 1.29MB                                                                               2.9s
+ => => sha256:5b4d6ff92fc4e14e911b7753c954fac965d48c40fe1075758d284148ccace970 29.78MB / 29.78MB                                                                           472.7s
+ => => extracting sha256:5b4d6ff92fc4e14e911b7753c954fac965d48c40fe1075758d284148ccace970                                                                                    1.1s
+ => => extracting sha256:8649771fee179d7c2590c94f533aaa5fceb70e36e25dec83672fe836d99577c5                                                                                    0.1s
+ => => extracting sha256:797d495f2c68eb4664df918d39078ca04612d7ef47c57b5c784f7f6eedd42bf5                                                                                    0.7s
+ => => extracting sha256:45006ceeeea9e2ca59a046b6f4ac9a212e4b27b3d8d6e7d348b03f0aaccdac99                                                                                    0.0s
+ => [internal] load build context                                                                                                                                            0.1s
+ => => transferring context: 65.06kB                                                                                                                                         0.0s
+ => [2/8] WORKDIR /app                                                                                                                                                       0.2s
+ => [3/8] RUN apt-get update     && apt-get install -y --no-install-recommends git ca-certificates     && rm -rf /var/lib/apt/lists/*                                       10.0s
+ => [4/8] COPY pyproject.toml ./                                                                                                                                             0.1s 
+ => ERROR [5/8] RUN pip install --no-cache-dir .     && pip install --no-cache-dir "dbt-bigquery==1.8.*"                                                                     6.6s 
+------                                                                                                                                                                            
+ > [5/8] RUN pip install --no-cache-dir .     && pip install --no-cache-dir "dbt-bigquery==1.8.*":                                                                                
+2.140 Processing /app                                                                                                                                                             
+2.144   Installing build dependencies: started                                                                                                                                    
+5.567   Installing build dependencies: finished with status 'done'                                                                                                                
+5.568   Getting requirements to build wheel: started                                                                                                                              
+6.339   Getting requirements to build wheel: finished with status 'error'
+6.345   error: subprocess-exited-with-error
+6.345   
+6.345   × Getting requirements to build wheel did not run successfully.
+6.345   │ exit code: 1
+6.345   ╰─> [11 lines of output]
+6.345       /tmp/pip-build-env-iiwthmdu/overlay/lib/python3.11/site-packages/setuptools/config/expand.py:126: SetuptoolsWarning: File '/app/README.md' cannot be found
+6.345         return '\n'.join(
+6.345       running egg_info
+6.345       creating qe_quality_agent.egg-info
+6.345       writing qe_quality_agent.egg-info/PKG-INFO
+6.345       writing dependency_links to qe_quality_agent.egg-info/dependency_links.txt
+6.345       writing entry points to qe_quality_agent.egg-info/entry_points.txt
+6.345       writing requirements to qe_quality_agent.egg-info/requires.txt
+6.345       writing top-level names to qe_quality_agent.egg-info/top_level.txt
+6.345       writing manifest file 'qe_quality_agent.egg-info/SOURCES.txt'
+6.345       error: package directory 'agent' does not exist
+6.345       [end of output]
+6.345   
+6.345   note: This error originates from a subprocess, and is likely not a problem with pip.
+6.348 error: subprocess-exited-with-error
+6.348 
+6.348 × Getting requirements to build wheel did not run successfully.
+6.348 │ exit code: 1
+6.348 ╰─> See above for output.
+6.348 
+6.348 note: This error originates from a subprocess, and is likely not a problem with pip.
+6.448 
+6.448 [notice] A new release of pip is available: 24.0 -> 26.1.2
+6.448 [notice] To update, run: pip install --upgrade pip
+------
+Dockerfile:20
+--------------------
+  19 |     COPY pyproject.toml ./
+  20 | >>> RUN pip install --no-cache-dir . \
+  21 | >>>     && pip install --no-cache-dir "dbt-bigquery==1.8.*"
+  22 |     
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c pip install --no-cache-dir .     && pip install --no-cache-dir \"dbt-bigquery==1.8.*\"" did not complete successfully: exit code: 1
+The push refers to repository [us-central1-docker.pkg.dev/project-61358164-b71e-4422-a5c/qe/qe-quality-agent]
+tag does not exist: us-central1-docker.pkg.dev/project-61358164-b71e-4422-a5c/qe/qe-quality-agent:0.1.0
