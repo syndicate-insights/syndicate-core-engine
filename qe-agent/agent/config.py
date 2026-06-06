@@ -25,12 +25,11 @@ class Settings:
     bq_location: str = field(default_factory=lambda: _env("BQ_LOCATION", "us-central1"))
     gcs_bucket: str = field(default_factory=lambda: _env("GCS_BUCKET_NAME", "qe_hack_syndicate_raw"))
 
-    # Service account the agent impersonates (empty -> use ambient ADC / Workload Identity).
+    # Optional GCP SA impersonation. Empty by default: the agent uses ambient
+    # Workload Identity (the same `qe-hack-syndicate-k8s-sa` KSA the dbt jobs and
+    # the synthetic data generator use), so no impersonation hop is required.
     impersonate_sa: str = field(
-        default_factory=lambda: _env(
-            "IMPERSONATE_SERVICE_ACCOUNT",
-            "qe-quality-agent-svc@project-61358164-b71e-4422-a5c.iam.gserviceaccount.com",
-        )
+        default_factory=lambda: _env("IMPERSONATE_SERVICE_ACCOUNT", "")
     )
 
     # --- Vertex AI / Gemini ---

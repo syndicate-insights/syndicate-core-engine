@@ -4,12 +4,17 @@ pipeline:
   projectIdentifier: QE_HACK
   orgIdentifier: default
   tags: {}
+  # The Harness delegate and the QE agent run in the SAME namespace
+  # (qe-hack-syndicate), so every step reaches the agent via in-cluster Service
+  # DNS. Each step is self-contained (inline curl + gate) so it needs no
+  # checked-out script on the delegate.
   variables:
     - name: QE_AGENT_URL
       type: String
       description: In-cluster URL of the QE agent Service.
       value: http://qe-quality-agent.qe-hack-syndicate.svc.cluster.local:8080
   stages:
+    # ---------------------------------------------------------------- Stage 1
     - stage:
         name: Static Code Analysis
         identifier: static_code_analysis
@@ -29,7 +34,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh static SA1
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/static/SA1")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: SA2 Python lint
                       identifier: SA2
@@ -41,7 +50,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh static SA2
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/static/SA2")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: SA3 Security scan
                       identifier: SA3
@@ -53,7 +66,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh static SA3
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/static/SA3")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: SA4 YAML lint
                       identifier: SA4
@@ -65,7 +82,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh static SA4
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/static/SA4")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: SA5 Secret scan
                       identifier: SA5
@@ -77,8 +98,13 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh static SA5
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/static/SA5")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
         tags: {}
+    # ---------------------------------------------------------------- Stage 2
     - stage:
         name: Coding Standards Check
         identifier: coding_standards_check
@@ -98,7 +124,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh standards CS1
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/standards/CS1")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: CS2 PK tests present
                       identifier: CS2
@@ -110,7 +140,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh standards CS2
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/standards/CS2")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: CS3 Sources documented
                       identifier: CS3
@@ -122,7 +156,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh standards CS3
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/standards/CS3")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: CS4 K8s hygiene
                       identifier: CS4
@@ -134,7 +172,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh standards CS4
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/standards/CS4")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: CS5 FK naming
                       identifier: CS5
@@ -146,8 +188,13 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh standards CS5
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/standards/CS5")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
         tags: {}
+    # ---------------------------------------------------------------- Stage 3
     - stage:
         name: Integration Testing
         identifier: integration_testing
@@ -167,7 +214,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh integration I1
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/integration/I1")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: I2 Raw to enriched
                       identifier: I2
@@ -179,7 +230,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh integration I2
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/integration/I2")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: I3 Enriched to Neo4j
                       identifier: I3
@@ -191,7 +246,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh integration I3
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/integration/I3")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: I4 Incremental watermark
                       identifier: I4
@@ -203,7 +262,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh integration I4
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/integration/I4")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: I5 End-to-end consistency
                       identifier: I5
@@ -215,8 +278,13 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh integration I5
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/integration/I5")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
         tags: {}
+    # ---------------------------------------------------------------- Stage 4
     - stage:
         name: Functional Testing
         identifier: functional_testing
@@ -236,7 +304,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh functional F1
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/functional/F1")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: F2 INVESTMENT negative
                       identifier: F2
@@ -248,7 +320,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh functional F2
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/functional/F2")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: F3 full_address format
                       identifier: F3
@@ -260,7 +336,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh functional F3
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/functional/F3")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: F4 Phone normalisation
                       identifier: F4
@@ -272,7 +352,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh functional F4
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/functional/F4")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: F5 dbt data tests
                       identifier: F5
@@ -284,7 +368,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh functional F5
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 1800 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/functional/F5")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: F6 Neo4j constraints
                       identifier: F6
@@ -296,8 +384,13 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh functional F6
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/functional/F6")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
         tags: {}
+    # ---------------------------------------------------------------- Stage 5
     - stage:
         name: Non Functional Testing
         identifier: non_functional_testing
@@ -317,7 +410,11 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh nonfunctional N1
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/nonfunctional/N1")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
                   - step:
                       name: N2 Reliability Security
                       identifier: N2
@@ -329,5 +426,9 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: bash scripts/run_scenario.sh nonfunctional N2
+                            script: |
+                              set -eo pipefail
+                              R=$(curl -fsS --max-time 900 "<+pipeline.variables.QE_AGENT_URL>/qe/scenario/nonfunctional/N2")
+                              echo "$R"
+                              echo "$R" | grep -q '"status": *"PASS"'
         tags: {}

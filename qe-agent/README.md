@@ -69,11 +69,11 @@ qe-agent/
   cli/qe_cli.py                # Harness client
   deploy/
     Dockerfile
-    k8s/                       # serviceaccount, rbac, configmap, secret.example,
+    k8s/                       # rbac, configmap, secret.example,
                                # deployment, service
-harness/
-  pipeline.yaml                # 5 stages, parallel scenario steps
-  scripts/run_scenario.sh      # curl + gate helper used by each step
+.harness/                      # Harness Git Experience pipeline
+  orgs/default/projects/QE_HACK/pipelines/
+    quality_engineering_hack.yaml   # 5 stages, parallel scenario steps (inline)
 ```
 
 ---
@@ -143,16 +143,20 @@ SLA thresholds are configurable via `DBT_JOB_SLA_SECONDS`, `INGEST_SLA_SECONDS`,
 
 ## IAM — service account & roles
 
-The agent **impersonates a dedicated GCP service account** via **Workload
-Identity** (no JSON keys in-cluster). All values default to the discovered
-project; override via env if different.
+The agent **reuses the shared `qe-hack-syndicate-k8s-sa` service account** — the
+same Kubernetes SA used by the dbt cronjobs, `neo4j-ingest` and the synthetic
+data generator. It authenticates to GCP via that SA's existing **Workload
+Identity** binding (no impersonation hop, no JSON keys in-cluster). Override via
+env if your setup differs.
 
 | Identity | Value |
 |----------|-------|
-| Kubernetes SA | `qe-quality-agent-sa` (ns `qe-hack-syndicate`) |
-| GCP SA | `qe-quality-agent-svc@project-61358164-b71e-4422-a5c.iam.gserviceaccount.com` |
+| Kubernetes SA | `qe-hack-syndicate-k8s-sa` (ns `qe-hack-syndicate`) — shared with the other workloads |
+| GCP SA (via Workload Identity) | `qe-hack-syndicate-svc@project-61358164-b71e-4422-a5c.iam.gserviceaccount.com` |
 
-**Project IAM roles to grant the GCP SA (least privilege, read-only + Vertex):**
+**Project IAM roles the shared GCP SA needs (least privilege, read-only + Vertex).**
+The data-pipeline roles are typically already present; ensure Vertex access for
+the agent's Gemini calls:
 
 | Role | Why |
 |------|-----|
@@ -162,8 +166,9 @@ project; override via env if different.
 | `roles/aiplatform.user`      | call Gemini on Vertex AI |
 
 **Kubernetes RBAC (namespace `qe-hack-syndicate`, see `deploy/k8s/rbac.yaml`):**
-`get/list` on `pods`, `pods/log`, `jobs`, `cronjobs`; plus `create` on `jobs`
-only (to trigger an ephemeral `dbt test`). No data-mutation permissions.
+a Role + RoleBinding grant `qe-hack-syndicate-k8s-sa` `get/list` on `pods`,
+`pods/log`, `jobs`, `cronjobs`; plus `create` on `jobs` only (to trigger an
+ephemeral `dbt test`). No data-mutation permissions.
 
 > The agent never mutates pipeline data. Its only "write" actions are running
 > `dbt test` and (optionally) creating a short-lived test Job.
@@ -195,14 +200,15 @@ docker build -f deploy/Dockerfile -t "$IMAGE" .
 docker push "$IMAGE"
 ```
 
-### 2. Create the GCP service account & grant roles
+### 2. Ensure the shared GCP SA has the required roles
+
+The agent uses the existing `qe-hack-syndicate-k8s-sa` KSA and its Workload
+Identity-bound GCP SA. The storage/BigQuery roles are usually already granted to
+that SA for the pipeline; just make sure Vertex AI access is present:
 
 ```bash
 PROJECT=project-61358164-b71e-4422-a5c
-GSA=qe-quality-agent-svc@$PROJECT.iam.gserviceaccount.com
-
-gcloud iam service-accounts create qe-quality-agent-svc \
-  --project "$PROJECT" --display-name "QE Quality Agent"
+GSA=qe-hack-syndicate-svc@$PROJECT.iam.gserviceaccount.com
 
 for ROLE in roles/storage.objectViewer roles/bigquery.dataViewer \
             roles/bigquery.jobUser roles/aiplatform.user; do
@@ -211,29 +217,12 @@ for ROLE in roles/storage.objectViewer roles/bigquery.dataViewer \
 done
 ```
 
-### 3. Bind Workload Identity (KSA ⇄ GSA)
+> No new service account or Workload Identity binding is required — the shared
+> `qe-hack-syndicate-k8s-sa` already maps to this GCP SA, exactly like the dbt
+> jobs and the synthetic data generator. `IMPERSONATE_SERVICE_ACCOUNT` is left
+> empty so the agent uses that ambient identity directly.
 
-```bash
-PROJECT=project-61358164-b71e-4422-a5c
-GSA=qe-quality-agent-svc@$PROJECT.iam.gserviceaccount.com
-NS=qe-hack-syndicate
-KSA=qe-quality-agent-sa
-
-# Apply the KSA first (carries the iam.gke.io annotation).
-kubectl apply -f deploy/k8s/serviceaccount.yaml
-
-gcloud iam service-accounts add-iam-policy-binding "$GSA" \
-  --project "$PROJECT" \
-  --role roles/iam.workloadIdentityUser \
-  --member "serviceAccount:$PROJECT.svc.id.goog[$NS/$KSA]"
-```
-
-> If you keep impersonation (`IMPERSONATE_SERVICE_ACCOUNT` set), also grant the
-> KSA's bound principal `roles/iam.serviceAccountTokenCreator` on the GSA. If WI
-> maps the KSA **directly** to the GSA, leave `IMPERSONATE_SERVICE_ACCOUNT`
-> empty and skip token-creator.
-
-### 4. Create the Neo4j secret
+### 3. Create the Neo4j secret
 
 ```bash
 kubectl create secret generic qe-quality-agent-secrets \
@@ -241,7 +230,7 @@ kubectl create secret generic qe-quality-agent-secrets \
   --from-literal=NEO4J_PASSWORD='<neo4j-password>'
 ```
 
-### 5. Apply config + workload
+### 4. Apply config + workload
 
 ```bash
 # Set the image in the Deployment (replace placeholder).
@@ -255,7 +244,11 @@ kubectl apply -f deploy/k8s/deployment.yaml
 kubectl -n qe-hack-syndicate rollout status deploy/qe-quality-agent
 ```
 
-### 6. Smoke test
+The Deployment references the shared `qe-hack-syndicate-k8s-sa` service account,
+so no ServiceAccount manifest is applied here — it already exists in the
+namespace.
+
+### 5. Smoke test
 
 ```bash
 kubectl -n qe-hack-syndicate port-forward svc/qe-quality-agent 8080:8080 &
@@ -286,52 +279,23 @@ Required local env: `GOOGLE_GENAI_USE_VERTEXAI=1`, `GOOGLE_CLOUD_PROJECT`,
 
 ## CI/CD — Harness
 
-`harness/pipeline.yaml` defines a **QE Quality Gate** pipeline with **5 stages**
-(static → standards → integration → functional → non-functional). Each stage's
-execution is a `parallel` block with **one step per scenario**, so all scenarios
-in a goal run concurrently.
+The pipeline lives in the **Harness Git Experience** layout at
+`.harness/orgs/default/projects/QE_HACK/pipelines/quality_engineering_hack.yaml`.
+It defines a **QE Quality Gate** with **5 stages** (static → standards →
+integration → functional → non-functional). Each stage's execution is a
+`parallel` block with **one step per scenario**, so all scenarios in a goal run
+concurrently (23 scenarios total).
 
-Each step runs `harness/scripts/run_scenario.sh <suite> <id>` on the **delegate**
-(same namespace as the agent), which `curl`s
-`http://qe-quality-agent.qe-hack-syndicate.svc.cluster.local:8080` and exits
-non-zero on a non-`PASS` status — gating the pipeline.
+Each step is **self-contained**: an inline Bash script runs `onDelegate` and
+`curl`s the agent's deterministic endpoint
+(`<+pipeline.variables.QE_AGENT_URL>/qe/scenario/<suite>/<id>`), then `grep`s the
+JSON for `"status": "PASS"` and exits non-zero otherwise — gating the pipeline.
+No checked-out helper script is needed on the delegate.
 
 To use it:
-1. Ensure the Harness delegate runs in `qe-hack-syndicate`.
-2. Import `harness/pipeline.yaml` (replace `<ORG>`/`<PROJECT>`), ship
-   `harness/scripts/run_scenario.sh` with the codebase, and run.
+1. Ensure the Harness delegate runs in the `qe-hack-syndicate` namespace (so it
+   reaches the agent at `http://qe-quality-agent.qe-hack-syndicate.svc.cluster.local:8080`).
+2. Connect the repo via Git Experience (the `.harness/` tree is auto-discovered)
+   or import the pipeline YAML directly.
 
-Override the target with the pipeline variable / env `QE_AGENT_URL`.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## What was built
-
-**ADK agent** (qe-agent, Python + Gemini on Vertex AI)
-- Root orchestrator agent/root_agent.py coordinating **5 sub-agents** (one per goal) in agent/sub_agents/agents.py.
-- **5 toolsets** in agent/tools/: GCS, BigQuery, Neo4j, Kubernetes (pods/jobs/cronjobs/logs), dbt — all read-only except triggering `dbt test`. Impersonation via Workload Identity in credentials.py.
-- **Deterministic scenarios** in agent/scenarios/: static (SA1–SA5), standards (CS1–CS5), integration (I1–I5), functional (F1–F6), non-functional (N1–N2). Functional checks encode the actual business rules (INVESTMENT reclassification, `full_address`, phone digits-only).
-- FastAPI server agent/server/main.py serving ADK endpoints + deterministic `/qe/...` gate endpoints; thin CLI cli/qe_cli.py.
-
-**Deploy** (qe-agent/deploy/): Dockerfile + K8s manifests (SA w/ WI annotation, least-privilege RBAC, ConfigMap, Secret example, Deployment, ClusterIP Service).
-
-**IAM/roles** (documented in README.md): GCP SA roles `storage.objectViewer`, `bigquery.dataViewer`, `bigquery.jobUser`, `aiplatform.user`; namespace RBAC get/list pods/logs/jobs/cronjobs + create jobs; Workload Identity binding steps.
-
-**Harness CICD** (harness/): pipeline.yaml with **5 sequential stages**, each a `parallel` block of per-scenario steps calling scripts/run_scenario.sh against the in-namespace Service DNS, gating on JSON `status`.
-
-**Verification**: `compileall` clean, `pytest` 4/4 green (real repo), CLI runs standalone, pipeline YAML parses.
-
-Three things you'll set at deploy time: the image ref (`REPLACE_WITH_IMAGE` in the Deployment + `sed` step in README), the Neo4j password Secret, and `<ORG>`/`<PROJECT>` in the Harness pipeline. If your Neo4j has no in-cluster Service, point `NEO4J_URI` in the ConfigMap at the external `bolt://34.69.104.67:7687`.
-
-Want me to add a `neo4j` ClusterIP/headless Service manifest so the default in-cluster `NEO4J_URI` resolves, or wire a Vertex AI Gemini smoke check into the readiness path?
+Override the target with the `QE_AGENT_URL` pipeline variable.

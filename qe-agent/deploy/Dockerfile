@@ -15,14 +15,15 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends git ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Python deps first for layer caching.
-COPY pyproject.toml ./
-RUN pip install --no-cache-dir . \
-    && pip install --no-cache-dir "dbt-bigquery==1.8.*"
-
-# Application code.
+# Copy project metadata + source before install: `pip install .` builds a wheel
+# from this directory, so the package dirs and README referenced by
+# pyproject.toml must already be present.
+COPY pyproject.toml README.md ./
 COPY agent ./agent
 COPY cli ./cli
+
+RUN pip install --no-cache-dir . \
+    && pip install --no-cache-dir "dbt-bigquery==1.8.*"
 
 # Non-root runtime.
 RUN useradd --create-home --uid 10001 qeagent

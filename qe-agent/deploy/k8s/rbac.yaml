@@ -1,6 +1,8 @@
 # Least-privilege namespace RBAC for the QE Quality Agent.
-# Read access to pods/jobs/cronjobs + pod logs for observability, and create
-# rights on jobs ONLY so it can trigger an ephemeral `dbt test` run.
+# Bound to the shared `qe-hack-syndicate-k8s-sa` service account (the same one
+# used by the dbt cronjobs, neo4j-ingest and the synthetic data generator).
+# Grants read access to pods/jobs/cronjobs + pod logs for observability, and
+# create rights on jobs ONLY so it can trigger an ephemeral `dbt test` run.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -24,7 +26,7 @@ metadata:
   namespace: qe-hack-syndicate
 subjects:
   - kind: ServiceAccount
-    name: qe-quality-agent-sa
+    name: qe-hack-syndicate-k8s-sa
     namespace: qe-hack-syndicate
 roleRef:
   kind: Role

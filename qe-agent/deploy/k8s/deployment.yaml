@@ -16,7 +16,7 @@ spec:
       labels:
         app: qe-quality-agent
     spec:
-      serviceAccountName: qe-quality-agent-sa
+      serviceAccountName: qe-hack-syndicate-k8s-sa
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
