@@ -1,0 +1,333 @@
+pipeline:
+  name: quality engineering hack
+  identifier: quality_engineering_hack
+  projectIdentifier: QE_HACK
+  orgIdentifier: default
+  tags: {}
+  variables:
+    - name: QE_AGENT_URL
+      type: String
+      description: In-cluster URL of the QE agent Service.
+      value: http://qe-quality-agent.qe-hack-syndicate.svc.cluster.local:8080
+  stages:
+    - stage:
+        name: Static Code Analysis
+        identifier: static_code_analysis
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      name: SA1 dbt SQL lint
+                      identifier: SA1
+                      type: ShellScript
+                      timeout: 15m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh static SA1
+                  - step:
+                      name: SA2 Python lint
+                      identifier: SA2
+                      type: ShellScript
+                      timeout: 15m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh static SA2
+                  - step:
+                      name: SA3 Security scan
+                      identifier: SA3
+                      type: ShellScript
+                      timeout: 15m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh static SA3
+                  - step:
+                      name: SA4 YAML lint
+                      identifier: SA4
+                      type: ShellScript
+                      timeout: 15m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh static SA4
+                  - step:
+                      name: SA5 Secret scan
+                      identifier: SA5
+                      type: ShellScript
+                      timeout: 15m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh static SA5
+        tags: {}
+    - stage:
+        name: Coding Standards Check
+        identifier: coding_standards_check
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      name: CS1 dbt naming
+                      identifier: CS1
+                      type: ShellScript
+                      timeout: 15m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh standards CS1
+                  - step:
+                      name: CS2 PK tests present
+                      identifier: CS2
+                      type: ShellScript
+                      timeout: 15m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh standards CS2
+                  - step:
+                      name: CS3 Sources documented
+                      identifier: CS3
+                      type: ShellScript
+                      timeout: 15m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh standards CS3
+                  - step:
+                      name: CS4 K8s hygiene
+                      identifier: CS4
+                      type: ShellScript
+                      timeout: 15m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh standards CS4
+                  - step:
+                      name: CS5 FK naming
+                      identifier: CS5
+                      type: ShellScript
+                      timeout: 15m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh standards CS5
+        tags: {}
+    - stage:
+        name: Integration Testing
+        identifier: integration_testing
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      name: I1 GCS to BQ raw
+                      identifier: I1
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh integration I1
+                  - step:
+                      name: I2 Raw to enriched
+                      identifier: I2
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh integration I2
+                  - step:
+                      name: I3 Enriched to Neo4j
+                      identifier: I3
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh integration I3
+                  - step:
+                      name: I4 Incremental watermark
+                      identifier: I4
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh integration I4
+                  - step:
+                      name: I5 End-to-end consistency
+                      identifier: I5
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh integration I5
+        tags: {}
+    - stage:
+        name: Functional Testing
+        identifier: functional_testing
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      name: F1 INVESTMENT positive
+                      identifier: F1
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh functional F1
+                  - step:
+                      name: F2 INVESTMENT negative
+                      identifier: F2
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh functional F2
+                  - step:
+                      name: F3 full_address format
+                      identifier: F3
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh functional F3
+                  - step:
+                      name: F4 Phone normalisation
+                      identifier: F4
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh functional F4
+                  - step:
+                      name: F5 dbt data tests
+                      identifier: F5
+                      type: ShellScript
+                      timeout: 30m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh functional F5
+                  - step:
+                      name: F6 Neo4j constraints
+                      identifier: F6
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh functional F6
+        tags: {}
+    - stage:
+        name: Non Functional Testing
+        identifier: non_functional_testing
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      name: N1 Performance SLA
+                      identifier: N1
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh nonfunctional N1
+                  - step:
+                      name: N2 Reliability Security
+                      identifier: N2
+                      type: ShellScript
+                      timeout: 20m
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: bash scripts/run_scenario.sh nonfunctional N2
+        tags: {}
