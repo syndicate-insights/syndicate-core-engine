@@ -20,104 +20,47 @@ EXTERNAL_IP=$(kubectl -n qe-hack-syndicate get ingress qe-quality-agent-webhook 
   -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 echo "External IP: $EXTERNAL_IP"
 
-# --- 4. HTTPS via sslip.io (no domain required) ---
-HOSTNAME=$(echo "$EXTERNAL_IP" | tr '.' '-').sslip.io
-echo "Hostname: $HOSTNAME"
+# --- 4. DNS: point qe-agent.astom.tools at the LB IP ---
+# The ingress host rule is already set to qe-agent.astom.tools in ingress.yaml.
+# Create (or update) the A record in the astom.tools managed zone:
+DNS_PROJECT=<YOUR_DNS_GCP_PROJECT_ID>   # project that owns the astom.tools zone
+DNS_ZONE_NAME=<ASTOM_TOOLS_ZONE_NAME>   # Cloud DNS zone resource name (not the DNS name)
 
-# Add host to ingress rule
-kubectl -n qe-hack-syndicate patch ingress qe-quality-agent-webhook \
-  --type=json \
-  -p="[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"$HOSTNAME\"}]"
-
-# Attach the pre-shared GCP SSL certificate named qe-agent
-# (created in GCP Console -> Certificate Manager -> Classic certs, or via gcloud)
-kubectl -n qe-hack-syndicate annotate ingress qe-quality-agent-webhook \
-  ingress.gcp.kubernetes.io/pre-shared-cert=qe-agent --overwrite
-
-# Confirm the cert exists in GCP and covers the right domain:
-gcloud compute ssl-certificates describe qe-agent --global
-
-# Jira webhook URL to register:
-echo "https://$HOSTNAME/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>"
-
-# --- 5. (Optional) HTTPS via real domain (Cloud DNS) ---
-PROJECT=project-61358164-b71e-4422-a5c
-DOMAIN=qe-agent.<YOUR_DOMAIN>   # replace with your real domain
-
-# Create DNS zone (skip if already exists)
-gcloud dns managed-zones create qe-agent-zone \
-  --dns-name="$DOMAIN." \
-  --description="QE Agent webhook" \
-  --project "$PROJECT"
-
-# Point domain at ingress IP
-gcloud dns record-sets create "$DOMAIN." \
-  --zone=qe-agent-zone \
-  --type=A \
-  --ttl=60 \
-  --rrdatas="$EXTERNAL_IP" \
-  --project "$PROJECT"
-
-# Patch ingress host
-kubectl -n qe-hack-syndicate patch ingress qe-quality-agent-webhook \
-  --type=json \
-  -p="[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"$DOMAIN\"}]"
-
-# Attach the pre-shared GCP SSL certificate named qe-agent
-kubectl -n qe-hack-syndicate annotate ingress qe-quality-agent-webhook \
-  ingress.gcp.kubernetes.io/pre-shared-cert=qe-agent --overwrite
-
-# Confirm the cert exists in GCP:
-gcloud compute ssl-certificates describe qe-agent --global
-
-echo "https://$DOMAIN/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>"
-
-# --- 6. HTTPS via subdomain in another GCP project ---
-#
-# Use this when your domain (managed zone) lives in a different GCP project
-# to the one running the QE agent GKE cluster.
-#
-# Variables — fill in before running:
-DNS_PROJECT=<YOUR_DNS_GCP_PROJECT_ID>   # project that owns the domain/zone
-GKE_PROJECT=project-61358164-b71e-4422-a5c  # project running the GKE cluster
-SUBDOMAIN=qe-agent.<YOUR_BASE_DOMAIN>       # e.g. qe-agent.syndicate-insights.com
-DNS_ZONE_NAME=<YOUR_MANAGED_ZONE_NAME>      # the Cloud DNS zone name in $DNS_PROJECT
-                                             # (not the DNS name, the zone resource name)
-
-# Step 6a: confirm the ingress external IP is ready
-EXTERNAL_IP=$(kubectl -n qe-hack-syndicate get ingress qe-quality-agent-webhook \
-  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-echo "External IP: $EXTERNAL_IP"
-
-# Step 6b: add an A record for the subdomain in the other project's managed zone
-gcloud dns record-sets create "${SUBDOMAIN}." \
+# Create the A record (run once; use 'update' instead if the record already exists)
+gcloud dns record-sets create qe-agent.astom.tools. \
   --zone="${DNS_ZONE_NAME}" \
   --type=A \
   --ttl=60 \
   --rrdatas="${EXTERNAL_IP}" \
   --project "${DNS_PROJECT}"
 
-# Verify propagation (expect the IP back within a few minutes):
-dig +short "${SUBDOMAIN}"
+# Verify propagation:
+dig +short qe-agent.astom.tools
 
-# Step 6c: patch the ingress host rule to match the subdomain
-kubectl -n qe-hack-syndicate patch ingress qe-quality-agent-webhook \
-  --type=json \
-  -p="[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"${SUBDOMAIN}\"}]"
+# --- 5. TLS: attach the pre-shared GCP SSL certificate named qe-agent ---
+# The certificate must already exist in GCP (GCP Console -> Certificate Manager
+# -> Classic certificates, or via gcloud compute ssl-certificates create).
+# It must cover the domain qe-agent.astom.tools.
 
-# Step 6d: attach the pre-shared GCP SSL certificate named qe-agent.
-# The cert must already cover ${SUBDOMAIN}. Verify the domains it covers:
+# Confirm the cert exists and covers the right domain:
 gcloud compute ssl-certificates describe qe-agent --global \
   --format='value(managed.domains)'
-# If ${SUBDOMAIN} is not listed the cert will not serve that domain —
-# you would need a new/updated GCP-managed cert covering it.
 
+# Confirm cert status is ACTIVE:
+gcloud compute ssl-certificates describe qe-agent --global \
+  --format='value(managed.status)'
+
+# Attach to the ingress (already set in ingress.yaml annotation; run this if
+# applying to a pre-existing ingress that didn't have the annotation):
 kubectl -n qe-hack-syndicate annotate ingress qe-quality-agent-webhook \
   ingress.gcp.kubernetes.io/pre-shared-cert=qe-agent --overwrite
 
-# Step 6e: confirm GCP cert status is ACTIVE
-gcloud compute ssl-certificates describe qe-agent --global \
-  --format='value(managed.status)'
+# --- 6. Jira webhook URL ---
+# Register this URL in Jira: Settings -> System -> WebHooks -> Create
+echo "https://qe-agent.astom.tools/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>"
+
+# Smoke test:
+curl -s https://qe-agent.astom.tools/healthz
 
 # Step 6f: verify end-to-end
 curl -i "https://${SUBDOMAIN}/healthz"

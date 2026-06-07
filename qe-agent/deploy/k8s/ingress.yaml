@@ -17,7 +17,8 @@ metadata:
     ingress.gcp.kubernetes.io/pre-shared-cert: "qe-agent"
 spec:
   rules:
-    - http:
+    - host: qe-agent.astom.tools
+      http:
         paths:
           - path: /qe/jira/webhook
             pathType: Prefix
