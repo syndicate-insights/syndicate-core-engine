@@ -1,0 +1,13 @@
+inputSet:
+  name: bdd_tests
+  identifier: bdd_tests
+  orgIdentifier: default
+  projectIdentifier: QE_HACK
+  pipeline:
+    identifier: bdd_tests
+    codebase:
+      build: main
+    variables:
+      - name: jiraTicket
+        type: String
+        value: "\"\""
