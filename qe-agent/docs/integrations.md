@@ -51,7 +51,7 @@ flowchart LR
 | System | Location | Purpose |
 |---|---|---|
 | `qe-quality-agent` Deployment | GKE, `qe-hack-syndicate` | Hosts deterministic `/qe/...` API and ADK sub-agents, including `bdd_authoring_agent`. |
-| `qe-quality-agent` Ingress | GKE (public HTTPS) | Exposes `https://qe-agent.syndicate-insights.com/qe/jira/webhook` and `/healthz` for Jira Cloud callbacks. |
+| `qe-quality-agent` Ingress | GKE (public external LB IP) | Exposes `http://<EXTERNAL_LB_IP>/qe/jira/webhook` and `/healthz` for Jira Cloud callbacks. |
 | `quality_engineering_hack` pipeline | Harness NextGen | Main quality gate (5 deterministic stages), then chains `bdd_tests`. |
 | `bdd_tests` pipeline | Harness NextGen | Runs Maven Cucumber tests from `bdd-tests/` and publishes reports. |
 | `jira_testing_transition` trigger | Harness NextGen | Custom Webhook trigger that starts `bdd_tests` for a Jira ticket moved to `Testing`. |
@@ -63,11 +63,11 @@ flowchart LR
 ### 1. Ticket created -> feature authoring
 
 1. Jira emits `issue_created` to:
-   `https://qe-agent.syndicate-insights.com/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>`.
+  `http://<EXTERNAL_LB_IP>/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>`.
 2. Agent verifies token and reads acceptance criteria.
 3. Agent generates `.feature` files under:
    `bdd-tests/src/test/resources/feature/<Domain>/<slug>.feature`.
-4. Agent creates linked Jira `Test` issues and opens a PR with new/updated features.
+4. Agent creates Jira `Test` subtasks and opens a PR with new/updated features.
 
 Manual equivalent:
 
@@ -123,6 +123,9 @@ kubectl apply -f qe-agent/deploy/k8s/configmap.yaml
 kubectl apply -f qe-agent/deploy/k8s/deployment.yaml
 kubectl apply -f qe-agent/deploy/k8s/service.yaml
 kubectl apply -f qe-agent/deploy/k8s/ingress.yaml
+
+# get the external load balancer IP to use in Jira webhook URL
+kubectl -n qe-hack-syndicate get ingress qe-quality-agent-webhook
 ```
 
 ### 4. Harness Git Experience sync
@@ -139,7 +142,7 @@ After saving the trigger, copy its webhook URL into `HARNESS_BDD_WEBHOOK_URL`.
 
 In Jira: Settings -> System -> WebHooks -> Create:
 
-- URL: `https://qe-agent.syndicate-insights.com/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>`
+- URL: `http://<EXTERNAL_LB_IP>/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>`
 - Events: `Issue created`, `Issue updated`
 - JQL: `project = SYN AND issuetype in (Story, Task, Bug)`
 - Include payload body: enabled

@@ -101,7 +101,7 @@ def reconcile(ticket: str, plan_execution_id: str | None = None) -> dict:
 # --- Jira webhook listener --------------------------------------------------
 #
 # Configure a Jira "Issue created" + "Issue updated" webhook pointing at:
-#   https://<agent-host>/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>
+#   http://<EXTERNAL_LB_IP>/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>
 # The agent will:
 #   * author BDD scenarios (and a PR) when a Story/Task/Bug is created with AC
 #   * trigger the Harness `bdd_tests` pipeline when the ticket transitions

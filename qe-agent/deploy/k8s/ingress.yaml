@@ -2,8 +2,8 @@
 #
 # Jira Cloud cannot reach a ClusterIP Service. We expose ONLY the webhook path
 # via a path-prefix Ingress (the rest of the API stays in-cluster only).
-# Provide the GKE Ingress class and a managed-cert hostname that match your
-# environment before applying.
+# This Ingress is configured for an external load balancer IP (no hostname
+# requirement). After apply, use the assigned EXTERNAL-IP in Jira webhook URLs.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -11,13 +11,9 @@ metadata:
   namespace: qe-hack-syndicate
   annotations:
     kubernetes.io/ingress.class: "gce"
-    networking.gke.io/managed-certificates: "qe-quality-agent-cert"
-    # Lock down what's exposed: only the webhook + healthz path.
-    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   rules:
-    - host: qe-agent.syndicate-insights.com
-      http:
+    - http:
         paths:
           - path: /qe/jira/webhook
             pathType: Prefix
@@ -33,12 +29,3 @@ spec:
                 name: qe-quality-agent
                 port:
                   number: 8080
----
-apiVersion: networking.gke.io/v1
-kind: ManagedCertificate
-metadata:
-  name: qe-quality-agent-cert
-  namespace: qe-hack-syndicate
-spec:
-  domains:
-    - qe-agent.syndicate-insights.com
