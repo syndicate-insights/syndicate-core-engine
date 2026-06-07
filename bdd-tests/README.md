@@ -53,11 +53,18 @@ kubectl -n qe-hack-syndicate port-forward svc/qe-quality-agent 8080:8080 &
 export QE_AGENT_URL=http://localhost:8080
 
 cd bdd-tests
-mvn -B -ntp test                                 # all features
-mvn -B -ntp test -Dcucumber.filter.tags=@Functional   # one suite
+mvn -B -ntp test                                       # all features
+mvn -B -ntp test -Dcucumber.filter.tags=@Functional    # one suite
 ```
 
 Reports are written to `bdd-tests/target/`:
+
+* `target/cucumber-junit.xml` — published as JUnit by Harness.
+* `target/cucumber.json`     — consumed by `POST /qe/jira/<ticket>/sync-results`.
+* `target/cucumber-report.html` — human-readable report.
+
+## Running in Harness on GKE
+
 The pipeline at
 [`.harness/.../pipelines/bdd_tests.yaml`](../.harness/orgs/default/projects/QE_HACK/pipelines/bdd_tests.yaml)
 defines a `CI` stage that:
@@ -77,14 +84,7 @@ The pipeline is invoked in three ways:
 * **Custom Webhook trigger** fired by the QE agent when a Jira ticket
   transitions into the `Testing` status (see
   [`triggers/jira_testing_transition.yaml`](../.harness/orgs/default/projects/QE_HACK/triggers/jira_testing_transition.yaml)).
-* **Manually** via the Pipeline Studio with the `jiraTicket` runtime input
-
-1. Clones the repo,
-2. Runs `mvn test` against the in-cluster QE agent
-   (`qe-quality-agent.qe-hack-syndicate.svc.cluster.local`),
-3. Publishes JUnit results to Harness,
-4. Calls `qe-cli jira sync-results` to update the linked Jira Test issues with
-   the per-scenario PASS/FAIL status and a link back to the Harness execution.
+* **Manually** via the Pipeline Studio with the `jiraTicket` runtime input.
 
 See [`qe-agent/docs/integrations.md`](../qe-agent/docs/integrations.md) for the
 end-to-end GitHub <-> Jira <-> Agent <-> Harness wiring on GKE.

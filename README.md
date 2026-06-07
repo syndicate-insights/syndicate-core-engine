@@ -19,8 +19,10 @@ It is invoked by the Harness pipeline at
 The Cucumber BDD test pack lives in [`bdd-tests/`](bdd-tests/README.md). Every
 `.feature` file delegates to the QE agent's deterministic `/qe/scenario/...`
 API so the same code path runs in the agent, in `qe-cli`, and in CI. The
-Harness pipeline that runs the pack is in
-[`bdd-tests/harness/bdd-pipeline.yaml`](bdd-tests/harness/bdd-pipeline.yaml).
+Harness pipeline that runs the pack is
+[`.harness/orgs/default/projects/QE_HACK/pipelines/bdd_tests.yaml`](.harness/orgs/default/projects/QE_HACK/pipelines/bdd_tests.yaml),
+chained as the final stage of `quality_engineering_hack` and also fired by
+the agent's Jira webhook listener when a ticket transitions to `Testing`.
 
 ## Integration documentation
 

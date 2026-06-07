@@ -56,16 +56,18 @@ Surfaces (one process, port `8080`):
 
 - **ADK agent API** (`/run`, `/run_sse`, sessions) — LLM-driven sweeps & triage.
 - **Deterministic QE API** — what Harness calls:
-  - `GET /qe/scenarios` — list suites + scenario ids
-  - `GET /qe/suite
+  - `GET  /qe/scenarios` — list suites + scenario ids
+  - `GET  /qe/suite/{suite}` — run a whole suite (`passed` is the gate)
+  - `GET  /qe/scenario/{suite}/{id}` — run one scenario (`status` is the gate)
+  - `GET  /healthz`
 - **BDD authoring API** — used by the BDD pipeline and by humans via `qe-cli`:
   - `GET  /qe/jira/{ticket}/acceptance-criteria`
   - `POST /qe/jira/{ticket}/author?dry_run=false`
   - `POST /qe/jira/{ticket}/sync-results?cucumber_json_path=...`
   - `POST /qe/jira/{ticket}/reconcile?plan_execution_id=...`
-  - `GET  /qe/harness/bdd/latest`/{suite}` — run a whole suite (`passed` is the gate)
-  - `GET /qe/scenario/{suite}/{id}` — run one scenario (`status` is the gate)
-  - `GET /healthz`
+  - `GET  /qe/harness/bdd/latest`
+- **Jira webhook listener** — event source for the BDD authoring flow:
+  - `POST /qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>` — `issue_created` → author BDD; `issue_updated` with status → `Testing` → fire the Harness `bdd_tests` pipeline.
 
 A thin **`qe-cli`** (`cli/qe_cli.py`) wraps the deterministic API for CI.
 
@@ -329,15 +331,17 @@ Required local env: `GOOGLE_GENAI_USE_VERTEXAI=1`, `GOOGLE_CLOUD_PROJECT`,
 
 ## CI/CD — Harness
 
-The pipeline lives in the **Harness Git Experience** layout at
-`.harness/orgs/default/projects/QE_HACK/pipelines/quality_engineering_hack.yaml`.
-It defines a **QE Quality Gate** with **5 stages** (static → standards →
-integration → functional → non-functional). Each stage's execution is a
-`parallel` block with **one step per scenario**, so all scenarios in a goal run
-concurrently (23 scenarios total).
+The pipelines live in the **Harness Git Experience** layout under
+`.harness/orgs/default/projects/QE_HACK/`:
 
-Each step is **self-contained**: an inline Bash script runs `onDelegate` and
-`curl`s the agent's deterministic endpoint
+| File | Purpose |
+|------|---------|
+| `pipelines/quality_engineering_hack.yaml` | QE Quality Gate — 5 deterministic stages (static → standards → integration → functional → non-functional) with `parallel` per-scenario steps, then a sixth **BDD Tests** stage that chains `bdd_tests` and forwards a `jiraTicket` runtime input. |
+| `pipelines/bdd_tests.yaml` | Maven Cucumber `CI` stage that runs `bdd-tests/` against the in-cluster agent and (when `jiraTicket` is set) posts results back via `POST /qe/jira/<ticket>/sync-results`. |
+| `triggers/jira_testing_transition.yaml` | Custom Webhook trigger fired by the agent's `/qe/jira/webhook` listener when a ticket transitions to `Testing`. |
+
+Each deterministic step is **self-contained**: an inline Bash script runs
+`onDelegate` and `curl`s the agent's deterministic endpoint
 (`<+pipeline.variables.QE_AGENT_URL>/qe/scenario/<suite>/<id>`), then `grep`s the
 JSON for `"status": "PASS"` and exits non-zero otherwise — gating the pipeline.
 No checked-out helper script is needed on the delegate.
@@ -347,5 +351,9 @@ To use it:
    reaches the agent at `http://qe-quality-agent.qe-hack-syndicate.svc.cluster.local:8080`).
 2. Connect the repo via Git Experience (the `.harness/` tree is auto-discovered)
    or import the pipeline YAML directly.
+3. Copy the `jira_testing_transition` trigger's webhook URL into the
+   `HARNESS_BDD_WEBHOOK_URL` secret so the agent can fire it.
 
-Override the target with the `QE_AGENT_URL` pipeline variable.
+Override the target with the `QE_AGENT_URL` pipeline variable. See
+[`docs/integrations.md`](docs/integrations.md) for the full Jira → Agent →
+Harness wiring.
