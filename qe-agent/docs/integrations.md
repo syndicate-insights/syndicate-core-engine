@@ -1,295 +1,155 @@
 # GitHub <-> Jira <-> QE Agent <-> Harness on GKE — Integration Guide
 
-This document describes how the four systems collaborate around the
-`syndicate-core-engine` repository, where each piece runs, and exactly which
-credentials, env vars and Kubernetes objects you need to wire it up.
-
----
+This document describes how GitHub, Jira, the QE Agent, and Harness are wired
+for event-driven BDD test authoring and execution.
 
 ## High-level architecture
 
 ```mermaid
 flowchart LR
     subgraph Jira[Atlassian Jira Cloud]
-      J1[Story / Task<br/>SYN-123<br/>Acceptance Criteria]
-      J2[Linked Test issues<br/>SYN-1xx, SYN-1xx]
-      J3[Xray / Test execution<br/>history]
-      JW[Jira Webhook<br/>issue_created + issue_updated]
+      J1[Story/Task/Bug with AC]
+      J2[Linked Test issues]
+      J3[Xray/Test execution history]
+      JW[Jira Webhook]
     end
 
     subgraph GitHub[GitHub]
-      G1[(syndicate-insights/<br/>syndicate-core-engine)]
-      G2[bdd-tests/.../*.feature]
-      G3[PR auto-opened by agent]
+      G1[(syndicate-insights/syndicate-core-engine)]
+      G2[bdd-tests features]
+      G3[Agent-authored PR]
     end
 
-    subgraph GKE[GKE — namespace qe-hack-syndicate]
-      I[Ingress<br/>qe-agent.syndicate-insights.com]
-      A[QE Quality Agent<br/>Deployment + Service]
+    subgraph GKE[GKE ns: qe-hack-syndicate]
+      I[Ingress]
+      A[QE Quality Agent]
       A1[bdd_authoring_agent]
-      A2[/qe/jira/webhook listener/]
-      A3[other QE sub-agents]
     end
 
     subgraph Harness[Harness NextGen]
-      HQ[Pipeline:<br/>quality_engineering_hack]
-      H1[Pipeline:<br/>bdd_tests<br/>chained from above]
-      HT[Custom Webhook trigger<br/>jira_testing_transition]
-      H3[Publish JUnit + Cucumber]
+      HQ[quality_engineering_hack]
+      H1[bdd_tests]
+      HT[jira_testing_transition trigger]
     end
 
-    J1 -- webhook: issue_created --> JW
-    JW -- HTTPS / token --> I --> A2
-    A2 -- author + create Test issues --> A1
-    A1 -- create Test issues + link --> J2
-    A1 -- branch + commit --> G2
-    A1 -- open PR --> G3
-    G3 -- merge to main --> G1
+    J1 -- issue_created --> JW
+    JW -- POST /qe/jira/webhook --> I --> A
+    A -- author scenarios --> A1
+    A1 --> J2
+    A1 --> G2 --> G3 --> G1
 
-    J1 -- webhook: status -> Testing --> JW
-    A2 -- POST Custom Webhook --> HT --> H1
+    J1 -- status -> Testing --> JW
+    A -- fire custom webhook --> HT --> H1
 
-    HQ -- final stage chains --> H1
-    H1 --> A
-    H1 -- /qe/scenario/* --> A
-    H3 -- /qe/jira/{ticket}/sync-results --> J3
-    H3 -- failure --> A1
-   qe-quality-agent` Ingress | GKE, GCE-managed cert | Exposes `https://qe-agent.syndicate-insights.com/qe/jira/webhook` (path-restricted) so Jira Cloud can call the agent. |
-| `quality_engineering_hack` Harness pipeline | Harness NextGen, in-cluster delegate | Five quality stages (static / standards / integration / functional / non-functional) followed by a chained **BDD Tests** stage. |
-| `bdd_tests` Harness pipeline | Same project, chained from above | Runs `mvn -B -ntp test` from `bdd-tests/` against the agent and publishes JUnit + Cucumber reports. |
-| Custom Webhook trigger `jira_testing_transition` | Same project | Fired by the agent when a ticket transitions into `Testing`; runs the `bdd_tests` pipeline scoped to that ticket. |
-| Jira Cloud | SaaS | Source of truth for acceptance criteria; receives Test issues + per-scenario PASS/FAIL via comments and Xray import. Two webhooks fire into the agent: `issue_created` and `issue_updated`. |
-| GitHub | SaaS | Hosts the repo. Receives auto-PRs from the agent (new features for new tickets, refreshed features after failing runs). |
+    HQ -- chained stage --> H1
+    H1 -- scenario calls --> A
+    H1 -- sync results --> J3
+```
 
-Everything inside GKE talks over cluster DNS:
-`http://qe-quality-agent.qe-hack-syndicate.svc.cluster.local:8080`. Only the
-`/qe/jira/webhook` and `/healthz` paths are exposed to the public internet
-through the Ingress so Jira Cloud can reach them
+## What runs where
+
+| System | Location | Purpose |
 |---|---|---|
-| `qe-quality-agent` Deployment | GKE, namespace `qe-hack-syndicate` | Hosts the deterministic `/qe/...` API and the ADK sub-agents (including `bdd_authoring_agent`). |
-| `syndicate_bdd_tests` Harness pipeline | Harness NextGen, GKE delegate in the same cluster | Runs `mvn -B -ntp test` from `bdd-tests/` against the agent's in-cluster Service URL, publishes JUnit + Cucumber JSON, and calls `qe-cli jira sync-results`. |
-| Jira Cloud | SaaS | Source of truth for acceptance criteria; receives Test issues + per-scenario PASS/FAIL via comments and Xray import. |
-| GitHub | SaaS | Hosts the repo. Receives auto-PRs from the agent (new features for new tickets, refreshed features after failing runs). |
+| `qe-quality-agent` Deployment | GKE, `qe-hack-syndicate` | Hosts deterministic `/qe/...` API and ADK sub-agents, including `bdd_authoring_agent`. |
+| `qe-quality-agent` Ingress | GKE (public HTTPS) | Exposes `https://qe-agent.syndicate-insights.com/qe/jira/webhook` and `/healthz` for Jira Cloud callbacks. |
+| `quality_engineering_hack` pipeline | Harness NextGen | Main quality gate (5 deterministic stages), then chains `bdd_tests`. |
+| `bdd_tests` pipeline | Harness NextGen | Runs Maven Cucumber tests from `bdd-tests/` and publishes reports. |
+| `jira_testing_transition` trigger | Harness NextGen | Custom Webhook trigger that starts `bdd_tests` for a Jira ticket moved to `Testing`. |
+| Jira Cloud | SaaS | Source of acceptance criteria and status transitions; receives test result sync. |
+| GitHub | SaaS | Stores code and receives agent-authored PRs for generated/updated features. |
 
-Everything inside GKE talks over cluster DNS:
-`http://qe-quality-agent.qe-hack-syndicate.svc.cluster.local:8080`. No public
-ingress is required for Harness <-> Agent because the Harness CI delegate runs
-in the same cluster and namespace.
+## End-to-end flow
 
----
-Ticket created → BDD authored automatically
+### 1. Ticket created -> feature authoring
 
-When a Jira `Story`/`Task`/`Bug` is created, Jira fires `jira:issue_created`
-to `https://qe-agent.syndicate-insights.com/qe/jira/webhook?token=...`. The
-agent's webhook listener
-([`server/jira_webhook.py`](../agent/server/jira_webhook.py)):
+1. Jira emits `issue_created` to:
+   `https://qe-agent.syndicate-insights.com/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>`.
+2. Agent verifies token and reads acceptance criteria.
+3. Agent generates `.feature` files under:
+   `bdd-tests/src/test/resources/feature/<Domain>/<slug>.feature`.
+4. Agent creates linked Jira `Test` issues and opens a PR with new/updated features.
 
-1. Verifies the `?token=` query parameter against `JIRA_WEBHOOK_TOKEN`.
-2. Calls `bdd_authoring_agent.author_bdd_scenarios(ticket)`, which:
-   - reads the AC bullets from the ticket,
-   - generates `bdd-tests/src/test/resources/feature/<Domain>/<slug>.feature`,
-   - creates one Jira `Test` issue per `Scenario`, linked to the parent via
-     `Tests`, and
-   - opens a PR against `syndicate-insights/syndicate-core-engine` labelled
-     `qe-agent`, `bdd`, `auto-generated`.
+Manual equivalent:
 
-You can also run this manually:
-
-```
-qe-cli jira author SYN-123          # full run
-qe-cli jira author SYN-123 --dry-run    # preview the .feature locally
+```bash
+qe-cli jira author SYN-123
+qe-cli jira author SYN-123 --dry-run
 ```
 
-### 2. Ticket moves to "Testing" → Harness BDD pipeline runs
+### 2. Ticket moved to Testing -> BDD pipeline run
 
-When the ticket transitions into the configured `Testing` status, Jira fires
-`jira:issue_updated`. The webhook listener:
+1. Jira emits `issue_updated` with status transition to `Testing`.
+2. Agent listener detects transition and POSTs to `HARNESS_BDD_WEBHOOK_URL`.
+3. Harness trigger `jira_testing_transition` maps `issue.key` into `jiraTicket`.
+4. `bdd_tests` runs Cucumber and syncs results via:
+   `POST /qe/jira/<ticket>/sync-results`.
 
-1. Detects the status transition in the `changelog`,
-2. POSTs to the pre-issued Harness Custom Webhook URL
-   (`HARNESS_BDD_WEBHOOK_URL`) with `{"issue": {"key": "<TICKET>"}}`,
-3. The trigger
-   [`jira_testing_transition`](../../.harness/orgs/default/projects/QE_HACK/triggers/jira_testing_transition.yaml)
-   maps `<+trigger.payload.issue.key>` to the pipeline's `jiraTicket`
-   variable and starts `bdd_tests`.
+### 3. Main quality gate also runs BDD
 
-The `bdd_tests` pipeline:
+`quality_engineering_hack` chains `bdd_tests` as the final stage, so merges can
+run deterministic suites and then the BDD pack.
 
-1. Clones the repo,
-2. Spins up a `maven:3.9.6-eclipse-temurin-21` container in
-   `qe-hack-syndicate` and runs `mvn -B -ntp test` from `bdd-tests/`,
-3. Each Cucumber step calls
-   `http://qe-quality-agent.qe-hack-syndicate.svc.cluster.local:8080/qe/scenario/<suite>/<id>`,
-4. JUnit XML is published as a Harness `JUnit` report,
-5. The "Publish to Jira / Xray" stage POSTs to
-   `/qe/jira/<ticket>/sync-results`, which comments on the parent ticket and
-   transitions the linked Test issues (and pushes to Xray Cloud if configured).
+## Setup
 
-### 3. Full quality sweep ends with BDD
+### 1. Create/update secrets
 
-The main pipeline
-[`quality_engineering_hack`](../../.harness/orgs/default/projects/QE_HACK/pipelines/quality_engineering_hack.yaml)
-chains `bdd_tests` as its sixth stage (`type: Pipeline`). A merge to `main`
-runs the five deterministic suites and, if they pass, runs the BDD pack so
-all Cucumber features are exercised before deployment.
-
-### 4. Reconcile a failing run
-
-When the BDD pipeline fails, the `bdd_authoring_agent` reconciles:
-
-```
-qe-cli jira reconcile SYN-123 --execution $HARNESS_BUILD_ID
-```
-
-It calls `update_bdd_from_failure`, which reads the latest AC, regenerates the
-`.feature` file, and opens a follow-up PR labelled `auto-fix` so a human
-reviewer can confirm whether the AC actually shifted. If not, close the PR
-and treat the failure   and the Harness execution URL).
-
-If the AC has not changed, the reviewer closes the PR and treats the failure
-as a real regression.
-
----
-
-## Step-by-step setup
-
-### Prerequisites
-
-* GKE cluster with namespace `qe-hack-syndicate` and KSA `qe-hack-syndicate-k8s-sa`
-  (already used by the dbt cronjobs).
-* Harness NextGen account with a Kubernetes delegate in the same cluster.
-* Jira Cloud project (default: `SYN`) with a `Test` issuetype enabled
-  (Xray Cloud is optional but recommended).
-* GitHub repository `syndicate-insights/syndicate-core-engine`.
-
-### 1. Mint credentials
-
-| Credential | Where created | Scope |
-|---|---|---| \
+```bash
+kubectl -n qe-hack-syndicate create secret generic qe-quality-agent-secrets \
+  --from-literal=NEO4J_PASSWORD='...' \
+  --from-literal=JIRA_API_TOKEN='...' \
+  --from-literal=XRAY_CLIENT_ID='' \
+  --from-literal=XRAY_CLIENT_SECRET='' \
+  --from-literal=HARNESS_API_KEY='...' \
+  --from-literal=HARNESS_ACCOUNT_ID='...' \
+  --from-literal=GITHUB_TOKEN='...' \
   --from-literal=JIRA_WEBHOOK_TOKEN="$(openssl rand -hex 32)" \
   --from-literal=HARNESS_BDD_WEBHOOK_URL='<paste-from-harness-trigger>'
 ```
 
-`HARNESS_BDD_WEBHOOK_URL` is the URL Harness shows when you save the
-[`jira_testing_transition`](../../.harness/orgs/default/projects/QE_HACK/triggers/jira_testing_transition.yaml)
-Custom Webhook trigger; treat the full URL as a secret because anyone with it
-can fire the pipeline. Apply [`secret.example.yaml`](../deploy/k8s/secret.example.yaml)
-after replacing the placeholders (do **not** commit real values).
+### 2. Configure ConfigMap values
 
-### 3. Update the ConfigMap and apply the manifests
+Set in `qe-agent/deploy/k8s/configmap.yaml`:
 
-Edit [`configmap.yaml`](../deploy/k8s/configmap.yaml) and set:
+- `JIRA_BASE_URL`, `JIRA_USER`, `JIRA_PROJECT`
+- `JIRA_TESTING_STATUS=Testing`
+- `JIRA_TRIGGER_ISSUETYPES=Story,Task,Bug`
+- `HARNESS_ORG_ID=default`
+- `HARNESS_PROJECT_ID=QE_HACK`
+- `HARNESS_BDD_PIPELINE_ID=bdd_tests`
+- `GITHUB_REPO=syndicate-insights/syndicate-core-engine`
 
-```
-JIRA_BASE_URL=https://<your-tenant>.atlassian.net
-JIRA_USER=qe-agent@<your-domain>
-JIRA_PROJECT=SYN
-JIRA_AC_FIELD=customfield_10100   # only if you use a custom AC field
-JIRA_TESTING_STATUS=Testing       # status name that triggers the BDD pipeline
-JIRA_TRIGGER_ISSUETYPES=Story,Task,Bug
-HARNESS_ORG_ID=default
-HARNESS_PROJECT_ID=QE_HACK
-HARNESS_BDD_PIPELINE_ID=bdd_tests
-GITHUB_REPO=syndicate-insights/syndicate-core-engine
-```
-
-Apply:
+### 3. Apply K8s manifests
 
 ```bash
 kubectl apply -f qe-agent/deploy/k8s/configmap.yaml
 kubectl apply -f qe-agent/deploy/k8s/deployment.yaml
 kubectl apply -f qe-agent/deploy/k8s/service.yaml
-kubectl apply -f qe-agent/deploy/k8s/ingress.yaml      # exposes /qe/jira/webhook
+kubectl apply -f qe-agent/deploy/k8s/ingress.yaml
 ```
 
-The init container in the Deployment clones the repo (read-only) into a shared
-emptyDir so the static-analysis and coding-standards suites can lint it.
+### 4. Harness Git Experience sync
 
-### 4. Sync the Harness pipelines via Git Experience
+Harness should track:
 
-Both pipelines and the trigger live in the repo under `.harness/`:
+- `.harness/orgs/default/projects/QE_HACK/pipelines/quality_engineering_hack.yaml`
+- `.harness/orgs/default/projects/QE_HACK/pipelines/bdd_tests.yaml`
+- `.harness/orgs/default/projects/QE_HACK/triggers/jira_testing_transition.yaml`
 
-```
-.harness/orgs/default/projects/QE_HACK/
-  pipelines/
-    quality_engineering_hack.yaml   # main pipeline (chains bdd_tests as last stage)
-    bdd_tests.yaml                  # Cucumber pack
-  triggers/
-    jira_testing_transition.yaml    # Custom Webhook the agent fires
-```
+After saving the trigger, copy its webhook URL into `HARNESS_BDD_WEBHOOK_URL`.
 
-Connect the Harness project to this Git repo via Git Experience (Account >
-Git Experience > New Connection); Harness will pick up changes on every push.
-After the trigger is saved, copy its webhook URL into the
-`HARNESS_BDD_WEBHOOK_URL` Secret (step 2).
+### 5. Jira webhook setup
 
-### 5. Configure the Jira webhooks
+In Jira: Settings -> System -> WebHooks -> Create:
 
-In Jira: Settings > System > WebHooks > Create:
+- URL: `https://qe-agent.syndicate-insights.com/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>`
+- Events: `Issue created`, `Issue updated`
+- JQL: `project = SYN AND issuetype in (Story, Task, Bug)`
+- Include payload body: enabled
 
-* **URL:** `https://qe-agent.syndicate-insights.com/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>`
-* **Events:** `Issue created`, `Issue updated`
-* **JQL filter:** `project = SYN AND issuetype in (Story, Task, Bug)` (adjust
-  to the projects you want to manage).
-* **Exclude body:** off (the agent needs the issue payload).
-
-Tip: send a test event with `Send test event` and check
-`kubectl -n qe-hack-syndicate logs deploy/qe-quality-agent -f` for a 200
-response.
-
-### 6. Smoke test
+### 6. Smoke tests
 
 ```bash
-# Dry-run the BDD authoring locally
-Configure the pipeline triggers:
-
-* `On Push to main` — runs the full BDD pack and updates Jira.
-* `On PR opened with label qe-agent` — runs the BDD pack against the PR branch
-  so the agent's auto-generated tests are validated before merge.
-
-### 5. (Optional) GitHub <-> Harness webhook
-
-Add a GitHub webhook on the `syndicate-core-engine` repo pointing to the
-Harness webhook URL emitted by the pipeline trigger, so push and PR events
-auto-trigger `syndicate_bdd_tests`.
-
-### 6. Smoke test
-
-```bash
-# Author scenarios for an existing Jira ticket (dry-run prints the feature):
-QE_AGENT_URL=http://localhost:8080 qe-cli jira author SYN-123 --dry-run
-
-# Real run (creates Test issues + opens a PR):
+qe-cli jira author SYN-123 --dry-run
 qe-cli jira author SYN-123
-
-# Trigger the BDD pipeline manually and watch the latest status:
 qe-cli harness latest
 ```
-
----
-
-## Security notes
-
-* Secrets are mounted as `secretKeyRef` env vars; nothing is baked into the
-  container image. The `secret-scan` static-analysis scenario flags any
-  hardcoded credential that slips back into the repo.
-* The agent's KSA (`qe-hack-syndicate-k8s-sa`) only has read access to the
-  pipeline's BigQuery/GCS/Neo4j; PR creation relies on the GitHub token, not
-  on cluster identity, so revoking GitHub access is a single PAT rotation.
-* The agent never executes cluster-mutating commands; `dbt test` is the only
-  side effect it runs, and Cucumber tests are read-only HTTP calls to the
-  agent's own API.
-* Harness NextGen runs the BDD pipeline with a delegate inside the cluster,
-  so the agent's HTTP API never needs a public ingress.
-
----
-
-## Troubleshooting
-
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| `qe-cli jira author` returns `error 401` | Bad/expired Jira API token | Rotate the token; re-create the Secret. |
-| `pr` field is `null` after `author` | `GITHUB_TOKEN` lacks `pull-requests:write` | Recreate the PAT with the right scopes. |
-| Jira Test issues not linked | `Tests` issue link type missing in the project | Ask the Jira admin to enable it (Xray installs it by default). |
-| Harness step "Publish to Jira / Xray" fails | `cucumber.json` missing | Make sure `mvn test` ran the JUnit XML/JSON plugins (set in `pom.xml`). |
-| BDD pipeline can't reach the agent | DNS or Service mismatch | `kubectl -n qe-hack-syndicate get svc qe-quality-agent` and check `QE_AGENT_URL`. |

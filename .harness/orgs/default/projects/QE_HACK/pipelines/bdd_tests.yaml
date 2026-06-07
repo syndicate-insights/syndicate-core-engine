@@ -20,7 +20,9 @@ pipeline:
   codebase:
     connectorRef: account.github_syndicate
     repoName: syndicate-core-engine
-    build: <+input>
+    # Default to main so chained/manual runs always have checkout source.
+    # If a caller provides a build input, Harness will use that value instead.
+    build: <+input>.default("main")
   variables:
     - name: QE_AGENT_URL
       type: String
