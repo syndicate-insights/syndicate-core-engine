@@ -91,3 +91,72 @@ kubectl -n qe-hack-syndicate annotate ingress qe-quality-agent-webhook \
 kubectl -n qe-hack-syndicate get managedcertificate qe-quality-agent-cert -w
 
 echo "https://$DOMAIN/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>"
+
+# --- 6. HTTPS via subdomain in another GCP project ---
+#
+# Use this when your domain (managed zone) lives in a different GCP project
+# to the one running the QE agent GKE cluster.
+#
+# Variables — fill in before running:
+DNS_PROJECT=<YOUR_DNS_GCP_PROJECT_ID>   # project that owns the domain/zone
+GKE_PROJECT=project-61358164-b71e-4422-a5c  # project running the GKE cluster
+SUBDOMAIN=qe-agent.<YOUR_BASE_DOMAIN>       # e.g. qe-agent.syndicate-insights.com
+DNS_ZONE_NAME=<YOUR_MANAGED_ZONE_NAME>      # the Cloud DNS zone name in $DNS_PROJECT
+                                             # (not the DNS name, the zone resource name)
+
+# Step 6a: confirm the ingress external IP is ready
+EXTERNAL_IP=$(kubectl -n qe-hack-syndicate get ingress qe-quality-agent-webhook \
+  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+echo "External IP: $EXTERNAL_IP"
+
+# Step 6b: add an A record for the subdomain in the other project's managed zone
+gcloud dns record-sets create "${SUBDOMAIN}." \
+  --zone="${DNS_ZONE_NAME}" \
+  --type=A \
+  --ttl=60 \
+  --rrdatas="${EXTERNAL_IP}" \
+  --project "${DNS_PROJECT}"
+
+# Verify propagation (expect the IP back within a few minutes):
+dig +short "${SUBDOMAIN}"
+
+# Step 6c: patch the ingress host rule to match the subdomain
+kubectl -n qe-hack-syndicate patch ingress qe-quality-agent-webhook \
+  --type=json \
+  -p="[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"${SUBDOMAIN}\"}]"
+
+# Step 6d: create a GKE managed TLS certificate (issued in the GKE project)
+# The cert will only provision once the A record resolves to the ingress IP.
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: qe-quality-agent-cert
+  namespace: qe-hack-syndicate
+spec:
+  domains:
+    - ${SUBDOMAIN}
+EOF
+
+# Attach the cert to the ingress
+kubectl -n qe-hack-syndicate annotate ingress qe-quality-agent-webhook \
+  networking.gke.io/managed-certificates=qe-quality-agent-cert
+
+# Step 6e: watch cert provisioning — status must reach ACTIVE (10-30 min)
+kubectl -n qe-hack-syndicate get managedcertificate qe-quality-agent-cert -w
+
+# Step 6f: verify end-to-end
+curl -i "https://${SUBDOMAIN}/healthz"
+
+# Final Jira webhook URL:
+echo "https://${SUBDOMAIN}/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>"
+#
+# Notes:
+# - The DNS project just needs an A record — no GCP IAM cross-project permission
+#   is required between the two projects for DNS.
+# - GKE ManagedCertificate is provisioned in the GKE project independently of
+#   where the DNS zone lives.
+# - If the zone uses NS delegation (e.g. subdomain delegated from a parent zone),
+#   ensure the NS records are correct first: `dig NS ${SUBDOMAIN}`
+# - TTL 60s is used above for faster propagation during setup; raise to 300-3600
+#   once stable.
