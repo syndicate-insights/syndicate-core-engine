@@ -17,6 +17,10 @@ pipeline:
   tags:
     bdd: cucumber
     owner: qe-hack-syndicate
+  codebase:
+    connectorRef: account.github_syndicate
+    repoName: syndicate-core-engine
+    build: <+input>
   variables:
     - name: QE_AGENT_URL
       type: String
@@ -64,31 +68,20 @@ pipeline:
                       spec:
                         paths:
                           - bdd-tests/target/cucumber-junit.xml
-        tags: {}
-    # ---------------------------------------------------------------- Stage 2
-    - stage:
-        name: Publish to Jira / Xray
-        identifier: publish_to_jira
-        type: Custom
-        when:
-          pipelineStatus: All
-          condition: <+pipeline.variables.jiraTicket> != ""
-        spec:
-          execution:
-            steps:
               - step:
-                  name: qe-cli jira sync-results
-                  identifier: sync_results
-                  type: ShellScript
-                  timeout: 10m
+                  name: Sync Results to Jira
+                  identifier: sync_jira
+                  type: Run
+                  when:
+                    pipelineStatus: All
+                    condition: <+pipeline.variables.jiraTicket> != ""
                   spec:
+                    connectorRef: account.dockerhub
+                    image: maven:3.9.6-eclipse-temurin-21
                     shell: Bash
-                    onDelegate: true
-                    source:
-                      type: Inline
-                      spec:
-                        script: |
-                          set -eo pipefail
-                          curl -fsS -X POST --max-time 600 \
-                            "<+pipeline.variables.QE_AGENT_URL>/qe/jira/<+pipeline.variables.jiraTicket>/sync-results?cucumber_json_path=bdd-tests/target/cucumber.json&execution_url=https://app.harness.io/ng/account/<+account.identifier>/cd/orgs/<+pipeline.orgIdentifier>/projects/<+pipeline.projectIdentifier>/pipelines/<+pipeline.identifier>/executions/<+pipeline.executionId>/pipeline"
+                    command: |
+                      set -eo pipefail
+                      # Execute the sync call within the CI workspace so cucumber.json is accessible
+                      curl -fsS -X POST --max-time 600 \
+                        "<+pipeline.variables.QE_AGENT_URL>/qe/jira/<+pipeline.variables.jiraTicket>/sync-results?cucumber_json_path=bdd-tests/target/cucumber.json&execution_url=https://app.harness.io/ng/account/<+account.identifier>/cd/orgs/<+pipeline.orgIdentifier>/projects/<+pipeline.projectIdentifier>/pipelines/<+pipeline.identifier>/executions/<+pipeline.executionId>/pipeline"
         tags: {}
