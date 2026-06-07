@@ -75,7 +75,7 @@ pipeline:
                   identifier: sync_jira
                   type: Run
                   when:
-                    pipelineStatus: All
+                    stageStatus: All
                     condition: <+pipeline.variables.jiraTicket> != ""
                   spec:
                     connectorRef: account.dockerhub
