@@ -74,18 +74,6 @@ spec:
                 secretKeyRef:
                   name: qe-quality-agent-secrets
                   key: JIRA_API_TOKEN
-            - name: XRAY_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: qe-quality-agent-secrets
-                  key: XRAY_CLIENT_ID
-                  optional: true
-            - name: XRAY_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: qe-quality-agent-secrets
-                  key: XRAY_CLIENT_SECRET
-                  optional: true
             - name: HARNESS_API_KEY
               valueFrom:
                 secretKeyRef:

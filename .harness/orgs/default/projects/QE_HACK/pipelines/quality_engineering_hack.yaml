@@ -440,7 +440,7 @@ pipeline:
     # Chain the BDD pipeline (defined separately at
     # .harness/.../pipelines/bdd_tests.yaml). It runs the Cucumber pack in
     # bdd-tests/ against the same in-cluster QE agent and publishes results
-    # back to Jira / Xray when a ticket id is supplied at runtime.
+    # back to Jira ticket + Test subtasks when a ticket id is supplied.
     - stage:
         name: BDD Tests
         identifier: bdd_tests

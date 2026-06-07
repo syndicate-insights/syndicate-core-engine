@@ -12,7 +12,7 @@ Examples:
     qe-cli jira author SYN-123 [--dry-run]
     qe-cli jira sync-results --ticket SYN-123 \\
         --cucumber-json bdd-tests/target/cucumber.json \\
-        --pipeline syndicate_bdd_tests --execution <plan_execution_id>
+        --pipeline bdd_tests --execution <plan_execution_id>
     qe-cli jira reconcile SYN-123 --execution <plan_execution_id>
     qe-cli harness latest
 """

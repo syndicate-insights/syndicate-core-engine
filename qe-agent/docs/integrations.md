@@ -9,8 +9,8 @@ for event-driven BDD test authoring and execution.
 flowchart LR
     subgraph Jira[Atlassian Jira Cloud]
       J1[Story/Task/Bug with AC]
-      J2[Linked Test issues]
-      J3[Xray/Test execution history]
+      J2[Test subtasks]
+      J3[Ticket + Test subtask execution history]
       JW[Jira Webhook]
     end
 
@@ -97,8 +97,6 @@ run deterministic suites and then the BDD pack.
 kubectl -n qe-hack-syndicate create secret generic qe-quality-agent-secrets \
   --from-literal=NEO4J_PASSWORD='...' \
   --from-literal=JIRA_API_TOKEN='...' \
-  --from-literal=XRAY_CLIENT_ID='' \
-  --from-literal=XRAY_CLIENT_SECRET='' \
   --from-literal=HARNESS_API_KEY='...' \
   --from-literal=HARNESS_ACCOUNT_ID='...' \
   --from-literal=GITHUB_TOKEN='...' \

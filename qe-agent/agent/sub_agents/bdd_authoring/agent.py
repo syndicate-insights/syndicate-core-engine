@@ -1,7 +1,7 @@
 """BDD authoring sub-agent.
 
 Reads a Jira ticket's acceptance criteria, generates Cucumber scenarios,
-creates Jira Test issues linked to the ticket, opens a PR with the new
+creates Jira `Test` subtasks under the ticket, opens a PR with the new
 `.feature` file, and on a failing Harness run inspects the Cucumber report and
 opens a follow-up PR to update the affected scenarios.
 """
@@ -28,7 +28,7 @@ def jira_read_acceptance_criteria(ticket: str) -> dict:
 
 
 def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
-    """Generate a feature file for `ticket`, create Jira Test issues and open a PR.
+    """Generate a feature file for `ticket`, create Jira Test subtasks and open a PR.
 
     Returns a structured payload describing what was created so the agent can
     explain the result back to the user.
@@ -54,7 +54,7 @@ def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
     if dry_run:
         return result
 
-    # 1. Create one Jira Test issue per Cucumber scenario.
+    # 1. Create one Jira Test subtask per Cucumber scenario.
     for idx, bullet in enumerate(bullets or ["acceptance criterion 1"], start=1):
         scenario_summary = f"BDD AC{idx} for {ticket}: {bullet[:120]}"
         issue = jira.create_test_issue(
@@ -114,7 +114,7 @@ def harness_latest_bdd() -> dict:
 
 def jira_sync_results(ticket: str, cucumber_json_path: str,
                       execution_url: str | None = None) -> dict:
-    """Push Cucumber results to the Jira ticket and (optionally) Xray Cloud."""
+    """Push Cucumber results to the Jira parent ticket and Test subtasks."""
     return jira.sync_cucumber_results(ticket, cucumber_json_path, execution_url)
 
 
@@ -126,10 +126,9 @@ def _pr_body(ticket: str, summary: str, domain: str, path: str, ac: dict) -> str
         f"**Domain:** {domain}\n\n"
         f"**Feature file:** `{path}`\n\n"
         f"### Acceptance criteria\n{bullets}\n\n"
-        "Each `Scenario` has a corresponding Jira Test issue linked to "
-        f"{ticket} via the `Tests` link type. Harness pipeline "
-        "`syndicate_bdd_tests` will execute these scenarios on every push and "
-        "publish PASS/FAIL back to the linked Test issues.\n"
+        "Each `Scenario` has a corresponding Jira `Test` subtask under "
+        f"{ticket}. Harness pipeline `bdd_tests` executes these scenarios and "
+        "publishes PASS/FAIL comments back to the parent ticket and subtasks.\n"
     )
 
 
@@ -160,7 +159,7 @@ bdd_authoring_agent = LlmAgent(
     model=SETTINGS.model,
     description=(
         "Reads acceptance criteria from a Jira ticket, generates Cucumber BDD "
-        "features, creates linked Jira Test issues, opens a GitHub PR against "
+        "features, creates Jira Test subtasks, opens a GitHub PR against "
         "bdd-tests/, and reconciles failing Harness BDD runs by raising "
         "follow-up PRs to update the Gherkin."
     ),
@@ -170,7 +169,7 @@ bdd_authoring_agent = LlmAgent(
         "1. When given a Jira ticket id, call `jira_read_acceptance_criteria` and "
         "validate the bullets are testable. Refuse politely if the ticket has no AC.\n"
         "2. Call `author_bdd_scenarios(ticket)` to generate the .feature, create the "
-        "Jira Test issues and open a PR. Include the PR url and Test issue keys "
+        "Jira Test subtasks and open a PR. Include the PR url and Test subtask keys "
         "in your reply.\n"
         "3. When asked about a failing Harness BDD run, call `harness_latest_bdd` "
         "(or `update_bdd_from_failure` when given an execution id) and explain "

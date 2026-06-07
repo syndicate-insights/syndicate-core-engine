@@ -74,7 +74,7 @@ defines a `CI` stage that:
    (`qe-quality-agent.qe-hack-syndicate.svc.cluster.local`),
 3. Publishes JUnit results to Harness,
 4. When `jiraTicket` is provided, calls
-   `POST /qe/jira/<ticket>/sync-results` to update the linked Jira Test issues
+  `POST /qe/jira/<ticket>/sync-results` to update Jira `Test` subtasks
    with the per-scenario PASS/FAIL status and a link back to the Harness execution.
 
 The pipeline is invoked in three ways:

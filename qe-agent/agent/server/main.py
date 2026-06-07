@@ -76,13 +76,13 @@ def get_jira_ac(ticket: str) -> dict:
 
 @app.post("/qe/jira/{ticket}/author")
 def author_from_jira(ticket: str, dry_run: bool = False) -> dict:
-    """Generate a .feature file, create linked Jira Test issues and open a PR."""
+    """Generate a .feature file, create Jira Test subtasks, and open a PR."""
     return author_bdd_scenarios(ticket, dry_run=dry_run)
 
 
 @app.post("/qe/jira/{ticket}/sync-results")
 def sync_jira(ticket: str, cucumber_json_path: str, execution_url: str | None = None) -> dict:
-    """Push Cucumber results back to Jira (and Xray Cloud if configured)."""
+    """Push Cucumber results back to Jira parent ticket + Test subtasks."""
     return jira_sync_results(ticket, cucumber_json_path, execution_url)
 
 
@@ -94,7 +94,8 @@ def harness_bdd_latest() -> dict:
 
 @app.post("/qe/jira/{ticket}/reconcile")
 def reconcile(ticket: str, plan_execution_id: str | None = None) -> dict:
-    """Inspect a failing BDD run and raise a PR with refreshe
+    """Inspect a failing BDD run and raise a PR with refreshed Gherkin."""
+    return update_bdd_from_failure(ticket, plan_execution_id)
 
 
 # --- Jira webhook listener --------------------------------------------------
@@ -115,8 +116,7 @@ async def handle_jira_webhook(request: Request, token: str | None = None) -> dic
         raise HTTPException(status_code=400, detail=f"invalid JSON payload: {exc}") from exc
     if not isinstance(payload, dict):
         raise HTTPException(status_code=400, detail="payload must be a JSON object")
-    return jira_webhook.handle_event(payload)d Gherkin."""
-    return update_bdd_from_failure(ticket, plan_execution_id)
+    return jira_webhook.handle_event(payload)
 
 
 def main() -> None:
