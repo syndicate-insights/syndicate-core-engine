@@ -29,12 +29,13 @@ kubectl -n qe-hack-syndicate patch ingress qe-quality-agent-webhook \
   --type=json \
   -p="[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"$HOSTNAME\"}]"
 
-# Attach the existing ManagedCertificate (already provisioned, named qe-agent)
+# Attach the pre-shared GCP SSL certificate named qe-agent
+# (created in GCP Console -> Certificate Manager -> Classic certs, or via gcloud)
 kubectl -n qe-hack-syndicate annotate ingress qe-quality-agent-webhook \
-  networking.gke.io/managed-certificates=qe-agent --overwrite
+  ingress.gcp.kubernetes.io/pre-shared-cert=qe-agent --overwrite
 
-# Confirm cert is ACTIVE
-kubectl -n qe-hack-syndicate get managedcertificate qe-agent
+# Confirm the cert exists in GCP and covers the right domain:
+gcloud compute ssl-certificates describe qe-agent --global
 
 # Jira webhook URL to register:
 echo "https://$HOSTNAME/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>"
@@ -62,12 +63,12 @@ kubectl -n qe-hack-syndicate patch ingress qe-quality-agent-webhook \
   --type=json \
   -p="[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"$DOMAIN\"}]"
 
-# Attach the existing ManagedCertificate (named qe-agent)
+# Attach the pre-shared GCP SSL certificate named qe-agent
 kubectl -n qe-hack-syndicate annotate ingress qe-quality-agent-webhook \
-  networking.gke.io/managed-certificates=qe-agent --overwrite
+  ingress.gcp.kubernetes.io/pre-shared-cert=qe-agent --overwrite
 
-# Confirm cert is ACTIVE
-kubectl -n qe-hack-syndicate get managedcertificate qe-agent
+# Confirm the cert exists in GCP:
+gcloud compute ssl-certificates describe qe-agent --global
 
 echo "https://$DOMAIN/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>"
 
@@ -104,19 +105,19 @@ kubectl -n qe-hack-syndicate patch ingress qe-quality-agent-webhook \
   --type=json \
   -p="[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"${SUBDOMAIN}\"}]"
 
-# Step 6d: attach the existing ManagedCertificate named qe-agent
-# The cert must already cover ${SUBDOMAIN}. Verify:
-kubectl -n qe-hack-syndicate get managedcertificate qe-agent \
-  -o jsonpath='{.spec.domains}{"\n"}'
-# If ${SUBDOMAIN} is not listed, add it:
-#   kubectl -n qe-hack-syndicate edit managedcertificate qe-agent
-# Then wait for re-provisioning before proceeding.
+# Step 6d: attach the pre-shared GCP SSL certificate named qe-agent.
+# The cert must already cover ${SUBDOMAIN}. Verify the domains it covers:
+gcloud compute ssl-certificates describe qe-agent --global \
+  --format='value(managed.domains)'
+# If ${SUBDOMAIN} is not listed the cert will not serve that domain —
+# you would need a new/updated GCP-managed cert covering it.
 
 kubectl -n qe-hack-syndicate annotate ingress qe-quality-agent-webhook \
-  networking.gke.io/managed-certificates=qe-agent --overwrite
+  ingress.gcp.kubernetes.io/pre-shared-cert=qe-agent --overwrite
 
-# Step 6e: confirm cert status is ACTIVE
-kubectl -n qe-hack-syndicate get managedcertificate qe-agent
+# Step 6e: confirm GCP cert status is ACTIVE
+gcloud compute ssl-certificates describe qe-agent --global \
+  --format='value(managed.status)'
 
 # Step 6f: verify end-to-end
 curl -i "https://${SUBDOMAIN}/healthz"
@@ -127,7 +128,7 @@ echo "https://${SUBDOMAIN}/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>"
 # Notes:
 # - The DNS project just needs an A record — no GCP IAM cross-project permission
 #   is required between the two projects for DNS.
-# - The existing ManagedCertificate `qe-agent` is reused; no new cert is created.
+# - The pre-shared GCP SSL certificate `qe-agent` is reused; no new cert is created.
 # - If the zone uses NS delegation (e.g. subdomain delegated from a parent zone),
 #   ensure the NS records are correct first: `dig NS ${SUBDOMAIN}`
 # - TTL 60s is used above for faster propagation during setup; raise to 300-3600

@@ -2,8 +2,9 @@
 #
 # Jira Cloud cannot reach a ClusterIP Service. We expose ONLY the webhook path
 # via a path-prefix Ingress (the rest of the API stays in-cluster only).
-# TLS is terminated by the pre-existing GKE ManagedCertificate named `qe-agent`.
-# Set the ingress host rule to match the domain covered by that certificate.
+# TLS is terminated at the GCP Load Balancer using the pre-shared GCP SSL
+# certificate named `qe-agent` (created via GCP Console or gcloud compute
+# ssl-certificates). Set the ingress host rule to match the cert's domain.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -11,7 +12,9 @@ metadata:
   namespace: qe-hack-syndicate
   annotations:
     kubernetes.io/ingress.class: "gce"
-    networking.gke.io/managed-certificates: "qe-agent"
+    # Pre-shared GCP SSL certificate created via GCP Console or gcloud.
+    # The certificate named `qe-agent` must already exist in the same GCP project.
+    ingress.gcp.kubernetes.io/pre-shared-cert: "qe-agent"
 spec:
   rules:
     - http:
