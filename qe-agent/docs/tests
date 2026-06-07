@@ -1,0 +1,16 @@
+kubectl -n qe-hack-syndicate create secret generic qe-quality-agent-secrets \
+  --from-literal=NEO4J_PASSWORD='bitt4sw33t' \
+  --from-literal=JIRA_API_TOKEN='ATATT3xFfGF09UumFq5rW4IoBFbDskkWns8pc8egKv_IEQR31AUZjkInk7HI0OKVt_c8ddT50yiL0MiYq0xUlZwPcU-fBx2aHlBnBUhweHjH8rj-7zpps_Toz5du2E0B43E5-PDe6X71JvUorAb2j9HAd7fj35KRkRN4VMQQsRRaujcImVV0OTc=95D3F36D' \
+  --from-literal=HARNESS_API_KEY='pat.1iW3b7HMR3-EyCF5Nhpmrg.6a25c4ba900c2f1f4ed01008.Psr44EnTrpwPHvjQlNKA' \
+  --from-literal=HARNESS_ACCOUNT_ID='1iW3b7HMR3-EyCF5Nhpmrg' \
+  --from-literal=GITHUB_TOKEN='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' \
+  --from-literal=JIRA_WEBHOOK_TOKEN="$(openssl rand -hex 32)" \
+  --from-literal=HARNESS_BDD_WEBHOOK_URL='https://app.harness.io/gateway/pipeline/api/webhook/custom/clwv6w73S22lXg31baT9ig/v3?accountIdentifier=1iW3b7HMR3-EyCF5Nhpmrg&orgIdentifier=default&projectIdentifier=QE_HACK&pipelineIdentifier=bdd_tests&triggerIdentifier=jira_testing_transition'
+
+
+
+
+kubectl -n qe-hack-syndicate apply -f qe-agent/deploy/k8s/configmap.yaml
+kubectl -n qe-hack-syndicate apply -f qe-agent/deploy/k8s/deployment.yaml
+kubectl -n qe-hack-syndicate apply -f qe-agent/deploy/k8s/service.yaml
+kubectl -n qe-hack-syndicate apply -f qe-agent/deploy/k8s/ingress.yaml

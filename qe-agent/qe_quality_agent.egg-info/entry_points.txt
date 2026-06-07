@@ -1,0 +1,2 @@
+[console_scripts]
+qe-cli = cli.qe_cli:main
