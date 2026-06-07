@@ -37,7 +37,15 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["agent", "agent.tools", "agent.sub_agents", "agent.scenarios", "agent.server", "cli"]
+packages = [
+    "agent",
+    "agent.tools",
+    "agent.sub_agents",
+    "agent.sub_agents.bdd_authoring",
+    "agent.scenarios",
+    "agent.server",
+    "cli",
+]
 
 [tool.ruff]
 line-length = 100

@@ -24,3 +24,24 @@ data:
   DBT_JOB_SLA_SECONDS: "3600"
   INGEST_SLA_SECONDS: "1800"
   BQ_QUERY_SLA_SECONDS: "10"
+  # --- BDD authoring (Jira / Harness / GitHub) ---
+  JIRA_BASE_URL: "https://syndicate-insights.atlassian.net"
+  JIRA_USER: "qe-agent@syndicate-insights.com"
+  JIRA_PROJECT: "SYN"
+  JIRA_TEST_ISSUETYPE: "Test"
+  # Optional: custom field id holding Acceptance Criteria. Leave blank to scan
+  # the description for an "Acceptance Criteria" section.
+  JIRA_AC_FIELD: ""
+  HARNESS_BASE_URL: "https://app.harness.io"
+  HARNESS_ORG_ID: "default"
+  HARNESS_PROJECT_ID: "QE_HACK"
+  HARNESS_BDD_PIPELINE_ID: "bdd_tests"
+  GITHUB_API_URL: "https://api.github.com"
+  GITHUB_REPO: "syndicate-insights/syndicate-core-engine"
+  GIT_DEFAULT_BRANCH: "main"
+  GIT_AUTHOR_NAME: "qe-quality-agent"
+  GIT_AUTHOR_EMAIL: "qe-agent@syndicate-insights.com"
+  # Jira webhook listener: which status name means "ready to test", and which
+  # issuetypes are allowed to fire BDD authoring / pipeline triggers.
+  JIRA_TESTING_STATUS: "Testing"
+  JIRA_TRIGGER_ISSUETYPES: "Story,Task,Bug"

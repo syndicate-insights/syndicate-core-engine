@@ -11,9 +11,17 @@ from __future__ import annotations
 
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 
 from agent.scenarios import runner
+from agent.server import jira_webhook
+from agent.sub_agents.bdd_authoring.agent import (
+    author_bdd_scenarios,
+    harness_latest_bdd,
+    jira_read_acceptance_criteria,
+    jira_sync_results,
+    update_bdd_from_failure,
+)
 
 AGENTS_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -56,6 +64,59 @@ def run_suite(suite: str) -> dict:
 def run_scenario(suite: str, scenario_id: str) -> dict:
     """Run a single scenario by id."""
     return runner.run_scenario(suite, scenario_id)
+
+
+# --- BDD authoring / Jira / Harness -----------------------------------------
+
+@app.get("/qe/jira/{ticket}/acceptance-criteria")
+def get_jira_ac(ticket: str) -> dict:
+    """Read acceptance-criteria bullets from a Jira ticket."""
+    return jira_read_acceptance_criteria(ticket)
+
+
+@app.post("/qe/jira/{ticket}/author")
+def author_from_jira(ticket: str, dry_run: bool = False) -> dict:
+    """Generate a .feature file, create linked Jira Test issues and open a PR."""
+    return author_bdd_scenarios(ticket, dry_run=dry_run)
+
+
+@app.post("/qe/jira/{ticket}/sync-results")
+def sync_jira(ticket: str, cucumber_json_path: str, execution_url: str | None = None) -> dict:
+    """Push Cucumber results back to Jira (and Xray Cloud if configured)."""
+    return jira_sync_results(ticket, cucumber_json_path, execution_url)
+
+
+@app.get("/qe/harness/bdd/latest")
+def harness_bdd_latest() -> dict:
+    """Latest BDD pipeline execution status from Harness."""
+    return harness_latest_bdd()
+
+
+@app.post("/qe/jira/{ticket}/reconcile")
+def reconcile(ticket: str, plan_execution_id: str | None = None) -> dict:
+    """Inspect a failing BDD run and raise a PR with refreshe
+
+
+# --- Jira webhook listener --------------------------------------------------
+#
+# Configure a Jira "Issue created" + "Issue updated" webhook pointing at:
+#   https://<agent-host>/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>
+# The agent will:
+#   * author BDD scenarios (and a PR) when a Story/Task/Bug is created with AC
+#   * trigger the Harness `bdd_tests` pipeline when the ticket transitions
+#     into the configured "Testing" status (default: "Testing").
+@app.post("/qe/jira/webhook")
+async def handle_jira_webhook(request: Request, token: str | None = None) -> dict:
+    if not jira_webhook.verify_token(token):
+        raise HTTPException(status_code=401, detail="invalid webhook token")
+    try:
+        payload = await request.json()
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=f"invalid JSON payload: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="payload must be a JSON object")
+    return jira_webhook.handle_event(payload)d Gherkin."""
+    return update_bdd_from_failure(ticket, plan_execution_id)
 
 
 def main() -> None:

@@ -20,6 +20,16 @@ The agent delivers the five QE goals:
 | 4 | Functional testing          | `functional`    | F1–F6 (6)   |
 | 5 | Non-functional testing      | `nonfunctional` | N1–N2 (2)   |
 
+A sixth goal — **BDD authoring** — is delivered by the
+[`bdd_authoring_agent`](agent/sub_agents/bdd_authoring/agent.py) sub-agent: it
+reads acceptance criteria from a Jira ticket, generates Cucumber feature files
+in [`bdd-tests/`](../bdd-tests/README.md), creates Jira `Test` issues linked to
+the originating story, opens a GitHub PR, and reconciles failing Harness BDD
+runs by raising follow-up PRs against the Gherkin.
+
+See [`docs/integrations.md`](docs/integrations.md) for the full
+GitHub <-> Jira <-> Agent <-> Harness wiring on GKE.
+
 Checks are **deterministic** (each returns a JSON `status` of `PASS`/`FAIL`/
 `ERROR`); Gemini is used for static analysis reasoning, standards review and
 failure triage/summaries. Harness gates strictly on the deterministic status.
@@ -34,10 +44,12 @@ qe_orchestrator (LlmAgent, Gemini)
 ├── coding_standards_agent     ── standards suite
 ├── integration_test_agent     ── integration suite
 ├── functional_test_agent      ── functional suite
-└── non_functional_test_agent  ── nonfunctional suite
+├── non_functional_test_agent  ── nonfunctional suite
+└── bdd_authoring_agent        ── Jira AC -> Cucumber features -> Jira Test issues -> GitHub PRs
 
 Toolsets (FunctionTools, impersonated GCP SA + WI):
   gcs_toolset · bigquery_toolset · neo4j_toolset · kubernetes_toolset · dbt_toolset
+  jira_toolset · harness_toolset · github_toolset
 ```
 
 Surfaces (one process, port `8080`):
@@ -45,7 +57,13 @@ Surfaces (one process, port `8080`):
 - **ADK agent API** (`/run`, `/run_sse`, sessions) — LLM-driven sweeps & triage.
 - **Deterministic QE API** — what Harness calls:
   - `GET /qe/scenarios` — list suites + scenario ids
-  - `GET /qe/suite/{suite}` — run a whole suite (`passed` is the gate)
+  - `GET /qe/suite
+- **BDD authoring API** — used by the BDD pipeline and by humans via `qe-cli`:
+  - `GET  /qe/jira/{ticket}/acceptance-criteria`
+  - `POST /qe/jira/{ticket}/author?dry_run=false`
+  - `POST /qe/jira/{ticket}/sync-results?cucumber_json_path=...`
+  - `POST /qe/jira/{ticket}/reconcile?plan_execution_id=...`
+  - `GET  /qe/harness/bdd/latest`/{suite}` — run a whole suite (`passed` is the gate)
   - `GET /qe/scenario/{suite}/{id}` — run one scenario (`status` is the gate)
   - `GET /healthz`
 

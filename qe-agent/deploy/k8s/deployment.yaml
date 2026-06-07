@@ -69,6 +69,48 @@ spec:
                 secretKeyRef:
                   name: qe-quality-agent-secrets
                   key: NEO4J_PASSWORD
+            - name: JIRA_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: qe-quality-agent-secrets
+                  key: JIRA_API_TOKEN
+            - name: XRAY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: qe-quality-agent-secrets
+                  key: XRAY_CLIENT_ID
+                  optional: true
+            - name: XRAY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: qe-quality-agent-secrets
+                  key: XRAY_CLIENT_SECRET
+                  optional: true
+            - name: HARNESS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: qe-quality-agent-secrets
+                  key: HARNESS_API_KEY
+            - name: HARNESS_ACCOUNT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: qe-quality-agent-secrets
+                  key: HARNESS_ACCOUNT_ID
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: qe-quality-agent-secrets
+                  key: GITHUB_TOKEN
+            - name: JIRA_WEBHOOK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: qe-quality-agent-secrets
+                  key: JIRA_WEBHOOK_TOKEN
+            - name: HARNESS_BDD_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: qe-quality-agent-secrets
+                  key: HARNESS_BDD_WEBHOOK_URL
           volumeMounts:
             - name: repo-src
               mountPath: /workspace

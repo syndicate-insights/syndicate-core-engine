@@ -1,0 +1,37 @@
+# Custom webhook trigger for the BDD pipeline.
+#
+# The QE agent's /qe/jira/webhook endpoint listens to Jira "issue updated"
+# events and, when a ticket transitions to the "Testing" status, POSTs to
+# this Harness Custom webhook with the Jira ticket key as a runtime input.
+#
+# Authentication: Harness issues a webhook URL with an embedded token at
+# <+pipeline.identifier>; the agent stores it as the HARNESS_BDD_WEBHOOK_URL
+# secret. No additional shared key is needed because the URL itself is secret.
+trigger:
+  name: jira_testing_transition
+  identifier: jira_testing_transition
+  enabled: true
+  description: |
+    Fired by the QE agent when a Jira ticket moves into the "Testing" status.
+    Runs the BDD pipeline scoped to that ticket so the per-scenario PASS/FAIL
+    is published back to the Jira Test issues linked to it.
+  tags:
+    source: qe-agent
+    event: jira_testing
+  orgIdentifier: default
+  projectIdentifier: QE_HACK
+  pipelineIdentifier: bdd_tests
+  source:
+    type: Webhook
+    spec:
+      type: Custom
+      spec:
+        payloadConditions: []
+        headerConditions: []
+  inputYaml: |
+    pipeline:
+      identifier: bdd_tests
+      variables:
+        - name: jiraTicket
+          type: String
+          value: <+trigger.payload.issue.key>

@@ -1,8 +1,9 @@
-"""The five QE sub-agents."""
+"""The QE sub-agents."""
 
 from __future__ import annotations
 
 from agent.sub_agents.base import make_sub_agent
+from agent.sub_agents.bdd_authoring import bdd_authoring_agent
 
 static_analysis_agent = make_sub_agent(
     name="static_analysis_agent",
@@ -47,4 +48,5 @@ ALL_SUB_AGENTS = [
     integration_test_agent,
     functional_test_agent,
     non_functional_test_agent,
+    bdd_authoring_agent,
 ]
