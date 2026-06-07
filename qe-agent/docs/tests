@@ -1,16 +1,93 @@
+# --- 1. Create secrets ---
 kubectl -n qe-hack-syndicate create secret generic qe-quality-agent-secrets \
-  --from-literal=NEO4J_PASSWORD='bitt4sw33t' \
-  --from-literal=JIRA_API_TOKEN='ATATT3xFfGF09UumFq5rW4IoBFbDskkWns8pc8egKv_IEQR31AUZjkInk7HI0OKVt_c8ddT50yiL0MiYq0xUlZwPcU-fBx2aHlBnBUhweHjH8rj-7zpps_Toz5du2E0B43E5-PDe6X71JvUorAb2j9HAd7fj35KRkRN4VMQQsRRaujcImVV0OTc=95D3F36D' \
-  --from-literal=HARNESS_API_KEY='pat.1iW3b7HMR3-EyCF5Nhpmrg.6a25c4ba900c2f1f4ed01008.Psr44EnTrpwPHvjQlNKA' \
-  --from-literal=HARNESS_ACCOUNT_ID='1iW3b7HMR3-EyCF5Nhpmrg' \
-  --from-literal=GITHUB_TOKEN='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' \
+  --from-literal=NEO4J_PASSWORD='<NEO4J_PASSWORD>' \
+  --from-literal=JIRA_API_TOKEN='<JIRA_API_TOKEN>' \
+  --from-literal=HARNESS_API_KEY='<HARNESS_API_KEY>' \
+  --from-literal=HARNESS_ACCOUNT_ID='<HARNESS_ACCOUNT_ID>' \
+  --from-literal=GITHUB_TOKEN='<GITHUB_TOKEN>' \
   --from-literal=JIRA_WEBHOOK_TOKEN="$(openssl rand -hex 32)" \
-  --from-literal=HARNESS_BDD_WEBHOOK_URL='https://app.harness.io/gateway/pipeline/api/webhook/custom/clwv6w73S22lXg31baT9ig/v3?accountIdentifier=1iW3b7HMR3-EyCF5Nhpmrg&orgIdentifier=default&projectIdentifier=QE_HACK&pipelineIdentifier=bdd_tests&triggerIdentifier=jira_testing_transition'
+  --from-literal=HARNESS_BDD_WEBHOOK_URL='<HARNESS_BDD_WEBHOOK_URL>'
 
-
-
-
+# --- 2. Apply manifests ---
 kubectl -n qe-hack-syndicate apply -f qe-agent/deploy/k8s/configmap.yaml
 kubectl -n qe-hack-syndicate apply -f qe-agent/deploy/k8s/deployment.yaml
 kubectl -n qe-hack-syndicate apply -f qe-agent/deploy/k8s/service.yaml
 kubectl -n qe-hack-syndicate apply -f qe-agent/deploy/k8s/ingress.yaml
+
+# --- 3. Get the external load balancer IP ---
+# Wait ~2 min after ingress apply for GCP to assign the IP
+EXTERNAL_IP=$(kubectl -n qe-hack-syndicate get ingress qe-quality-agent-webhook \
+  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+echo "External IP: $EXTERNAL_IP"
+
+# --- 4. HTTPS via sslip.io (no domain required) ---
+HOSTNAME=$(echo "$EXTERNAL_IP" | tr '.' '-').sslip.io
+echo "Hostname: $HOSTNAME"
+
+# Add host to ingress rule
+kubectl -n qe-hack-syndicate patch ingress qe-quality-agent-webhook \
+  --type=json \
+  -p="[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"$HOSTNAME\"}]"
+
+# Create GKE managed TLS certificate
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: qe-quality-agent-cert
+  namespace: qe-hack-syndicate
+spec:
+  domains:
+    - $HOSTNAME
+EOF
+
+# Attach cert to ingress
+kubectl -n qe-hack-syndicate annotate ingress qe-quality-agent-webhook \
+  networking.gke.io/managed-certificates=qe-quality-agent-cert
+
+# Watch provisioning (takes 10-30 min first time)
+kubectl -n qe-hack-syndicate get managedcertificate qe-quality-agent-cert -w
+
+# Jira webhook URL to register:
+echo "https://$HOSTNAME/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>"
+
+# --- 5. (Optional) HTTPS via real domain (Cloud DNS) ---
+PROJECT=project-61358164-b71e-4422-a5c
+DOMAIN=qe-agent.<YOUR_DOMAIN>   # replace with your real domain
+
+# Create DNS zone (skip if already exists)
+gcloud dns managed-zones create qe-agent-zone \
+  --dns-name="$DOMAIN." \
+  --description="QE Agent webhook" \
+  --project "$PROJECT"
+
+# Point domain at ingress IP
+gcloud dns record-sets create "$DOMAIN." \
+  --zone=qe-agent-zone \
+  --type=A \
+  --ttl=60 \
+  --rrdatas="$EXTERNAL_IP" \
+  --project "$PROJECT"
+
+# Patch ingress host and cert domain
+kubectl -n qe-hack-syndicate patch ingress qe-quality-agent-webhook \
+  --type=json \
+  -p="[{\"op\":\"replace\",\"path\":\"/spec/rules/0/host\",\"value\":\"$DOMAIN\"}]"
+
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: qe-quality-agent-cert
+  namespace: qe-hack-syndicate
+spec:
+  domains:
+    - $DOMAIN
+EOF
+
+kubectl -n qe-hack-syndicate annotate ingress qe-quality-agent-webhook \
+  networking.gke.io/managed-certificates=qe-quality-agent-cert
+
+kubectl -n qe-hack-syndicate get managedcertificate qe-quality-agent-cert -w
+
+echo "https://$DOMAIN/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>"
