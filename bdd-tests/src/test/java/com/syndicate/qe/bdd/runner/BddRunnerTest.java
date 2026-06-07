@@ -19,10 +19,7 @@ import static io.cucumber.junit.platform.engine.Constants.PLUGIN_PROPERTY_NAME;
 @IncludeEngines("cucumber")
 @SelectClasspathResource("feature")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "com.syndicate.qe.bdd.steps")
-@ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "pretty,summary,html:target/cucumber-html-report,json:target/cucumber.json,junit:target/cucumber-junit.xml"
-)
+@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty,summary,html:target/cucumber-html-report,json:target/cucumber.json,junit:target/cucumber-junit.xml")
 public class BddRunnerTest {
     // No code needed — discovery & execution handled by the Cucumber engine.
 }
