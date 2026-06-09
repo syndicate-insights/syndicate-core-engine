@@ -12,6 +12,7 @@ from google.adk.agents import LlmAgent
 from google.adk.tools import FunctionTool
 
 from agent.config import SETTINGS
+from agent.observability import agent_callbacks
 from agent.scenarios import runner
 
 
@@ -47,4 +48,5 @@ def make_sub_agent(name: str, suite_key: str, description: str, focus: str) -> L
             "You are read-only apart from running dbt tests; never attempt to mutate data."
         ),
         tools=SCENARIO_TOOLS,
+        **agent_callbacks(),
     )

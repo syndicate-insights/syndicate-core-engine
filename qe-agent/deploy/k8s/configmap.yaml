@@ -6,6 +6,11 @@ metadata:
   namespace: qe-hack-syndicate
 data:
   LOG_LEVEL: "DEBUG"
+  # Color-coded trace logging (agent lifecycle, model calls, tool/function
+  # calls, source -> destination, tokens). "0" disables ANSI colors; LOG_MAX_LEN
+  # caps how many characters of each payload are logged before truncation.
+  LOG_COLOR: "1"
+  LOG_MAX_LEN: "2000"
   GCP_PROJECT: "project-61358164-b71e-4422-a5c"
   BQ_DATASET: "qe_hack_syndicate_insight"
   BQ_LOCATION: "us-central1"

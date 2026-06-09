@@ -17,6 +17,7 @@ from google.adk.agents import LlmAgent
 from google.adk.tools import FunctionTool
 
 from agent.config import SETTINGS
+from agent.observability import agent_callbacks
 from agent.sub_agents.bdd_authoring import gherkin
 from agent.tools import github_toolset as gh
 from agent.tools import harness_toolset as harness
@@ -198,4 +199,5 @@ bdd_authoring_agent = LlmAgent(
         "the human can audit.\n"
     ),
     tools=list(_TOOLS),
+    **agent_callbacks(),
 )

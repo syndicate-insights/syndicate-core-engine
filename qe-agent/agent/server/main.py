@@ -14,11 +14,9 @@ import os
 
 from fastapi import FastAPI, HTTPException, Request
 
-logging.basicConfig(
-    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    datefmt="%Y-%m-%dT%H:%M:%S",
-)
+from agent.observability import configure_logging
+
+configure_logging()
 logger = logging.getLogger(__name__)
 
 from agent.scenarios import runner

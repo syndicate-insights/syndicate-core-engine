@@ -10,7 +10,10 @@ from __future__ import annotations
 from google.adk.agents import LlmAgent
 
 from agent.config import SETTINGS
+from agent.observability import agent_callbacks, configure_logging
 from agent.sub_agents.agents import ALL_SUB_AGENTS
+
+configure_logging()
 
 ROOT_INSTRUCTION = """
 You are the Quality Engineering Orchestrator for the `syndicate-core-engine`
@@ -46,4 +49,5 @@ root_agent = LlmAgent(
     "integration, functional and non-functional testing of the data pipeline.",
     instruction=ROOT_INSTRUCTION,
     sub_agents=ALL_SUB_AGENTS,
+    **agent_callbacks(),
 )
