@@ -55,7 +55,7 @@ spec:
         - name: qe-quality-agent
           # Replace with your pushed image, e.g.
           # us-central1-docker.pkg.dev/project-61358164-b71e-4422-a5c/qe/qe-quality-agent:0.1.0
-          image: REPLACE_WITH_IMAGE
+          image: us-central1-docker.pkg.dev/project-61358164-b71e-4422-a5c/qe/qe-quality-agent:0.1.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
