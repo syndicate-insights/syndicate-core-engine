@@ -143,10 +143,13 @@ gcloud builds submit --config deploy/cloudbuild.yaml \
   --project <YOUR_PROJECT_ID> .
 
 
+gcloud builds submit --config deploy/cloudbuild.yaml \
+  --substitutions _IMAGE=us-central1-docker.pkg.dev/project-61358164-b71e-4422-a5c/qe/qe-quality-agent:0.1.2 \
+  --project project-61358164-b71e-4422-a5c .
 
 
 kubectl -n qe-hack-syndicate set image deployment/qe-quality-agent \
-  qe-quality-agent=us-central1-docker.pkg.dev/project-61358164-b71e-4422-a5c/qe/qe-quality-agent:0.1.1
+  qe-quality-agent=us-central1-docker.pkg.dev/project-61358164-b71e-4422-a5c/qe/qe-quality-agent:0.1.2
 
 
 
