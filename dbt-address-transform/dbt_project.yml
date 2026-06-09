@@ -16,5 +16,4 @@ clean-targets:
   - "dbt_packages"
 
 vars:
-  bq_project: "{{ env_var('GCP_PROJECT') }}"
   bq_dataset: "{{ env_var('BQ_DATASET') }}"

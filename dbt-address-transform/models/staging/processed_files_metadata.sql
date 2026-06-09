@@ -23,6 +23,6 @@
     select
         cast(null as string) as file_name,
         cast(null as timestamp) as processed_at
-    limit 0
+    where false
 
 {% endif %}

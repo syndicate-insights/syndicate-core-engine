@@ -4,7 +4,7 @@ models:
   - name: address_enriched
     description: >
       Final enriched address table with a composite full_address field.
-      Built incrementally from staged address rows loaded from GCS.
+      Built incrementally — only new (unprocessed) CSV files from GCS are ingested each run.
     columns:
       - name: address_id
         description: Unique address identifier.
@@ -28,5 +28,7 @@ models:
           separated by commas.
         tests:
           - not_null
+      - name: source_file
+        description: GCS file URI this row was loaded from.
       - name: processed_at
         description: Timestamp when the row was processed.

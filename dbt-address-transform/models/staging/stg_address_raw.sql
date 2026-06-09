@@ -5,7 +5,9 @@
 }}
 
 /*
-    Reads raw address data from GCS CSV files loaded into address_raw_data table.
+    Reads raw address data from the GCS external table.
+    Filters out any files that have already been processed
+    (tracked in processed_files_metadata).
 */
 
 select
@@ -14,5 +16,11 @@ select
     line1,
     city,
     postcode,
-    country
-from {{ source('gcs_raw', 'address_raw_data') }}
+    country,
+    _FILE_NAME as source_file
+from {{ source('gcs_raw', 'address_raw_external') }}
+where _FILE_NAME not in (
+    select file_name
+    from {{ ref('processed_files_metadata') }}
+    where file_name is not null
+)

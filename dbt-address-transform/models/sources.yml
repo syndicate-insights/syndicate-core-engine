@@ -2,23 +2,28 @@ version: 2
 
 sources:
   - name: gcs_raw
-    database: "{{ var('bq_project') }}"
+    database: "{{ var('bq_dataset') }}"
     schema: "{{ var('bq_dataset') }}"
     tables:
-      - name: address_raw_data
+      - name: address_raw_external
         description: >
           External table pointing to address CSV files in GCS bucket.
           Each CSV contains: address_id, customer_id, line1, city, postcode, country.
-        columns:
-          - name: address_id
-            data_type: string
-          - name: customer_id
-            data_type: string
-          - name: line1
-            data_type: string
-          - name: city
-            data_type: string
-          - name: postcode
-            data_type: string
-          - name: country
-            data_type: string
+        external:
+          location: "gs://{{ env_var('GCS_BUCKET_NAME') }}/qe_hack_syndicate_raw/address/*.csv"
+          options:
+            format: CSV
+            skip_leading_rows: 1
+          columns:
+            - name: address_id
+              data_type: STRING
+            - name: customer_id
+              data_type: STRING
+            - name: line1
+              data_type: STRING
+            - name: city
+              data_type: STRING
+            - name: postcode
+              data_type: STRING
+            - name: country
+              data_type: STRING

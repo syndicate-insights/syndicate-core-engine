@@ -18,7 +18,8 @@ models:
 
   - name: stg_address_raw
     description: >
-      Staging model that reads address data from the loaded raw address table.
+      Staging model that reads address data from the GCS external table,
+      filtering out files that have already been processed.
     columns:
       - name: address_id
         description: Unique address identifier.
@@ -36,3 +37,5 @@ models:
         description: Postal code.
       - name: country
         description: Country name.
+      - name: source_file
+        description: GCS file URI this row was loaded from.
