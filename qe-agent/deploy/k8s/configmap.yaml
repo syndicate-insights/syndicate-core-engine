@@ -29,7 +29,7 @@ data:
   JIRA_BASE_URL: "https://insight-syndicate-qe-hack.atlassian.net"
   JIRA_USER: "syndicate.insights@astom.tools"
   JIRA_PROJECT: "SYN"
-  JIRA_TEST_ISSUETYPE: "Test"
+  JIRA_TEST_ISSUETYPE: "Subtask"
   # Optional: custom field id holding Acceptance Criteria. Leave blank to scan
   # the description for an "Acceptance Criteria" section.
   JIRA_AC_FIELD: ""
