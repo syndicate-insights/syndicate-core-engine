@@ -10,10 +10,13 @@ stale Gherkin scenario (raise a PR against `bdd-tests/`).
 from __future__ import annotations
 
 import json
+import logging
 import os
 import urllib.error
 import urllib.request
 from urllib.parse import urlencode
+
+logger = logging.getLogger(__name__)
 
 
 def _env(key: str, default: str = "") -> str:
@@ -40,6 +43,7 @@ def _request(method: str, path: str, query: dict | None = None,
     qs = ("?" + urlencode({"accountIdentifier": HARNESS_ACCOUNT, **(query or {})})
           if HARNESS_ACCOUNT else ("?" + urlencode(query) if query else ""))
     url = f"{HARNESS_BASE_URL.rstrip('/')}{path}{qs}"
+    logger.debug("harness %s %s body_keys=%s", method, url, list(body.keys()) if body else None)
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, method=method)  # noqa: S310
     req.add_header("x-api-key", HARNESS_API_KEY)
@@ -49,9 +53,13 @@ def _request(method: str, path: str, query: dict | None = None,
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
             payload = resp.read().decode()
-            return json.loads(payload) if payload else {}
+            result = json.loads(payload) if payload else {}
+            logger.debug("harness %s %s -> 2xx response_keys=%s", method, url, list(result.keys()) if isinstance(result, dict) else type(result).__name__)
+            return result
     except urllib.error.HTTPError as exc:
-        return {"error": exc.code, "detail": exc.read().decode(errors="ignore")}
+        body_text = exc.read().decode(errors="ignore")
+        logger.error("harness %s %s -> HTTP %s: %s", method, url, exc.code, body_text)
+        return {"error": exc.code, "detail": body_text}
 
 
 def list_executions(pipeline: str | None = None, page_size: int = 5) -> dict:
@@ -110,7 +118,9 @@ def trigger_bdd_for_ticket(ticket: str) -> dict:
     "Testing" status. The Harness Custom Webhook URL itself is the auth, so the
     agent doesn't need a Harness API key for this path.
     """
+    logger.info("trigger_bdd_for_ticket: ticket=%s webhook_configured=%s", ticket, bool(HARNESS_BDD_WEBHOOK_URL))
     if not HARNESS_BDD_WEBHOOK_URL:
+        logger.error("trigger_bdd_for_ticket: HARNESS_BDD_WEBHOOK_URL not configured")
         return {"error": "HARNESS_BDD_WEBHOOK_URL not configured"}
     body = json.dumps({"issue": {"key": ticket}}).encode()
     req = urllib.request.Request(  # noqa: S310
@@ -121,9 +131,13 @@ def trigger_bdd_for_ticket(ticket: str) -> dict:
         with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310
             payload = resp.read().decode()
             try:
-                return {"status": "queued", "ticket": ticket,
-                        "response": json.loads(payload) if payload else {}}
+                result = {"status": "queued", "ticket": ticket,
+                          "response": json.loads(payload) if payload else {}}
             except json.JSONDecodeError:
-                return {"status": "queued", "ticket": ticket, "response": payload}
+                result = {"status": "queued", "ticket": ticket, "response": payload}
+            logger.info("trigger_bdd_for_ticket: ticket=%s queued successfully response=%s", ticket, result.get("response"))
+            return result
     except urllib.error.HTTPError as exc:
-        return {"error": exc.code, "detail": exc.read().decode(errors="ignore")}
+        body_text = exc.read().decode(errors="ignore")
+        logger.error("trigger_bdd_for_ticket: ticket=%s HTTP %s: %s", ticket, exc.code, body_text)
+        return {"error": exc.code, "detail": body_text}

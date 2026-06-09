@@ -8,7 +8,10 @@ opens a follow-up PR to update the affected scenarios.
 
 from __future__ import annotations
 
+import logging
 from typing import Iterable
+
+logger = logging.getLogger(__name__)
 
 from google.adk.agents import LlmAgent
 from google.adk.tools import FunctionTool
@@ -33,14 +36,19 @@ def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
     Returns a structured payload describing what was created so the agent can
     explain the result back to the user.
     """
+    logger.info("author_bdd_scenarios: start ticket=%s dry_run=%s", ticket, dry_run)
     ac = jira.acceptance_criteria(ticket)
     if "error" in ac:
+        logger.error("author_bdd_scenarios: AC fetch failed ticket=%s error=%s", ticket, ac)
         return {"ticket": ticket, "error": ac}
     summary = ac.get("summary") or ticket
     bullets = ac.get("bullets") or []
+    logger.info("author_bdd_scenarios: ticket=%s summary=%r bullets=%d", ticket, summary, len(bullets))
     domain = gherkin.domain_for_ticket(ticket, summary)
+    logger.info("author_bdd_scenarios: ticket=%s domain=%s", ticket, domain)
     feature_text = gherkin.feature_for_ticket(ticket, summary, bullets)
     feature_path = f"{BDD_FEATURE_ROOT}/{domain}/{gherkin.slugify(ticket)}_{gherkin.slugify(summary, 30)}.feature"
+    logger.info("author_bdd_scenarios: ticket=%s feature_path=%s", ticket, feature_path)
 
     result: dict = {
         "ticket": ticket,
@@ -52,9 +60,11 @@ def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
         "pr": None,
     }
     if dry_run:
+        logger.info("author_bdd_scenarios: dry_run=True, skipping Jira + PR creation for ticket=%s", ticket)
         return result
 
     # 1. Create one Jira Test subtask per Cucumber scenario.
+    logger.info("author_bdd_scenarios: creating %d Jira Test subtask(s) for ticket=%s", len(bullets or ["acceptance criterion 1"]), ticket)
     for idx, bullet in enumerate(bullets or ["acceptance criterion 1"], start=1):
         scenario_summary = f"BDD AC{idx} for {ticket}: {bullet[:120]}"
         issue = jira.create_test_issue(
@@ -65,7 +75,9 @@ def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
         )
         result["test_issues"].append(issue)
 
+    logger.info("author_bdd_scenarios: %d Test subtask(s) created for ticket=%s", len(result["test_issues"]), ticket)
     # 2. Branch + write feature file + open PR against the syndicate-core-engine repo.
+    logger.info("author_bdd_scenarios: opening PR for ticket=%s feature_path=%s", ticket, feature_path)
     pr_body = _pr_body(ticket, summary, domain, feature_path, ac)
     result["pr"] = gh.author_feature_pr(
         ticket=ticket,
@@ -74,6 +86,12 @@ def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
         summary=f"BDD scenarios for {ticket}",
         description=pr_body,
         labels=["qe-agent", "bdd", "auto-generated", domain.lower()],
+    )
+    logger.info(
+        "author_bdd_scenarios: complete ticket=%s pr_url=%s error=%s",
+        ticket,
+        (result.get("pr") or {}).get("html_url"),
+        (result.get("pr") or {}).get("error"),
     )
     return result
 

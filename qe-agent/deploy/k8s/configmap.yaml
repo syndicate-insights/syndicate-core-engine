@@ -5,6 +5,7 @@ metadata:
   name: qe-quality-agent-config
   namespace: qe-hack-syndicate
 data:
+  LOG_LEVEL: "DEBUG"
   GCP_PROJECT: "project-61358164-b71e-4422-a5c"
   BQ_DATASET: "qe_hack_syndicate_insight"
   BQ_LOCATION: "us-central1"

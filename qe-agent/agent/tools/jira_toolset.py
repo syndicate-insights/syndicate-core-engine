@@ -13,12 +13,15 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
 import re
 import urllib.error
 import urllib.request
 from typing import Any
 from urllib.parse import quote
+
+logger = logging.getLogger(__name__)
 
 
 def _env(key: str, default: str = "") -> str:
@@ -46,6 +49,7 @@ def _request(method: str, path: str, body: dict | None = None, timeout: int = 30
     if not JIRA_BASE_URL:
         raise RuntimeError("JIRA_BASE_URL must be set.")
     url = f"{JIRA_BASE_URL.rstrip('/')}{path}"
+    logger.debug("jira %s %s body_keys=%s", method, url, list(body.keys()) if body else None)
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, method=method)  # noqa: S310
     req.add_header("Accept", "application/json")
@@ -55,9 +59,13 @@ def _request(method: str, path: str, body: dict | None = None, timeout: int = 30
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
             payload = resp.read().decode()
-            return json.loads(payload) if payload else {}
+            result = json.loads(payload) if payload else {}
+            logger.debug("jira %s %s -> 2xx response_keys=%s", method, url, list(result.keys()) if isinstance(result, dict) else type(result).__name__)
+            return result
     except urllib.error.HTTPError as exc:
-        return {"error": exc.code, "detail": exc.read().decode(errors="ignore")}
+        body_text = exc.read().decode(errors="ignore")
+        logger.error("jira %s %s -> HTTP %s: %s", method, url, exc.code, body_text)
+        return {"error": exc.code, "detail": body_text}
 
 
 # --- Reading acceptance criteria ----------------------------------------------
@@ -89,16 +97,32 @@ def acceptance_criteria(ticket: str) -> dict:
     Looks at the dedicated AC custom field if configured, otherwise scans the
     description for an "Acceptance Criteria" section (Markdown or ADF).
     """
+    logger.info("acceptance_criteria: fetching ticket=%s", ticket)
     issue = get_issue(ticket)
     if "error" in issue:
+        logger.error("acceptance_criteria: ticket=%s fetch error=%s", ticket, issue)
         return issue
     fields = issue.get("fields", {})
     raw = ""
     if JIRA_AC_FIELD and fields.get(JIRA_AC_FIELD):
+        logger.debug("acceptance_criteria: reading from custom field %s", JIRA_AC_FIELD)
         raw = _adf_to_text(fields[JIRA_AC_FIELD])
     if not raw:
+        logger.debug("acceptance_criteria: custom field empty or unset, falling back to description")
         raw = _adf_to_text(fields.get("description", "")) or ""
     bullets = _extract_bullets(raw)
+    logger.info(
+        "acceptance_criteria: ticket=%s summary=%r issuetype=%s bullets_found=%d",
+        ticket,
+        fields.get("summary"),
+        (fields.get("issuetype") or {}).get("name"),
+        len(bullets),
+    )
+    if not bullets:
+        logger.warning("acceptance_criteria: ticket=%s has no AC bullets — BDD authoring will no-op", ticket)
+    else:
+        for i, b in enumerate(bullets, 1):
+            logger.debug("acceptance_criteria: ticket=%s bullet[%d]=%r", ticket, i, b)
     return {
         "ticket": ticket,
         "summary": fields.get("summary"),
@@ -138,6 +162,7 @@ def _extract_bullets(text: str) -> list[str]:
 
 def create_test_issue(ticket: str, summary: str, gherkin: str, labels: list[str] | None = None) -> dict:
     """Create a Jira `Test` subtask under the originating ticket."""
+    logger.info("create_test_issue: parent=%s summary=%r", ticket, summary)
     if not JIRA_PROJECT:
         raise RuntimeError("JIRA_PROJECT must be set.")
     payload = {
@@ -161,7 +186,9 @@ def create_test_issue(ticket: str, summary: str, gherkin: str, labels: list[str]
     }
     created = _request("POST", "/rest/api/3/issue", payload)
     if "error" in created:
+        logger.error("create_test_issue: parent=%s failed: %s", ticket, created)
         return {"ticket": ticket, "summary": summary, "error": created}
+    logger.info("create_test_issue: created key=%s parent=%s", created.get("key"), ticket)
     return {"key": created.get("key"), "self": created.get("self"), "parent": ticket}
 
 

@@ -9,9 +9,17 @@ Two surfaces share one process:
 
 from __future__ import annotations
 
+import logging
 import os
 
 from fastapi import FastAPI, HTTPException, Request
+
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 from agent.scenarios import runner
 from agent.server import jira_webhook
@@ -35,8 +43,11 @@ def _build_adk_app() -> FastAPI | None:
     try:
         from google.adk.cli.fast_api import get_fast_api_app
 
-        return get_fast_api_app(agents_dir=AGENTS_DIR, web=True)
-    except Exception:  # noqa: BLE001
+        adk_app = get_fast_api_app(agents_dir=AGENTS_DIR, web=True)
+        logger.info("ADK app initialised from agents_dir=%s", AGENTS_DIR)
+        return adk_app
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("ADK app unavailable, falling back to plain FastAPI: %s", exc)
         return None
 
 
@@ -51,19 +62,28 @@ def healthz() -> dict:
 @app.get("/qe/scenarios")
 def list_scenarios() -> dict:
     """List all available suites and their scenario ids."""
-    return runner.list_scenarios()
+    logger.debug("list_scenarios called")
+    result = runner.list_scenarios()
+    logger.debug("list_scenarios result: %s", result)
+    return result
 
 
 @app.get("/qe/suite/{suite}")
 def run_suite(suite: str) -> dict:
     """Run every scenario in a suite. `passed` is the deterministic gate."""
-    return runner.run_suite(suite)
+    logger.info("run_suite called suite=%s", suite)
+    result = runner.run_suite(suite)
+    logger.info("run_suite suite=%s passed=%s", suite, result.get("passed"))
+    return result
 
 
 @app.get("/qe/scenario/{suite}/{scenario_id}")
 def run_scenario(suite: str, scenario_id: str) -> dict:
     """Run a single scenario by id."""
-    return runner.run_scenario(suite, scenario_id)
+    logger.info("run_scenario called suite=%s scenario_id=%s", suite, scenario_id)
+    result = runner.run_scenario(suite, scenario_id)
+    logger.info("run_scenario suite=%s scenario_id=%s status=%s", suite, scenario_id, result.get("status"))
+    return result
 
 
 # --- BDD authoring / Jira / Harness -----------------------------------------
@@ -108,15 +128,22 @@ def reconcile(ticket: str, plan_execution_id: str | None = None) -> dict:
 #     into the configured "Testing" status (default: "Testing").
 @app.post("/qe/jira/webhook")
 async def handle_jira_webhook(request: Request, token: str | None = None) -> dict:
+    logger.debug("webhook received from %s", request.client)
     if not jira_webhook.verify_token(token):
+        logger.warning("webhook rejected: invalid token (client=%s)", request.client)
         raise HTTPException(status_code=401, detail="invalid webhook token")
     try:
         payload = await request.json()
     except Exception as exc:  # noqa: BLE001
+        logger.error("webhook payload parse error: %s", exc)
         raise HTTPException(status_code=400, detail=f"invalid JSON payload: {exc}") from exc
     if not isinstance(payload, dict):
+        logger.error("webhook payload is not a JSON object: type=%s", type(payload).__name__)
         raise HTTPException(status_code=400, detail="payload must be a JSON object")
-    return jira_webhook.handle_event(payload)
+    logger.debug("webhook payload: %s", payload)
+    result = jira_webhook.handle_event(payload)
+    logger.info("webhook handled: action=%s ticket=%s", result.get("action"), result.get("ticket"))
+    return result
 
 
 def main() -> None:

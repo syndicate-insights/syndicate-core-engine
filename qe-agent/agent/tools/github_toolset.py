@@ -11,12 +11,15 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
 import time
 import urllib.error
 import urllib.request
 from typing import Iterable
 from urllib.parse import quote
+
+logger = logging.getLogger(__name__)
 
 
 def _env(key: str, default: str = "") -> str:
@@ -35,6 +38,7 @@ def _request(method: str, path: str, body: dict | None = None, timeout: int = 30
     if not GITHUB_TOKEN:
         raise RuntimeError("GITHUB_TOKEN must be set.")
     url = path if path.startswith("http") else f"{GITHUB_API}{path}"
+    logger.debug("github %s %s body_keys=%s", method, url, list(body.keys()) if body else None)
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, method=method)  # noqa: S310
     req.add_header("Authorization", f"Bearer {GITHUB_TOKEN}")
@@ -45,9 +49,13 @@ def _request(method: str, path: str, body: dict | None = None, timeout: int = 30
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
             payload = resp.read().decode()
-            return json.loads(payload) if payload else {}
+            result = json.loads(payload) if payload else {}
+            logger.debug("github %s %s -> 2xx response_keys=%s", method, url, list(result.keys()) if isinstance(result, dict) else type(result).__name__)
+            return result
     except urllib.error.HTTPError as exc:
-        return {"error": exc.code, "detail": exc.read().decode(errors="ignore")}
+        body_text = exc.read().decode(errors="ignore")
+        logger.error("github %s %s -> HTTP %s: %s", method, url, exc.code, body_text)
+        return {"error": exc.code, "detail": body_text}
 
 
 def _branch_ref(branch: str) -> dict:
@@ -101,12 +109,22 @@ def author_feature_pr(ticket: str, feature_path: str, feature_content: str,
                       labels: Iterable[str] | None = None) -> dict:
     """One-shot helper: branch + write feature file + open PR."""
     branch = f"qe-agent/{ticket.lower()}-{int(time.time())}"
+    logger.info("author_feature_pr: ticket=%s branch=%s feature_path=%s", ticket, branch, feature_path)
     cb = create_branch(branch)
     if "error" in cb and cb.get("error") != 422:  # 422 = already exists
+        logger.error("author_feature_pr: branch creation failed ticket=%s branch=%s error=%s", ticket, branch, cb)
         return cb
+    logger.debug("author_feature_pr: branch created ticket=%s branch=%s", ticket, branch)
     write = put_file(branch, feature_path, feature_content,
                      message=f"qe-agent: BDD scenarios for {ticket} - {summary}")
     if "error" in write:
+        logger.error("author_feature_pr: file write failed ticket=%s path=%s error=%s", ticket, feature_path, write)
         return write
-    return open_pr(branch, f"[{ticket}] {summary}", description,
-                   labels=list(labels or ["qe-agent", "bdd", "auto-generated"]))
+    logger.debug("author_feature_pr: file written ticket=%s path=%s", ticket, feature_path)
+    pr = open_pr(branch, f"[{ticket}] {summary}", description,
+                 labels=list(labels or ["qe-agent", "bdd", "auto-generated"]))
+    if "error" in pr:
+        logger.error("author_feature_pr: PR open failed ticket=%s error=%s", ticket, pr)
+    else:
+        logger.info("author_feature_pr: PR opened ticket=%s pr_url=%s", ticket, pr.get("html_url"))
+    return pr
