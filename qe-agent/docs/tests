@@ -76,3 +76,26 @@ echo "https://${SUBDOMAIN}/qe/jira/webhook?token=<JIRA_WEBHOOK_TOKEN>"
 #   ensure the NS records are correct first: `dig NS ${SUBDOMAIN}`
 # - TTL 60s is used above for faster propagation during setup; raise to 300-3600
 #   once stable.
+
+
+
+
+
+
+
+
+
+
+gcloud builds submit --config deploy/cloudbuild.yaml \
+  --substitutions _IMAGE=us-central1-docker.pkg.dev/project-61358164-b71e-4422-a5c/qe/qe-quality-agent:0.1.1 \
+  --project <YOUR_PROJECT_ID> .
+
+
+
+
+kubectl -n qe-hack-syndicate set image deployment/qe-quality-agent \
+  qe-quality-agent=us-central1-docker.pkg.dev/project-61358164-b71e-4422-a5c/qe/qe-quality-agent:0.1.1
+
+
+
+kubectl -n qe-hack-syndicate rollout status deployment/qe-quality-agent
