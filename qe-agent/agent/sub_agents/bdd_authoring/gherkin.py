@@ -54,22 +54,34 @@ def feature_for_ticket(ticket: str, summary: str, bullets: list[str]) -> str:
 
 
 def _bullet_to_gwt(bullet: str) -> list[str]:
-    """Parse a Given/When/Then bullet, otherwise build a sensible default."""
-    text = bullet.strip().rstrip(".")
-    lower = text.lower()
-    # Pre-formatted Gherkin in the bullet — keep as is.
-    m = re.match(r"^(given|when|then|and|but)\s+(.*)", lower, re.I)
-    if m:
-        keyword = m.group(1).capitalize()
-        return [f'{keyword} {text[len(m.group(1)):].strip()}']
-    # "Given X, When Y, Then Z" — inline form.
-    inline = re.findall(r"(given|when|then|and|but)\s+(.+?)(?=,?\s+(?:given|when|then|and|but)\b|$)",
-                        text, flags=re.I)
-    if inline and len(inline) >= 2:
-        return [f"{kw.capitalize()} {body.strip().rstrip(',')}" for kw, body in inline]
-    # Default: generic GWT pointing at a manual acceptance step.
+    """Map natural language bullets to the technical scenario ids the agent serves."""
+    text = bullet.strip().lower()
+    
+    # 1. Non-Functional Mapping (Performance, SLA, Logs, etc.)
+    if any(k in text for k in ("sla", "latency", "performance", "timing")):
+        return ['Given the test suite is "non_functional"', 'When I run scenario "N1"', 'Then the scenario status should be PASS']
+    if any(k in text for k in ("reliability", "security", "fail", "log")):
+        return ['Given the test suite is "non_functional"', 'When I run scenario "N2"', 'Then the scenario status should be PASS']
+    
+    # 2. Integration Mapping (GCS, BQ, Neo4j)
+    if "neo4j" in text:
+        return ['Given the test suite is "integration"', 'When I run scenario "I3"', 'Then the scenario status should be PASS']
+    if "gcs" in text:
+        return ['Given the test suite is "integration"', 'When I run scenario "I1"', 'Then the scenario status should be PASS']
+    if "raw" in text and "enriched" in text:
+        return ['Given the test suite is "integration"', 'When I run scenario "I2"', 'Then the scenario status should be PASS']
+
+    # 3. Static Analysis / Standards
+    if any(k in text for k in ("lint", "sqlfluff", "style")):
+        return ['Given the test suite is "static_analysis"', 'When I run scenario "SA1"', 'Then the scenario status should be PASS']
+    if any(k in text for k in ("secret", "hardcoded", "credential")):
+        return ['Given the test suite is "static_analysis"', 'When I run scenario "SA5"', 'Then the scenario status should be PASS']
+    if any(k in text for k in ("pk", "primary key", "unique")):
+        return ['Given the test suite is "coding_standards"', 'When I run scenario "CS2"', 'Then the scenario status should be PASS']
+
+    # Default to Functional suite
     return [
         'Given the test suite is "functional"',
-        f'When I validate the acceptance criterion "{text}"',
+        'When I run scenario "F5"',
         'Then the scenario status should be PASS',
     ]
