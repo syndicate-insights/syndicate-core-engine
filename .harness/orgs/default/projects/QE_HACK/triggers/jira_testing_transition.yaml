@@ -35,3 +35,4 @@ trigger:
         - name: jiraTicket
           type: String
           value: <+trigger.payload.issue.key>
+  pipelineBranchName: main
