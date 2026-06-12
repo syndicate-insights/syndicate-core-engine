@@ -31,9 +31,13 @@ def _run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess
 def s_sql_lint() -> ScenarioResult:
     """SA1: sqlfluff lint of all dbt models."""
     r = ScenarioResult("SA1", SUITE, "dbt SQL lint (sqlfluff)")
-    models = [str(p) for p in _repo().glob("dbt-*/models/**/*.sql")]
+    # Use rglob to ensure we find all .sql files inside any dbt project folder
+    models = [
+        str(p) for p in _repo().rglob("*.sql") 
+        if "dbt-" in str(p) and "/models/" in str(p)
+    ]
     if not models:
-        return r.error("No dbt model files found under repo_root.")
+        return r.error(f"No dbt model files found under repo_root ({_repo()}).")
     proc = _run(["sqlfluff", "lint", "--format", "json", "--dialect", "bigquery", *models])
     try:
         violations = json.loads(proc.stdout or "[]")
