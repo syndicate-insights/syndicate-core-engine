@@ -9,7 +9,7 @@ pipeline:
   properties:
     ci:
       codebase:
-        connectorRef: account.github_syndicate
+        connectorRef: account.syndicateGitHubConnector
         repoName: syndicate-core-engine
         build:
           type: branch
