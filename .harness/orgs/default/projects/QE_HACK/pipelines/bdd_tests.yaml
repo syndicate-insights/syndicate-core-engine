@@ -1,14 +1,3 @@
-# BDD test pipeline.
-#
-# Runs the Cucumber pack in `bdd-tests/` against the QE Quality Agent
-# in-cluster, publishes JUnit + Cucumber reports to Harness, and pushes the
-# per-scenario PASS/FAIL back to the originating Jira ticket.
-#
-# Trigger surfaces:
-#   * Chained from the parent pipeline `quality_engineering_hack` (final stage).
-#   * Custom webhook trigger fired by the QE agent when a Jira ticket
-#     transitions to "Testing" (see ../triggers/jira_testing_transition.yaml).
-#   * Manual run from the Pipeline Studio with `jiraTicket` set.
 pipeline:
   name: bdd tests
   identifier: bdd_tests
@@ -17,12 +6,15 @@ pipeline:
   tags:
     bdd: cucumber
     owner: qe-hack-syndicate
-  codebase:
-    connectorRef: account.github_syndicate
-    repoName: syndicate-core-engine
-    # Default to main so chained/manual runs always have checkout source.
-    # If a caller provides a build input, Harness will use that value instead.
-    build: <+input>.default("main")
+  properties:
+    ci:
+      codebase:
+        connectorRef: account.github_syndicate
+        repoName: syndicate-core-engine
+        build:
+          type: branch
+          spec:
+            branch: main
   variables:
     - name: QE_AGENT_URL
       type: String
@@ -33,7 +25,6 @@ pipeline:
       description: Jira ticket whose acceptance criteria drove this run (optional).
       value: <+input>.default("")
   stages:
-    # ---------------------------------------------------------------- Stage 1
     - stage:
         name: Run BDD Cucumber Pack
         identifier: run_bdd
