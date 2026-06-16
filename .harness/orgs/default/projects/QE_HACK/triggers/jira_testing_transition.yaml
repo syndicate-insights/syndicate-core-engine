@@ -31,6 +31,11 @@ trigger:
   inputYaml: |
     pipeline:
       identifier: bdd_tests
+      codebase:
+        build:
+          type: branch
+          spec:
+            branch: main
       variables:
         - name: jiraTicket
           type: String
