@@ -45,7 +45,7 @@ pipeline:
                   type: Run
                   timeout: 30m
                   spec:
-                    connectorRef: account.dockerhub
+                    connectorRef: org.dockerhub
                     image: maven:3.9.6-eclipse-temurin-21
                     shell: Bash
                     envVariables:
@@ -69,7 +69,7 @@ pipeline:
                     stageStatus: All
                     condition: <+pipeline.variables.jiraTicket> != ""
                   spec:
-                    connectorRef: account.dockerhub
+                    connectorRef: org.dockerhub
                     image: maven:3.9.6-eclipse-temurin-21
                     shell: Bash
                     command: |
