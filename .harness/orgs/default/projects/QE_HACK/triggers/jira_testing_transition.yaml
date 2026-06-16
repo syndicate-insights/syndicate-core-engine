@@ -35,4 +35,6 @@ trigger:
         - name: jiraTicket
           type: String
           value: <+trigger.payload.issue.key>
+  inputSetRefs:
+    - bdd_tests
   pipelineBranchName: main
