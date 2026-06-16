@@ -1,18 +1,1 @@
-INFO:     10.19.129.1:43128 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     10.19.129.1:47294 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     35.191.249.51:38332 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     35.191.249.52:56010 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     35.191.249.55:42552 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     10.19.129.1:42206 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     35.191.249.51:45562 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     35.191.249.52:33930 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     35.191.249.55:47794 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     10.19.129.1:42210 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     35.191.17.202:58420 - "POST /qe/jira/webhook?token=4f0f6f53b12f2e2bcc385d2c14c41c969524e6a28b7068d2664fec6610619852&triggeredByUser=712020%3Ac0c2a39f-d79e-481d-9ec0-ddd0df710af5 HTTP/1.1" 200 OK
-INFO:     10.19.129.1:50718 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     35.191.249.51:47808 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     35.191.249.52:52786 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     35.191.249.55:60386 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     10.19.129.1:50720 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     10.19.129.1:47424 - "GET /healthz HTTP/1.1" 200 OK
-INFO:     35.191.249.51:34054 - "GET /healthz HTTP/1.1" 200 OK
+Failed while requesting Pipeline Execution through Trigger: Error creating Plan: Could not create plan for node [pipeline.stages.run_bdd]: Codebase is mandatory with enabled cloneCodebase flag
