@@ -34,7 +34,7 @@ pipeline:
           infrastructure:
             type: KubernetesDirect
             spec:
-              connectorRef: org._syndicate_delegate
+              connectorRef: account.gke_qe_hack_syndicate
               namespace: qe-hack-syndicate
           execution:
             steps:
