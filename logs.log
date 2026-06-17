@@ -1,200 +1,300 @@
-	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
-	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
-	at java.base/java.lang.Thread.run(Unknown Source)
-Caused by: java.io.InterruptedIOException: interrupted
-	at okio.Timeout.throwIfReached(Timeout.kt:109)
-	at okio.OutputStreamSink.write(JvmOkio.kt:53)
-	at okio.AsyncTimeout$sink$1.write(AsyncTimeout.kt:127)
-	at okio.RealBufferedSink.flush(RealBufferedSink.kt:268)
-	at okhttp3.internal.http1.Http1ExchangeCodec.finishRequest(Http1ExchangeCodec.kt:155)
-	at okhttp3.internal.connection.Exchange.finishRequest(Exchange.kt:95)
-	at okhttp3.internal.http.CallServerInterceptor.intercept(CallServerInterceptor.kt:79)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at io.kubernetes.client.openapi.ApiClient$2.intercept(ApiClient.java:1242)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.kt:34)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.kt:95)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.kt:83)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.kt:76)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at okhttp3.internal.connection.RealCall.getResponseWithInterceptorChain$okhttp(RealCall.kt:201)
-	at okhttp3.internal.connection.RealCall.execute(RealCall.kt:154)
-	at io.kubernetes.client.openapi.ApiClient.execute(ApiClient.java:904)
-	... 26 common frames omitted
-	Suppressed: java.io.InterruptedIOException: interrupted
-		at okio.Timeout.throwIfReached(Timeout.kt:109)
-		at okio.InputStreamSource.read(JvmOkio.kt:90)
-		at okio.AsyncTimeout$source$1.read(AsyncTimeout.kt:153)
-		at okio.RealBufferedSource.indexOf(RealBufferedSource.kt:455)
-		at okio.RealBufferedSource.readUtf8LineStrict(RealBufferedSource.kt:348)
-		at okhttp3.internal.http1.HeadersReader.readLine(HeadersReader.kt:29)
-		at okhttp3.internal.http1.Http1ExchangeCodec.readResponseHeaders(Http1ExchangeCodec.kt:180)
-		at okhttp3.internal.connection.Exchange.readResponseHeaders(Exchange.kt:110)
-		at okhttp3.internal.http.CallServerInterceptor.intercept(CallServerInterceptor.kt:93)
-		... 40 common frames omitted
-2026-06-16 14:56:49.878 GMT [task-exec-5] WARN  io.harness.delegate.task.citasks.cik8handler.CIK8CleanupTaskHandler - Failed to delete common secret harnessci-runbdd-21y3pqz3-common-secrets [accountId=1iW3b7HMR3-EyCF5Nhpmrg, PodName=harnessci-runbdd-21y3pqz3, taskId=OvbZ0Ta7Rdm9GiLFotdniQ-DEL] 
-2026-06-16 14:56:49.905 GMT [task-exec-5] ERROR io.harness.network.FibonacciBackOff - Error [InterruptedIOException: interrupted], on attempt 1  [accountId=1iW3b7HMR3-EyCF5Nhpmrg, taskId=OvbZ0Ta7Rdm9GiLFotdniQ-DEL] 
-java.io.InterruptedIOException: interrupted
-	at okio.Timeout.throwIfReached(Timeout.kt:109)
-	at okio.OutputStreamSink.write(JvmOkio.kt:53)
-	at okio.AsyncTimeout$sink$1.write(AsyncTimeout.kt:127)
-	at okio.RealBufferedSink.flush(RealBufferedSink.kt:268)
-	at okhttp3.internal.http2.Http2Writer.flush(Http2Writer.kt:120)
-	at okhttp3.internal.http2.Http2Connection.flush(Http2Connection.kt:408)
-	at okhttp3.internal.http2.Http2Stream$FramingSink.close(Http2Stream.kt:624)
-	at okio.ForwardingSink.close(ForwardingSink.kt:37)
-	at okhttp3.internal.connection.Exchange$RequestBodySink.close(Exchange.kt:247)
-	at okio.RealBufferedSink.close(RealBufferedSink.kt:287)
-	at okhttp3.internal.http.CallServerInterceptor.intercept(CallServerInterceptor.kt:63)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.kt:34)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.kt:95)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.kt:83)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.kt:76)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at io.harness.security.delegate.DelegateAuthInterceptor.intercept(DelegateAuthInterceptor.java:41)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at io.harness.managerclient.DelegateAgentManagerClientFactory.lambda$getHttpClient$1(DelegateAgentManagerClientFactory.java:139)
-	at io.harness.network.FibonacciBackOff.execute(FibonacciBackOff.java:45)
-	at io.harness.managerclient.DelegateAgentManagerClientFactory.lambda$getHttpClient$2(DelegateAgentManagerClientFactory.java:139)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at io.harness.managerclient.DelegateAgentManagerClientFactory.lambda$getHttpClient$0(DelegateAgentManagerClientFactory.java:137)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at okhttp3.internal.connection.RealCall.getResponseWithInterceptorChain$okhttp(RealCall.kt:201)
-	at okhttp3.internal.connection.RealCall.execute(RealCall.kt:154)
-	at retrofit2.OkHttpCall.execute(OkHttpCall.java:207)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.sendTaskResponse(DelegateAgentServiceImpl.java:2249)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.lambda$getPostExecutionFunction$19(DelegateAgentServiceImpl.java:2090)
-	at io.harness.delegate.task.common.AbstractDelegateRunnableTask.runDelegateTask(AbstractDelegateRunnableTask.java:172)
-	at io.harness.delegate.task.common.AbstractDelegateRunnableTask.run(AbstractDelegateRunnableTask.java:108)
-	at io.prometheus.client.Gauge$Child.setToTime(Gauge.java:202)
-	at io.harness.metrics.HarnessMetricRegistry.recordGaugeDuration(HarnessMetricRegistry.java:204)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.executeTask(DelegateAgentServiceImpl.java:1848)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.handleTaskExecution(DelegateAgentServiceImpl.java:1747)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.dispatchDelegateTask(DelegateAgentServiceImpl.java:1650)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.lambda$dispatchDelegateTaskAsync$13(DelegateAgentServiceImpl.java:1575)
-	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
-	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
-	at java.base/java.lang.Thread.run(Unknown Source)
-	Suppressed: java.io.InterruptedIOException: null
-		at okhttp3.internal.http2.Http2Stream.waitForIo$okhttp(Http2Stream.kt:660)
-		at okhttp3.internal.http2.Http2Stream.takeHeaders(Http2Stream.kt:140)
-		at okhttp3.internal.http2.Http2ExchangeCodec.readResponseHeaders(Http2ExchangeCodec.kt:97)
-		at okhttp3.internal.connection.Exchange.readResponseHeaders(Exchange.kt:110)
-		at okhttp3.internal.http.CallServerInterceptor.intercept(CallServerInterceptor.kt:93)
-		... 35 common frames omitted
-2026-06-16 14:56:49.909 GMT [task-exec-5] ERROR io.harness.delegate.task.common.AbstractDelegateRunnableTask - Unexpected error executing delegate taskId: [OvbZ0Ta7Rdm9GiLFotdniQ-DEL] in accountId: [1iW3b7HMR3-EyCF5Nhpmrg] [taskId=OvbZ0Ta7Rdm9GiLFotdniQ-DEL] 
-io.harness.exception.InterruptedRuntimeException: java.lang.InterruptedException: sleep interrupted
-	at io.harness.threading.Morpheus.sleep(Morpheus.java:41)
-	at io.harness.network.FibonacciBackOff.handleFailure(FibonacciBackOff.java:81)
-	at io.harness.network.FibonacciBackOff.execute(FibonacciBackOff.java:50)
-	at io.harness.managerclient.DelegateAgentManagerClientFactory.lambda$getHttpClient$2(DelegateAgentManagerClientFactory.java:139)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at io.harness.managerclient.DelegateAgentManagerClientFactory.lambda$getHttpClient$0(DelegateAgentManagerClientFactory.java:137)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-	at okhttp3.internal.connection.RealCall.getResponseWithInterceptorChain$okhttp(RealCall.kt:201)
-	at okhttp3.internal.connection.RealCall.execute(RealCall.kt:154)
-	at retrofit2.OkHttpCall.execute(OkHttpCall.java:207)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.sendTaskResponse(DelegateAgentServiceImpl.java:2249)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.lambda$getPostExecutionFunction$19(DelegateAgentServiceImpl.java:2090)
-	at io.harness.delegate.task.common.AbstractDelegateRunnableTask.runDelegateTask(AbstractDelegateRunnableTask.java:172)
-	at io.harness.delegate.task.common.AbstractDelegateRunnableTask.run(AbstractDelegateRunnableTask.java:108)
-	at io.prometheus.client.Gauge$Child.setToTime(Gauge.java:202)
-	at io.harness.metrics.HarnessMetricRegistry.recordGaugeDuration(HarnessMetricRegistry.java:204)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.executeTask(DelegateAgentServiceImpl.java:1848)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.handleTaskExecution(DelegateAgentServiceImpl.java:1747)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.dispatchDelegateTask(DelegateAgentServiceImpl.java:1650)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.lambda$dispatchDelegateTaskAsync$13(DelegateAgentServiceImpl.java:1575)
-	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
-	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
-	at java.base/java.lang.Thread.run(Unknown Source)
-Caused by: java.lang.InterruptedException: sleep interrupted
-	at java.base/java.lang.Thread.sleep(Native Method)
-	at io.harness.threading.Morpheus.sleep(Morpheus.java:38)
-	... 24 common frames omitted
-2026-06-16 14:57:00.670 GMT [healthMonitor-9] INFO  io.harness.delegate.service.DelegateAgentServiceImpl - Current performance [cpu-system=8.68, taskExecutor=1, maxExecutingTasksCount=0, non-heap-max=-1, heap-committed=534249472, heap-used=306330328, timeoutEnforcement=1, non-heap-used=218626496, cpu-process=0.18, maxExecutingFuturesCount=0, heap-max=1336934400, maxValidatingTasksCount=0, non-heap-init=7667712, heap-init=67108864, non-heap-committed=221970432] 
-2026-06-16 14:57:00.670 GMT [healthMonitor-9] INFO  io.harness.container.CGroupMetrics - {"workingset_refault_file":"6659","pgrefill":"131","thp_swpout_fallback":"0","thp_collapse_alloc":"0","percpu":"96","container_memory_working_set_bytes":"1073459200","slab":"1703336","pgdeactivate":"58","file_thp":"0","swpout_zero":"0","pgsteal_khugepaged":"0","pgdemote_khugepaged":"0","slab_unreclaimable":"784304","swpin_zero":"0","pgactivate":"2696","workingset_nodereclaim":"0","pgscan_direct":"0","active_anon":"8192","pgsteal_kswapd":"1548","slab_reclaimable":"919032","inactive_file":"19804160","kernel_stack":"1998848","file_dirty":"45056","file_mapped":"3145728","pgdemote_kswapd":"0","pglazyfree":"0","sec_pagetables":"0","swapcached":"0","workingset_activate_file":"495","pglazyfreed":"0","pgsteal":"1548","inactive_anon":"1053650944","pagetables":"2707456","pgfault":"497351","memory_usage":"1093263360","file":"32645120","workingset_restore_file":"32","shmem_thp":"0","active_file":"12840960","pgscan_kswapd":"2227","anon":"1053659136","thp_fault_alloc":"0","thp_swpout":"0","shmem":"0","kernel":"6426624","workingset_restore_anon":"0","pgscan_khugepaged":"0","unevictable":"0","anon_thp":"0","pgmajfault":"86","sock":"8192","workingset_refault_anon":"0","pgscan":"2227","workingset_activate_anon":"0","pgsteal_direct":"0","vmalloc":"0","file_writeback":"0","pgdemote_direct":"0"}  
-2026-06-16 14:57:00.671 GMT [healthMonitor-9] INFO  io.harness.container.CGroupMetrics - {"nr_bursts":"0","burst_usec":"0","throttled_usec":"0","cpu_usage_ns":"851584452000","nr_periods":"0","usage_usec":"851584452","nice_usec":"0","system_usec":"206726594","nr_throttled":"0","user_usec":"644857858","core_sched.force_idle_usec":"0"}  
-2026-06-16 14:57:04.422 GMT [task-exec-7] INFO  io.harness.delegate.task.citasks.cik8handler.k8java.CIK8JavaClientHandler - [Retrying failed to delete secret: [harnessci-runbdd-14xv53ng-image-step-3]; attempt: 4 [accountId=1iW3b7HMR3-EyCF5Nhpmrg, PodName=harnessci-runbdd-14xv53ng, taskId=UXPKjeU2TDeQb7NFzpD-0A-DEL] 
-io.kubernetes.client.openapi.ApiException: Unauthorized
-	at io.kubernetes.client.openapi.ApiClient.handleResponse(ApiClient.java:989)
-	at io.kubernetes.client.openapi.ApiClient.execute(ApiClient.java:905)
-	at io.kubernetes.client.openapi.apis.CoreV1Api.deleteNamespacedSecretWithHttpInfo(CoreV1Api.java:14772)
-	at io.kubernetes.client.openapi.apis.CoreV1Api.deleteNamespacedSecret(CoreV1Api.java:14744)
-	at io.harness.delegate.task.citasks.cik8handler.k8java.CIK8JavaClientHandler.lambda$deleteSecret$15(CIK8JavaClientHandler.java:712)
-	at net.jodah.failsafe.Functions.lambda$resultSupplierOf$11(Functions.java:284)
-	at net.jodah.failsafe.RetryPolicyExecutor.lambda$supply$0(RetryPolicyExecutor.java:63)
-	at net.jodah.failsafe.Execution.executeSync(Execution.java:129)
-	at net.jodah.failsafe.FailsafeExecutor.call(FailsafeExecutor.java:379)
-	at net.jodah.failsafe.FailsafeExecutor.get(FailsafeExecutor.java:70)
-	at io.harness.delegate.task.citasks.cik8handler.k8java.CIK8JavaClientHandler.deleteSecret(CIK8JavaClientHandler.java:710)
-	at io.harness.delegate.task.citasks.cik8handler.CIK8CleanupTaskHandler.deleteSecrets(CIK8CleanupTaskHandler.java:209)
-	at io.harness.delegate.task.citasks.cik8handler.CIK8CleanupTaskHandler.executeTaskInternal(CIK8CleanupTaskHandler.java:96)
-	at io.harness.delegate.task.citasks.cik8handler.CIK8CleanupTaskHandler.executeTaskInternal(CIK8CleanupTaskHandler.java:44)
-	at io.harness.delegate.task.citasks.CICleanupTask.run(CICleanupTask.java:50)
-	at io.harness.delegate.task.common.AbstractDelegateRunnableTask.runDelegateTask(AbstractDelegateRunnableTask.java:139)
-	at io.harness.delegate.task.common.AbstractDelegateRunnableTask.run(AbstractDelegateRunnableTask.java:108)
-	at io.prometheus.client.Gauge$Child.setToTime(Gauge.java:202)
-	at io.harness.metrics.HarnessMetricRegistry.recordGaugeDuration(HarnessMetricRegistry.java:204)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.executeTask(DelegateAgentServiceImpl.java:1848)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.handleTaskExecution(DelegateAgentServiceImpl.java:1747)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.dispatchDelegateTask(DelegateAgentServiceImpl.java:1650)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.lambda$dispatchDelegateTaskAsync$13(DelegateAgentServiceImpl.java:1575)
-	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
-	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
-	at java.base/java.lang.Thread.run(Unknown Source)
-10.19.128.1 - - [16/Jun/2026:14:57:04 +0000] "GET /api/health HTTP/1.1" 200 74 "-" "kube-probe/1.35" 2
-10.19.128.1 - - [16/Jun/2026:14:57:24 +0000] "GET /api/health HTTP/1.1" 200 74 "-" "kube-probe/1.35" 2
-2026-06-16 14:57:44.428 GMT [task-exec-7] INFO  io.harness.delegate.task.citasks.cik8handler.k8java.CIK8JavaClientHandler - [Retrying failed to delete secret: [harnessci-runbdd-14xv53ng-image-step-3]; attempt: 5 [accountId=1iW3b7HMR3-EyCF5Nhpmrg, PodName=harnessci-runbdd-14xv53ng, taskId=UXPKjeU2TDeQb7NFzpD-0A-DEL] 
-io.kubernetes.client.openapi.ApiException: Unauthorized
-	at io.kubernetes.client.openapi.ApiClient.handleResponse(ApiClient.java:989)
-	at io.kubernetes.client.openapi.ApiClient.execute(ApiClient.java:905)
-	at io.kubernetes.client.openapi.apis.CoreV1Api.deleteNamespacedSecretWithHttpInfo(CoreV1Api.java:14772)
-	at io.kubernetes.client.openapi.apis.CoreV1Api.deleteNamespacedSecret(CoreV1Api.java:14744)
-	at io.harness.delegate.task.citasks.cik8handler.k8java.CIK8JavaClientHandler.lambda$deleteSecret$15(CIK8JavaClientHandler.java:712)
-	at net.jodah.failsafe.Functions.lambda$resultSupplierOf$11(Functions.java:284)
-	at net.jodah.failsafe.RetryPolicyExecutor.lambda$supply$0(RetryPolicyExecutor.java:63)
-	at net.jodah.failsafe.Execution.executeSync(Execution.java:129)
-	at net.jodah.failsafe.FailsafeExecutor.call(FailsafeExecutor.java:379)
-	at net.jodah.failsafe.FailsafeExecutor.get(FailsafeExecutor.java:70)
-	at io.harness.delegate.task.citasks.cik8handler.k8java.CIK8JavaClientHandler.deleteSecret(CIK8JavaClientHandler.java:710)
-	at io.harness.delegate.task.citasks.cik8handler.CIK8CleanupTaskHandler.deleteSecrets(CIK8CleanupTaskHandler.java:209)
-	at io.harness.delegate.task.citasks.cik8handler.CIK8CleanupTaskHandler.executeTaskInternal(CIK8CleanupTaskHandler.java:96)
-	at io.harness.delegate.task.citasks.cik8handler.CIK8CleanupTaskHandler.executeTaskInternal(CIK8CleanupTaskHandler.java:44)
-	at io.harness.delegate.task.citasks.CICleanupTask.run(CICleanupTask.java:50)
-	at io.harness.delegate.task.common.AbstractDelegateRunnableTask.runDelegateTask(AbstractDelegateRunnableTask.java:139)
-	at io.harness.delegate.task.common.AbstractDelegateRunnableTask.run(AbstractDelegateRunnableTask.java:108)
-	at io.prometheus.client.Gauge$Child.setToTime(Gauge.java:202)
-	at io.harness.metrics.HarnessMetricRegistry.recordGaugeDuration(HarnessMetricRegistry.java:204)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.executeTask(DelegateAgentServiceImpl.java:1848)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.handleTaskExecution(DelegateAgentServiceImpl.java:1747)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.dispatchDelegateTask(DelegateAgentServiceImpl.java:1650)
-	at io.harness.delegate.service.DelegateAgentServiceImpl.lambda$dispatchDelegateTaskAsync$13(DelegateAgentServiceImpl.java:1575)
-	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
-	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
-	at java.base/java.lang.Thread.run(Unknown Source)
-10.19.128.1 - - [16/Jun/2026:14:57:44 +0000] "GET /api/health HTTP/1.1" 200 74 "-" "kube-probe/1.35" 2
-2026-06-16 14:57:50.670 GMT [healthMonitor-9] INFO  io.harness.delegate.service.DelegateAgentServiceImpl - Current performance [cpu-system=9.23, taskExecutor=1, maxExecutingTasksCount=0, non-heap-max=-1, heap-committed=534249472, heap-used=307617440, timeoutEnforcement=1, non-heap-used=218711152, cpu-process=0.22, maxExecutingFuturesCount=0, heap-max=1336934400, maxValidatingTasksCount=0, non-heap-init=7667712, heap-init=67108864, non-heap-committed=221970432] 
-2026-06-16 14:57:50.671 GMT [healthMonitor-9] INFO  io.harness.container.CGroupMetrics - {"workingset_refault_file":"6659","pgrefill":"131","thp_swpout_fallback":"0","thp_collapse_alloc":"0","percpu":"96","container_memory_working_set_bytes":"1076006912","slab":"1704424","pgdeactivate":"58","file_thp":"0","swpout_zero":"0","pgsteal_khugepaged":"0","pgdemote_khugepaged":"0","slab_unreclaimable":"784576","swpin_zero":"0","pgactivate":"2696","workingset_nodereclaim":"0","pgscan_direct":"0","active_anon":"8192","pgsteal_kswapd":"1548","slab_reclaimable":"919848","inactive_file":"19812352","kernel_stack":"1998848","file_dirty":"36864","file_mapped":"3145728","pgdemote_kswapd":"0","pglazyfree":"0","sec_pagetables":"0","swapcached":"0","workingset_activate_file":"495","pglazyfreed":"0","pgsteal":"1548","inactive_anon":"1056190464","pagetables":"2711552","pgfault":"497979","memory_usage":"1095819264","file":"32653312","workingset_restore_file":"32","shmem_thp":"0","active_file":"12840960","pgscan_kswapd":"2227","anon":"1056198656","thp_fault_alloc":"0","thp_swpout":"0","shmem":"0","kernel":"6434816","workingset_restore_anon":"0","pgscan_khugepaged":"0","unevictable":"0","anon_thp":"0","pgmajfault":"86","sock":"8192","workingset_refault_anon":"0","pgscan":"2227","workingset_activate_anon":"0","pgsteal_direct":"0","vmalloc":"0","file_writeback":"0","pgdemote_direct":"0"}  
-2026-06-16 14:57:50.672 GMT [healthMonitor-9] INFO  io.harness.container.CGroupMetrics - {"nr_bursts":"0","burst_usec":"0","throttled_usec":"0","cpu_usage_ns":"852025800000","nr_periods":"0","usage_usec":"852025800","nice_usec":"0","system_usec":"206799493","nr_throttled":"0","user_usec":"645226306","core_sched.force_idle_usec":"0"}  
-10.19.128.1 - - [16/Jun/2026:14:58:04 +0000] "GET /api/health HTTP/1.1" 200 74 "-" "kube-probe/1.35" 1
-10.19.128.1 - - [16/Jun/2026:14:58:24 +0000] "GET /api/health HTTP/1.1" 200 74 "-" "kube-probe/1.35" 2
-2026-06-16 14:58:40.670 GMT [healthMonitor-17] INFO  io.harness.delegate.service.DelegateAgentServiceImpl - Current performance [cpu-system=10.42, taskExecutor=1, maxExecutingTasksCount=0, non-heap-max=-1, heap-committed=534249472, heap-used=308278976, timeoutEnforcement=1, non-heap-used=218741544, cpu-process=0.13, maxExecutingFuturesCount=0, heap-max=1336934400, maxValidatingTasksCount=0, non-heap-init=7667712, heap-init=67108864, non-heap-committed=221970432] 
-2026-06-16 14:58:40.671 GMT [healthMonitor-17] INFO  io.harness.container.CGroupMetrics - {"workingset_refault_file":"6659","pgrefill":"131","thp_swpout_fallback":"0","thp_collapse_alloc":"0","percpu":"96","container_memory_working_set_bytes":"1075916800","slab":"1699768","pgdeactivate":"58","file_thp":"0","swpout_zero":"0","pgsteal_khugepaged":"0","pgdemote_khugepaged":"0","slab_unreclaimable":"779808","swpin_zero":"0","pgactivate":"2696","workingset_nodereclaim":"0","pgscan_direct":"0","active_anon":"8192","pgsteal_kswapd":"1548","slab_reclaimable":"919960","inactive_file":"19816448","kernel_stack":"1982464","file_dirty":"16384","file_mapped":"3145728","pgdemote_kswapd":"0","pglazyfree":"0","sec_pagetables":"0","swapcached":"0","workingset_activate_file":"495","pglazyfreed":"0","pgsteal":"1548","inactive_anon":"1056120832","pagetables":"2711552","pgfault":"497997","memory_usage":"1095733248","file":"32657408","workingset_restore_file":"32","shmem_thp":"0","active_file":"12840960","pgscan_kswapd":"2227","anon":"1056129024","thp_fault_alloc":"0","thp_swpout":"0","shmem":"0","kernel":"6414336","workingset_restore_anon":"0","pgscan_khugepaged":"0","unevictable":"0","anon_thp":"0","pgmajfault":"86","sock":"8192","workingset_refault_anon":"0","pgscan":"2227","workingset_activate_anon":"0","pgsteal_direct":"0","vmalloc":"0","file_writeback":"0","pgdemote_direct":"0"}  
-2026-06-16 14:58:40.671 GMT [healthMonitor-17] INFO  io.harness.container.CGroupMetrics - {"nr_bursts":"0","burst_usec":"0","throttled_usec":"0","cpu_usage_ns":"852276440000","nr_periods":"0","usage_usec":"852276440","nice_usec":"0","system_usec":"206857660","nr_throttled":"0","user_usec":"645418779","core_sched.force_idle_usec":"0"}  
+INFO:     35.191.249.51:53020 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:40634 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:57108 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:59078 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:41724 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:58946 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:58962 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:58666 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:38578 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:47096 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:45738 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:33468 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:35982 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:35890 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:39192 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:39202 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:57208 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:38780 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:41936 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:40478 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:60668 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:56294 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:36514 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:32998 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:33010 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:52334 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:58024 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:34134 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:44134 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:51010 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:59944 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:49032 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:56576 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:56592 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:34622 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:49036 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:49260 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:44282 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:58972 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:33622 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:50958 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:51624 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:51628 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:39166 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:57878 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:44860 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:60768 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:55594 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:46336 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:34410 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:53138 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:53152 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:58182 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:43610 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:42030 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:47774 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:53666 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:55602 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:54096 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:37732 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:37738 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:43688 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:35090 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:37580 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:54680 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:37718 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:42288 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:55486 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:45928 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:45936 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:42046 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:53904 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:52528 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:38300 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:45802 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:40346 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:52374 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:60190 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:60198 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:49448 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:40746 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:56604 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:50884 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:52530 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:46342 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:60666 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:51808 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:51822 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:56892 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:36474 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:43622 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:53972 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:56570 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:38784 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:33892 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:40422 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:40436 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:59888 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:56710 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:46142 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:56682 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:59446 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:60444 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:52652 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:58308 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:58312 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:53848 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:42362 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:44166 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:53196 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:55430 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:55560 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:45138 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:54108 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:54114 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:60554 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:35910 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:34366 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:59492 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:52146 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:48128 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:43752 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:39790 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:39796 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:58640 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:50190 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:55532 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:52758 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:32936 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:53894 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:46292 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:35836 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:35844 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:43232 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:35094 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:52370 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.2:60828 - "POST /qe/jira/SYN-25/sync-results?cucumber_json_path=bdd-tests/target/cucumber.json&execution_url=https://app.harness.io/ng/account/1iW3b7HMR3-EyCF5Nhpmrg/cd/orgs/null/projects/null/pipelines/bdd_tests/executions/DlCtg0gURmqz9vsn8Ihoiw/pipeline HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 415, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 62, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/usr/local/lib/python3.11/site-packages/google/adk/cli/api_server.py", line 310, in __call__
+    await self._app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/google/adk/cli/api_server.py", line 251, in __call__
+    await self._app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 330, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/agent/server/main.py", line 104, in sync_jira
+    return jira_sync_results(ticket, cucumber_json_path, execution_url)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/agent/sub_agents/bdd_authoring/agent.py", line 137, in jira_sync_results
+    return jira.sync_cucumber_results(ticket, cucumber_json_path, execution_url)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/agent/tools/jira_toolset.py", line 233, in sync_cucumber_results
+    with open(cucumber_json_path, encoding="utf-8") as fh:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'bdd-tests/target/cucumber.json'
+INFO:     10.19.128.1:57508 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:39754 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:36930 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:47644 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:42184 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:42194 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:55366 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:39096 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:44990 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:58708 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:36068 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:36414 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:45966 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:42450 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:42456 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:51748 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:47666 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:60932 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:55046 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:35814 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:56354 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:40118 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:57872 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:57878 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:48062 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:60924 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:49312 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:58738 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:59874 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:41698 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:56686 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:54020 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:54026 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:58824 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:40556 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:52484 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:34056 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:40304 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:49016 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:40694 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:53600 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:53608 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:49374 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:60514 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:57286 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:42350 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:52162 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:58088 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:57584 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:36442 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:36448 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:35612 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:52960 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:60326 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:55154 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:53428 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:35798 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:50602 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:50606 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:44070 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:40298 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:36294 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:37570 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:56864 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:52540 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:47238 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:36636 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:36644 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:56510 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:60648 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:42872 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:50750 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:53588 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:49904 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:58208 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:36766 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:36772 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:50290 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:55024 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:52902 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:57106 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:42044 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:33520 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:43786 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:41836 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:41840 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:39760 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:40792 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.51:51586 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     10.19.128.1:47154 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.54:58982 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     35.191.249.53:52320 - "GET /healthz HTTP/1.1" 200 OK
