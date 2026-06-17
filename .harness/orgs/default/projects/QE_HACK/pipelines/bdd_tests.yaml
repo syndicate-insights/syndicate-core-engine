@@ -34,9 +34,8 @@ pipeline:
           infrastructure:
             type: KubernetesDirect
             spec:
-              connectorRef: account.gke_qe_hack_syndicate
-              namespace: qe-hack-syndicate
-              serviceAccountName: qe-hack-syndicate-k8s-sa
+              connectorRef: account._gke_delegate
+              namespace: harness-delegate-ng
           execution:
             steps:
               - step:
