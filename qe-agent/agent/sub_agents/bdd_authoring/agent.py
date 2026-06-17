@@ -131,10 +131,15 @@ def harness_latest_bdd() -> dict:
     return harness.latest_bdd_status()
 
 
-def jira_sync_results(ticket: str, cucumber_json_path: str,
-                      execution_url: str | None = None) -> dict:
-    """Push Cucumber results to the Jira parent ticket and Test subtasks."""
-    return jira.sync_cucumber_results(ticket, cucumber_json_path, execution_url)
+def jira_sync_results(ticket: str, cucumber_json_path: str | None = None,
+                      execution_url: str | None = None,
+                      report: list | str | None = None) -> dict:
+    """Push Cucumber results to the Jira parent ticket and Test subtasks.
+
+    ``report`` carries the Cucumber JSON content directly (used by the Harness
+    CI step); ``cucumber_json_path`` is the local-file fallback for the CLI.
+    """
+    return jira.sync_cucumber_results(ticket, cucumber_json_path, execution_url, report=report)
 
 
 def _pr_body(ticket: str, summary: str, domain: str, path: str, ac: dict) -> str:

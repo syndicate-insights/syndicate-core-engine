@@ -9,6 +9,7 @@ Two surfaces share one process:
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 
@@ -99,9 +100,35 @@ def author_from_jira(ticket: str, dry_run: bool = False) -> dict:
 
 
 @app.post("/qe/jira/{ticket}/sync-results")
-def sync_jira(ticket: str, cucumber_json_path: str, execution_url: str | None = None) -> dict:
-    """Push Cucumber results back to Jira parent ticket + Test subtasks."""
-    return jira_sync_results(ticket, cucumber_json_path, execution_url)
+async def sync_jira(ticket: str, request: Request, cucumber_json_path: str | None = None,
+                    execution_url: str | None = None) -> dict:
+    """Push Cucumber results back to Jira parent ticket + Test subtasks.
+
+    The Harness CI step POSTs the cucumber.json content as the request body
+    (the agent pod cannot read the CI workspace filesystem). `cucumber_json_path`
+    remains supported as a local-file fallback for the CLI.
+    """
+    body = await request.body()
+    report = None
+    if body and body.strip():
+        try:
+            report = json.loads(body)
+        except json.JSONDecodeError as exc:
+            logger.error("sync_jira: ticket=%s invalid cucumber JSON body: %s", ticket, exc)
+            raise HTTPException(status_code=400, detail=f"invalid cucumber JSON body: {exc}") from exc
+    logger.info("sync_jira: ticket=%s body_bytes=%d path=%s", ticket, len(body or b""), cucumber_json_path)
+    try:
+        return jira_sync_results(ticket, cucumber_json_path, execution_url, report=report)
+    except FileNotFoundError as exc:
+        logger.error("sync_jira: ticket=%s cucumber file not found: %s", ticket, exc)
+        raise HTTPException(
+            status_code=400,
+            detail=("cucumber report not found on the agent; POST the cucumber.json "
+                    f"content in the request body instead of a path: {exc}"),
+        ) from exc
+    except ValueError as exc:
+        logger.error("sync_jira: ticket=%s bad request: %s", ticket, exc)
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/qe/harness/bdd/latest")

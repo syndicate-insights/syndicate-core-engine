@@ -36,6 +36,11 @@ JIRA_TEST_ISSUETYPE = _env("JIRA_TEST_ISSUETYPE", "Test")
 JIRA_AC_FIELD = _env("JIRA_AC_FIELD", "")  # optional custom field id (e.g. customfield_10100)
 JIRA_TEST_PASS_STATUS = _env("JIRA_TEST_PASS_STATUS", "")
 JIRA_TEST_FAIL_STATUS = _env("JIRA_TEST_FAIL_STATUS", "")
+# Parent-ticket transitions applied after a BDD run syncs results:
+#   * all scenarios passed -> JIRA_TICKET_PASS_STATUS (default "Done")
+#   * any scenario failed   -> JIRA_TICKET_FAIL_STATUS (default "In Progress")
+JIRA_TICKET_PASS_STATUS = _env("JIRA_TICKET_PASS_STATUS", "Done")
+JIRA_TICKET_FAIL_STATUS = _env("JIRA_TICKET_FAIL_STATUS", "In Progress")
 
 
 def _auth_header() -> dict[str, str]:
@@ -227,11 +232,31 @@ def _transition_issue(issue_key: str, target_status: str) -> dict:
 
 # --- Pushing Cucumber results back to Jira ------------------------------------
 
-def sync_cucumber_results(ticket: str, cucumber_json_path: str,
-                          execution_url: str | None = None) -> dict:
-    """Parse cucumber.json and sync PASS/FAIL to Jira parent + Test subtasks."""
-    with open(cucumber_json_path, encoding="utf-8") as fh:
-        report = json.load(fh)
+def sync_cucumber_results(ticket: str, cucumber_json_path: str | None = None,
+                          execution_url: str | None = None,
+                          report: list | str | None = None) -> dict:
+    """Parse cucumber results and sync PASS/FAIL to Jira parent + Test subtasks.
+
+    The Cucumber report can be supplied either as already-parsed/raw JSON via
+    ``report`` (used by the Harness CI step, which POSTs the file content to the
+    agent because the agent pod cannot see the CI workspace filesystem) or as a
+    local file path via ``cucumber_json_path`` (used by the CLI / local runs).
+
+    After per-subtask comments are written, the parent ticket is transitioned:
+      * all scenarios passed -> JIRA_TICKET_PASS_STATUS (default "Done")
+      * any scenario failed   -> JIRA_TICKET_FAIL_STATUS (default "In Progress")
+    """
+    logger.info("sync_cucumber_results: ticket=%s path=%s report_inline=%s",
+                ticket, cucumber_json_path, report is not None)
+    if report is None:
+        if not cucumber_json_path:
+            raise ValueError("either `report` content or `cucumber_json_path` must be provided")
+        with open(cucumber_json_path, encoding="utf-8") as fh:
+            report = json.load(fh)
+    if isinstance(report, (str, bytes)):
+        report = json.loads(report)
+    if not isinstance(report, list):
+        raise ValueError("cucumber report must be a JSON array of features")
     scenarios: list[dict] = []
     for feature in report:
         for elem in feature.get("elements", []):
@@ -254,6 +279,8 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str,
         "execution_url": execution_url,
         "scenarios": scenarios,
     }
+    logger.info("sync_cucumber_results: ticket=%s total=%d passed=%d failed=%d",
+                ticket, summary["total"], summary["passed"], summary["failed"])
 
     # Add a summary comment on the parent ticket.
     body_text = (
@@ -285,6 +312,7 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str,
         if scenario.get("error"):
             comment += f"\nFailure: {scenario['error'][:400]}"
         _comment_issue(issue_key, comment)
+        logger.info("sync_cucumber_results: subtask=%s status=%s commented", issue_key, scenario["status"])
 
         status_target = JIRA_TEST_PASS_STATUS if scenario["status"] == "PASS" else JIRA_TEST_FAIL_STATUS
         transition_resp = None
@@ -299,4 +327,18 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str,
         })
 
     summary["subtask_updates"] = updates
+
+    # Transition the parent ticket based on the overall outcome.
+    overall_pass = summary["total"] > 0 and summary["failed"] == 0
+    parent_target = JIRA_TICKET_PASS_STATUS if overall_pass else JIRA_TICKET_FAIL_STATUS
+    parent_transition = None
+    if parent_target:
+        logger.info("sync_cucumber_results: ticket=%s overall_pass=%s -> transition to %r",
+                    ticket, overall_pass, parent_target)
+        parent_transition = _transition_issue(ticket, parent_target)
+        if isinstance(parent_transition, dict) and parent_transition.get("error"):
+            logger.error("sync_cucumber_results: ticket=%s parent transition failed: %s",
+                         ticket, parent_transition)
+    summary["parent_transition"] = {"target": parent_target, "result": parent_transition}
     return summary
+

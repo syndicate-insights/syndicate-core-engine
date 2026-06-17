@@ -152,7 +152,7 @@ def _handle_jira(args: argparse.Namespace) -> int:
         print(json.dumps(data, indent=2))
         return 0 if data.get("pr") or args.dry_run else 1
     if args.jira_command == "sync-results":
-        params = {"cucumber_json_path": args.cucumber_json}
+        params = {}
         if args.execution and args.pipeline:
             harness_base = os.environ.get("HARNESS_BASE_URL", "https://app.harness.io")
             account = os.environ.get("HARNESS_ACCOUNT_ID", "")
@@ -163,11 +163,14 @@ def _handle_jira(args: argparse.Namespace) -> int:
                 f"{project}/pipelines/{args.pipeline}/executions/"
                 f"{args.execution}/pipeline"
             )
-        url = (
-            f"{base}/qe/jira/{urllib.parse.quote(args.ticket)}/sync-results?"
-            + urllib.parse.urlencode(params)
-        )
-        data = _post(url, args.timeout)
+        # Read the cucumber report locally and POST its content, since the agent
+        # pod cannot see this CLI's filesystem.
+        with open(args.cucumber_json, encoding="utf-8") as fh:
+            report = json.load(fh)
+        url = f"{base}/qe/jira/{urllib.parse.quote(args.ticket)}/sync-results"
+        if params:
+            url += "?" + urllib.parse.urlencode(params)
+        data = _post(url, args.timeout, body=report)
         print(json.dumps(data, indent=2))
         return 0 if data.get("failed", 0) == 0 else 1
     if args.jira_command == "reconcile":

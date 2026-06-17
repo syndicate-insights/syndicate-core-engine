@@ -73,7 +73,13 @@ pipeline:
                     shell: Bash
                     command: |
                       set -eo pipefail
-                      # Execute the sync call within the CI workspace so cucumber.json is accessible
-                      curl -fsS -X POST --max-time 600 \
-                        "<+pipeline.variables.QE_AGENT_URL>/qe/jira/<+pipeline.variables.jiraTicket>/sync-results?cucumber_json_path=bdd-tests/target/cucumber.json&execution_url=https://app.harness.io/ng/account/<+account.identifier>/cd/orgs/<+pipeline.orgIdentifier>/projects/<+pipeline.projectIdentifier>/pipelines/<+pipeline.identifier>/executions/<+pipeline.executionId>/pipeline"
+                      # The agent pod cannot read this CI workspace, so POST the
+                      # cucumber.json *content* in the request body. Use --data-binary
+                      # to preserve the JSON exactly. Don't fail the step if the sync
+                      # call errors (results are best-effort feedback to Jira).
+                      curl -sS -X POST --max-time 600 \
+                        -H "Content-Type: application/json" \
+                        --data-binary @bdd-tests/target/cucumber.json \
+                        "<+pipeline.variables.QE_AGENT_URL>/qe/jira/<+pipeline.variables.jiraTicket>/sync-results?execution_url=https://app.harness.io/ng/account/<+account.identifier>/cd/orgs/<+pipeline.orgIdentifier>/projects/<+pipeline.projectIdentifier>/pipelines/<+pipeline.identifier>/executions/<+pipeline.executionId>/pipeline" \
+                        || echo "WARN: Jira sync call failed (non-fatal)"
         tags: {}

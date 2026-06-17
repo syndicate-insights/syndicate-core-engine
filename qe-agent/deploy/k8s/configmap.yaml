@@ -51,3 +51,7 @@ data:
   # issuetypes are allowed to fire BDD authoring / pipeline triggers.
   JIRA_TESTING_STATUS: "Testing"
   JIRA_TRIGGER_ISSUETYPES: "Story,Task,Bug"
+  # Parent-ticket transitions applied after a BDD run syncs results back:
+  #   all scenarios pass -> JIRA_TICKET_PASS_STATUS; any fail -> JIRA_TICKET_FAIL_STATUS.
+  JIRA_TICKET_PASS_STATUS: "Done"
+  JIRA_TICKET_FAIL_STATUS: "In Progress"
