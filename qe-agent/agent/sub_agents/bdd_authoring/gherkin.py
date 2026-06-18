@@ -32,8 +32,16 @@ def domain_for_ticket(ticket: str, summary: str) -> str:
     return "Functional"
 
 
-def feature_for_ticket(ticket: str, summary: str, bullets: list[str]) -> str:
-    """Render a complete .feature file from acceptance-criteria bullets."""
+def feature_for_ticket(ticket: str, summary: str, bullets: list[str],
+                       test_keys: list[str] | None = None) -> str:
+    """Render a complete .feature file from acceptance-criteria bullets.
+
+    When ``test_keys`` is supplied, each scenario is additionally tagged with the
+    Jira ``Test`` subtask key that backs it (e.g. ``@SYN-36``). The BDD results
+    sync uses that tag to push each scenario's PASS/FAIL to the exact subtask
+    instead of inferring the mapping from the ``ACn`` index. The list is aligned
+    by position with ``bullets`` (scenario ``ACn`` -> ``test_keys[n-1]``).
+    """
     title = (summary or ticket).strip()
     feature = [
         f"Feature: {title} ({ticket})",
@@ -43,9 +51,14 @@ def feature_for_ticket(ticket: str, summary: str, bullets: list[str]) -> str:
         "    Given the QE Quality Agent is reachable",
         "",
     ]
+    keys = test_keys or []
     for idx, bullet in enumerate(bullets or [f"acceptance criterion {ticket}-{1}"], start=1):
         gwt = _bullet_to_gwt(bullet)
-        feature.append(f"  {_SCENARIO_TAG} @{ticket}")
+        tags = f"{_SCENARIO_TAG} @{ticket}"
+        test_key = keys[idx - 1] if idx - 1 < len(keys) else None
+        if test_key:
+            tags += f" @{test_key}"
+        feature.append(f"  {tags}")
         feature.append(f"  Scenario: AC{idx} - {bullet[:80].rstrip()}")
         for line in gwt:
             feature.append(f"    {line}")

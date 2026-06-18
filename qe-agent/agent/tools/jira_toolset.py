@@ -209,6 +209,21 @@ def _extract_ac_index(text: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def _scenario_test_key(elem: dict, valid_keys: set[str]) -> str | None:
+    """Return the Jira Test subtask key tagged on a Cucumber scenario.
+
+    The authoring step tags each scenario with its backing subtask key
+    (e.g. ``@SYN-36``). The Cucumber JSON exposes those as ``tags`` on the
+    scenario element. We only accept a tag that matches a known subtask key so
+    the parent ticket / ``@JiraGenerated`` tags are never mistaken for one.
+    """
+    for tag in elem.get("tags") or []:
+        name = (tag.get("name") or "").lstrip("@")
+        if name in valid_keys:
+            return name
+    return None
+
+
 def _comment_issue(issue_key: str, text: str) -> dict:
     return _request("POST", f"/rest/api/3/issue/{quote(issue_key)}/comment", {
         "body": {
@@ -257,6 +272,22 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str | None = None,
         report = json.loads(report)
     if not isinstance(report, list):
         raise ValueError("cucumber report must be a JSON array of features")
+
+    # Index the parent's Test subtasks up front so each scenario can be matched
+    # to its subtask by the Jira key tagged on it (preferred), falling back to
+    # the ACn index parsed from summaries for features authored before tagging.
+    subtasks = _find_test_subtasks(ticket)
+    by_key: dict[str, dict] = {}
+    by_index: dict[int, dict] = {}
+    for issue in subtasks:
+        key = issue.get("key")
+        if key:
+            by_key[key] = issue
+        idx = _extract_ac_index((issue.get("fields") or {}).get("summary") or "")
+        if idx is not None:
+            by_index[idx] = issue
+    valid_keys = set(by_key)
+
     scenarios: list[dict] = []
     for feature in report:
         for elem in feature.get("elements", []):
@@ -268,6 +299,7 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str | None = None,
                 "name": elem.get("name"),
                 "status": "FAIL" if failed else "PASS",
                 "ac_index": _extract_ac_index(elem.get("name") or ""),
+                "test_key": _scenario_test_key(elem, valid_keys),
                 "feature": feature.get("uri"),
                 "error": (failed[0].get("result", {}).get("error_message") if failed else None),
             })
@@ -290,21 +322,20 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str | None = None,
     )
     _comment_issue(ticket, body_text)
 
-    # Match subtasks by AC index (AC1, AC2, ...) in summary text.
-    subtasks = _find_test_subtasks(ticket)
-    by_index: dict[int, dict] = {}
-    for issue in subtasks:
-        idx = _extract_ac_index((issue.get("fields") or {}).get("summary") or "")
-        if idx is not None:
-            by_index[idx] = issue
-
+    # Match each scenario to its Test subtask: prefer the Jira key tagged on the
+    # scenario (@SYN-NN); fall back to the ACn index for older feature files.
     updates: list[dict] = []
     for scenario in scenarios:
-        idx = scenario.get("ac_index")
-        if idx is None or idx not in by_index:
+        issue = None
+        if scenario.get("test_key") and scenario["test_key"] in by_key:
+            issue = by_key[scenario["test_key"]]
+        else:
+            idx = scenario.get("ac_index")
+            if idx is not None and idx in by_index:
+                issue = by_index[idx]
+        if issue is None:
             updates.append({"scenario": scenario.get("name"), "updated": False, "reason": "no matching subtask"})
             continue
-        issue = by_index[idx]
         issue_key = issue.get("key")
         comment = f"Scenario {scenario['name']}: {scenario['status']}"
         if execution_url:
@@ -322,6 +353,7 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str | None = None,
             "scenario": scenario.get("name"),
             "issue": issue_key,
             "status": scenario.get("status"),
+            "matched_by": "test_key" if scenario.get("test_key") else "ac_index",
             "transition": transition_resp,
             "updated": True,
         })
