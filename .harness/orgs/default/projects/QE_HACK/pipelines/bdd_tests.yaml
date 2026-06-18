@@ -54,7 +54,12 @@ pipeline:
                     command: |
                       set -euo pipefail
                       cd bdd-tests
-                      mvn -B -ntp test
+                      # Remove any stale target/ from a reused CI workspace so
+                      # Cucumber only runs feature files present in the current
+                      # checkout. `mvn test` alone leaves deleted .feature files
+                      # in target/test-classes, which re-run for removed tickets.
+                      rm -rf target
+                      mvn -B -ntp clean test
                     reports:
                       type: JUnit
                       spec:
