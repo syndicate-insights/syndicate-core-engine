@@ -29,13 +29,22 @@ def test_feature_without_keys_has_no_subtask_tag():
 
 
 def _stub_jira(monkeypatch, subtasks):
+    """Stub Jira REST helpers, recording comment/transition targets.
+
+    Returns a dict with ``comments`` and ``transitions`` lists of (key, value)
+    so tests can assert exactly which issues were touched.
+    """
+    calls: dict[str, list] = {"comments": [], "transitions": []}
     monkeypatch.setattr(jira_toolset, "_find_test_subtasks", lambda ticket: subtasks)
-    monkeypatch.setattr(jira_toolset, "_comment_issue", lambda key, text: {})
-    monkeypatch.setattr(jira_toolset, "_transition_issue", lambda key, status: {"ok": True})
+    monkeypatch.setattr(jira_toolset, "_comment_issue",
+                        lambda key, text: calls["comments"].append((key, text)) or {})
+    monkeypatch.setattr(jira_toolset, "_transition_issue",
+                        lambda key, status: calls["transitions"].append((key, status)) or {"ok": True})
+    return calls
 
 
 def test_sync_matches_by_test_key(monkeypatch):
-    _stub_jira(monkeypatch, [
+    calls = _stub_jira(monkeypatch, [
         {"key": "SYN-101", "fields": {"summary": "BDD AC1 for SYN-99: x"}},
         {"key": "SYN-102", "fields": {"summary": "BDD AC2 for SYN-99: y"}},
     ])
@@ -57,6 +66,16 @@ def test_sync_matches_by_test_key(monkeypatch):
     assert ups["AC1 - first"]["matched_by"] == "test_key"
     assert ups["AC2 - second"]["issue"] == "SYN-101"
     assert ups["AC2 - second"]["status"] == "FAIL"
+
+    # Comments and transitions go to the subtasks only — never the parent SYN-99.
+    commented = {k for k, _ in calls["comments"]}
+    transitioned = dict(calls["transitions"])
+    assert commented == {"SYN-101", "SYN-102"}
+    assert "SYN-99" not in commented
+    assert "SYN-99" not in transitioned
+    # Passing scenario -> Done; failing scenario -> In Progress.
+    assert transitioned["SYN-102"] == "Done"
+    assert transitioned["SYN-101"] == "In Progress"
 
 
 def test_sync_falls_back_to_ac_index(monkeypatch):
