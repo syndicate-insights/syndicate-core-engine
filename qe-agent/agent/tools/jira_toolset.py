@@ -252,6 +252,20 @@ def _find_test_subtasks(ticket: str) -> list[dict]:
     return resp.get("issues", []) if isinstance(resp, dict) else []
 
 
+def already_authored(ticket: str) -> bool:
+    """True when this ticket already has agent-authored BDD Test subtasks.
+
+    Used to make authoring idempotent so a re-delivered / retried Jira webhook
+    doesn't create duplicate subtasks and PRs. Detects the agent's own
+    ``"BDD AC..."`` subtasks specifically (ignores any human-created ones).
+    """
+    for issue in _find_test_subtasks(ticket):
+        summary = (issue.get("fields") or {}).get("summary") or ""
+        if summary.startswith("BDD AC"):
+            return True
+    return False
+
+
 def _extract_ac_index(text: str) -> int | None:
     m = re.search(r"\bAC(\d+)\b", text or "", flags=re.I)
     return int(m.group(1)) if m else None

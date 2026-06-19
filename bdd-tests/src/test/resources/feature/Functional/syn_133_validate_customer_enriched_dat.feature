@@ -12,6 +12,6 @@ Feature: Validate customer enriched data completeness and accuracy (SYN-133)
 
   @JiraGenerated @SYN-133 @SYN-135
   Scenario: AC2 - Given a customer record has a null email field, When customer_enriched is built,
-    Given the test suite is "non_functional"
-    When I run scenario "N2"
+    Given the test suite is "functional"
+    When I run scenario "F5"
     Then the scenario status should be PASS
