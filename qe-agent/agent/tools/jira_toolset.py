@@ -288,13 +288,16 @@ def _scenario_belongs(elem: dict, ticket: str, valid_keys: set[str]) -> bool:
     return ticket in tags or bool(tags & valid_keys)
 
 
-def _comment_issue(issue_key: str, text: str) -> dict:
+def _comment_issue(issue_key: str, text: str, code_block: str | None = None) -> dict:
+    content: list[dict] = [{"type": "paragraph", "content": [{"type": "text", "text": text}]}]
+    if code_block:
+        content.append({
+            "type": "codeBlock",
+            "attrs": {"language": "json"},
+            "content": [{"type": "text", "text": code_block}],
+        })
     return _request("POST", f"/rest/api/3/issue/{quote(issue_key)}/comment", {
-        "body": {
-            "type": "doc",
-            "version": 1,
-            "content": [{"type": "paragraph", "content": [{"type": "text", "text": text}]}],
-        },
+        "body": {"type": "doc", "version": 1, "content": content},
     })
 
 
@@ -323,17 +326,20 @@ def _find_subtask_by_scenario_id(subtasks: list[dict], scenario_id: str) -> dict
 
 
 def sync_scenario_result(ticket: str, scenario_id: str, status: str,
-                         findings: list[str] | None = None,
+                         result: dict | None = None,
                          execution_url: str | None = None) -> dict:
     """Sync a single non-BDD check result (CS/SA/N) to its fixed subtask.
 
     Mirrors the per-subtask behaviour of ``sync_cucumber_results``:
       * PASS -> comment + JIRA_TEST_PASS_STATUS (default "Done")
       * not PASS -> comment + JIRA_TEST_FAIL_STATUS (default "In Progress")
-    The parent ticket is left untouched. No-ops cleanly when no ticket / no
-    matching subtask is found.
+    On failure the comment also carries the full check detail (findings,
+    per-file violations and metrics) as a JSON code block so the fix is
+    actionable from the ticket. The parent ticket is left untouched. No-ops
+    cleanly when no ticket / no matching subtask is found.
     """
     status = "PASS" if str(status).upper() == "PASS" else "FAIL"
+    result = result or {}
     if not ticket:
         return {"scenario_id": scenario_id, "status": status, "updated": False,
                 "reason": "no ticket supplied"}
@@ -348,9 +354,16 @@ def sync_scenario_result(ticket: str, scenario_id: str, status: str,
     comment = f"Check {scenario_id}: {status}"
     if execution_url:
         comment += f" — {execution_url}"
-    for f in (findings or [])[:5]:
+    for f in (result.get("findings") or [])[:5]:
         comment += f"\n- {str(f)[:300]}"
-    _comment_issue(issue_key, comment)
+    # On failure, attach the full check detail so the fix is actionable.
+    code_block = None
+    if status != "PASS":
+        detail = {k: result[k] for k in ("status", "findings", "expected", "actual", "metrics")
+                  if result.get(k) is not None}
+        if detail:
+            code_block = json.dumps(detail, indent=2)[:4500]
+    _comment_issue(issue_key, comment, code_block=code_block)
     status_target = JIRA_TEST_PASS_STATUS if status == "PASS" else JIRA_TEST_FAIL_STATUS
     transition = _transition_issue(issue_key, status_target) if status_target else None
     logger.info("sync_scenario_result: ticket=%s scenario=%s subtask=%s status=%s",
