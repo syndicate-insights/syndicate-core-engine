@@ -19,16 +19,21 @@ def slugify(value: str, max_len: int = 60) -> str:
 
 
 def domain_for_ticket(ticket: str, summary: str) -> str:
-    """Pick a folder under bdd-tests/.../feature/ based on summary heuristics."""
+    """Pick the BDD feature folder for a per-ticket acceptance test.
+
+    Per-ticket AC scenarios only run in the **Functional & Integration** BDD
+    stage, so this returns just those two folders: ``Integration`` when the
+    ticket is clearly integration-related, otherwise ``Functional``.
+
+    Coding Standards, Static Analysis and Non-Functional are validated by the
+    fixed non-BDD check subtasks (run via the agent's /qe/scenario API), not by
+    per-ticket feature files — routing a feature into one of those folders would
+    place it where the Functional & Integration stage drops it, so its scenarios
+    would never run and never sync back to their subtasks.
+    """
     s = (summary or "").lower()
-    if any(k in s for k in ("performance", "latency", "sla", "security", "reliability")):
-        return "NonFunctional"
     if any(k in s for k in ("integration", "ingest", "pipeline", "neo4j", "bigquery", "gcs")):
         return "Integration"
-    if any(k in s for k in ("standard", "naming", "convention", "manifest", "lint")):
-        return "CodingStandards"
-    if any(k in s for k in ("static", "scan", "secret", "vulnerability")):
-        return "StaticAnalysis"
     return "Functional"
 
 
