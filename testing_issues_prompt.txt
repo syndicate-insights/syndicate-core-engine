@@ -1,0 +1,350 @@
+Fix the issues:
+Insights Syndicate
+4 minutes ago
+
+Check CS4: FAIL — https://app.harness.io/ng/account/1iW3b7HMR3-EyCF5Nhpmrg/cd/orgs/< pipeline.orgIdentifier>/projects/< pipeline.projectIdentifier>/pipelines/bdd_tests/executions/BLbAIYdjQMy-rVKoGgsILg/pipeline
+- Kubernetes manifest hygiene issues.
+{
+  "status": "FAIL",
+  "findings": [
+    "Kubernetes manifest hygiene issues."
+  ],
+  "actual": [
+    "synthetic-data-generator/synthetic-data-generator.yaml: container csv-generator has no resource limits",
+    "synthetic-data-generator/synthetic-data-generator.yaml: CronJob concurrencyPolicy should be Forbid/Replace"
+  ],
+  "metrics": {
+    "issues": 2
+  }
+}
+
+Insights Syndicate
+4 minutes ago
+
+Check SA1: FAIL — https://app.harness.io/ng/account/1iW3b7HMR3-EyCF5Nhpmrg/cd/orgs/< pipeline.orgIdentifier>/projects/< pipeline.projectIdentifier>/pipelines/bdd_tests/executions/BLbAIYdjQMy-rVKoGgsILg/pipeline
+- sqlfluff reported 18 style violations across dbt models.
+{
+  "status": "FAIL",
+  "findings": [
+    "sqlfluff reported 18 style violations across dbt models."
+  ],
+  "actual": [
+    {
+      "file": "/workspace/syndicate-core-engine/dbt-account-transform/models/marts/account_enriched.sql",
+      "violations": 6
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/dbt-account-transform/models/staging/processed_files_metadata.sql",
+      "violations": 1
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/dbt-account-transform/models/staging/stg_account_raw.sql",
+      "violations": 1
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/dbt-address-transform/models/marts/address_enriched.sql",
+      "violations": 4
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/dbt-address-transform/models/staging/stg_address_raw.sql",
+      "violations": 4
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/dbt-customer-transform/models/staging/processed_files_metadata.sql",
+      "violations": 1
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/dbt-customer-transform/models/staging/stg_customer_raw.sql",
+      "violations": 1
+    }
+  ],
+  "metrics": {
+    "files_checked": 9,
+    "violations": 18
+  }
+}
+
+Insights Syndicate
+4 minutes ago
+
+Check SA2: FAIL — https://app.harness.io/ng/account/1iW3b7HMR3-EyCF5Nhpmrg/cd/orgs/< pipeline.orgIdentifier>/projects/< pipeline.projectIdentifier>/pipelines/bdd_tests/executions/BLbAIYdjQMy-rVKoGgsILg/pipeline
+- ruff reported 12 lint issues.
+{
+  "status": "FAIL",
+  "findings": [
+    "ruff reported 12 lint issues."
+  ],
+  "actual": [
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/server/main.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/server/main.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/server/main.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/sub_agents/bdd_authoring/agent.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/sub_agents/bdd_authoring/agent.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/sub_agents/bdd_authoring/agent.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/sub_agents/bdd_authoring/agent.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/sub_agents/bdd_authoring/agent.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/sub_agents/bdd_authoring/agent.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/sub_agents/bdd_authoring/agent.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/sub_agents/bdd_authoring/agent.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/sub_agents/bdd_authoring/agent.py",
+      "code": "E402",
+      "msg": "Module level import not at top of file"
+    }
+  ],
+  "metrics": {
+    "issues": 12
+  }
+}
+
+
+
+Insights Syndicate
+4 minutes ago
+
+Check SA3: FAIL — https://app.harness.io/ng/account/1iW3b7HMR3-EyCF5Nhpmrg/cd/orgs/< pipeline.orgIdentifier>/projects/< pipeline.projectIdentifier>/pipelines/bdd_tests/executions/BLbAIYdjQMy-rVKoGgsILg/pipeline
+- bandit found 19 HIGH/MEDIUM severity issues.
+{
+  "status": "FAIL",
+  "findings": [
+    "bandit found 19 HIGH/MEDIUM severity issues."
+  ],
+  "actual": [
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/scenarios/functional.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/scenarios/functional.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/scenarios/functional.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/scenarios/functional.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/scenarios/integration.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/scenarios/integration.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/scenarios/integration.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/scenarios/integration.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/scenarios/integration.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/scenarios/non_functional.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/server/main.py",
+      "test": "hardcoded_bind_all_interfaces",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/tools/bigquery_toolset.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/tools/bigquery_toolset.py",
+      "test": "hardcoded_sql_expressions",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/tools/github_toolset.py",
+      "test": "blacklist",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/tools/harness_toolset.py",
+      "test": "blacklist",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/tools/harness_toolset.py",
+      "test": "blacklist",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/agent/tools/jira_toolset.py",
+      "test": "blacklist",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/cli/qe_cli.py",
+      "test": "blacklist",
+      "sev": "MEDIUM"
+    },
+    {
+      "file": "/workspace/syndicate-core-engine/qe-agent/cli/qe_cli.py",
+      "test": "blacklist",
+      "sev": "MEDIUM"
+    }
+  ],
+  "metrics": {
+    "total_findings": 73,
+    "high_or_medium": 19
+  }
+}
+
+
+Insights Syndicate
+4 minutes ago
+
+Check SA4: FAIL — https://app.harness.io/ng/account/1iW3b7HMR3-EyCF5Nhpmrg/cd/orgs/< pipeline.orgIdentifier>/projects/< pipeline.projectIdentifier>/pipelines/bdd_tests/executions/BLbAIYdjQMy-rVKoGgsILg/pipeline
+- yamllint reported 2 errors.
+{
+  "status": "FAIL",
+  "findings": [
+    "yamllint reported 2 errors."
+  ],
+  "actual": [
+    "/workspace/syndicate-core-engine/qe-agent/docs/tests.yaml:12:1: [error] syntax error: expected '<document start>', but found '<scalar>' (syntax)",
+    "/workspace/syndicate-core-engine/qe-agent/docs/tests.yaml:160:61: [error] no new line character at the end of file (new-line-at-end-of-file)"
+  ],
+  "metrics": {
+    "files_checked": 19,
+    "warnings": 6,
+    "errors": 2
+  }
+}
+
+Insights Syndicate
+4 minutes ago
+
+Check SA5: FAIL — https://app.harness.io/ng/account/1iW3b7HMR3-EyCF5Nhpmrg/cd/orgs/< pipeline.orgIdentifier>/projects/< pipeline.projectIdentifier>/pipelines/bdd_tests/executions/BLbAIYdjQMy-rVKoGgsILg/pipeline
+- Found 13 potential hardcoded secrets.
+{
+  "status": "FAIL",
+  "findings": [
+    "Found 13 potential hardcoded secrets."
+  ],
+  "actual": [
+    {
+      "file": "k8s/neo4j/neo4j-values.yaml",
+      "type": "neo4j_password"
+    },
+    {
+      "file": "k8s/neo4j/neo4j-values.yaml",
+      "type": "password_literal"
+    },
+    {
+      "file": "k8s/neo4j/neo4j-values.yaml",
+      "type": "password_literal"
+    },
+    {
+      "file": "k8s/neo4j-ingest/neo4j-ingest-cronjob.yaml",
+      "type": "password_literal"
+    },
+    {
+      "file": "qe-agent/docs/tests.yaml",
+      "type": "password_literal"
+    },
+    {
+      "file": "qe-agent/deploy/k8s/secret.example.yaml",
+      "type": "neo4j_password"
+    },
+    {
+      "file": "qe-agent/deploy/k8s/secret.example.yaml",
+      "type": "neo4j_password"
+    },
+    {
+      "file": "qe-agent/deploy/k8s/secret.example.yaml",
+      "type": "neo4j_password"
+    },
+    {
+      "file": "qe-agent/deploy/k8s/secret.example.yaml",
+      "type": "neo4j_password"
+    },
+    {
+      "file": "qe-agent/deploy/k8s/secret.example.yaml",
+      "type": "neo4j_password"
+    },
+    {
+      "file": "qe-agent/deploy/k8s/secret.example.yaml",
+      "type": "neo4j_password"
+    },
+    {
+      "file": "qe-agent/deploy/k8s/secret.example.yaml",
+      "type": "password_literal"
+    },
+    {
+      "file": "qe-agent/deploy/k8s/secret.example.yaml",
+      "type": "password_literal"
+    }
+  ],
+  "metrics": {
+    "hits": 13
+  }
+}
+
+Also if it's code related include the line in the json output that is failing and needs fixing
