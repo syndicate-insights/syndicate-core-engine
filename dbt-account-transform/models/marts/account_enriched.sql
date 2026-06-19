@@ -21,6 +21,9 @@
 select
     account_id,
     customer_id,
+    sort_code,
+    account_number,
+    opened_date_raw,
     case
         when cast(substr(regexp_replace(sort_code, r'[^0-9]', ''), -1, 1) as int64) in (2, 3, 5, 7)
          and mod(cast(substr(account_number, -2, 1) as int64), 2) = 0
@@ -28,8 +31,5 @@ select
         then 'INVESTMENT'
         else account_type
     end as account_type,
-    sort_code,
-    account_number,
-    opened_date_raw,
     current_timestamp() as processed_at
 from {{ ref('stg_account_raw') }}

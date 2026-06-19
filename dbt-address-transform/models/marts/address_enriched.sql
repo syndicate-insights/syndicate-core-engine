@@ -28,15 +28,15 @@ select
     city,
     postcode,
     country,
-    concat(line1, ', ', city, ', ', postcode, ', ', country) as full_address,
     source_file,
+    concat(line1, ', ', city, ', ', postcode, ', ', country) as full_address,
     current_timestamp() as processed_at
 from {{ ref('stg_address_raw') }}
 
 {% if is_incremental() %}
     where source_file not in (
-        select file_name
-        from {{ ref('processed_files_metadata') }}
-        where file_name is not null
+        select pfm.file_name
+        from {{ ref('processed_files_metadata') }} as pfm
+        where pfm.file_name is not null
     )
 {% endif %}
