@@ -105,8 +105,10 @@ def test_sync_reports_unmatched_scenario(monkeypatch):
     report = [{
         "uri": "f.feature",
         "elements": [
+            # Belongs to SYN-99 (parent tag) but has no AC index / subtask key,
+            # so it can't be matched to a subtask.
             {"type": "scenario", "name": "free-form scenario with no AC index",
-             "tags": [{"name": "@JiraGenerated"}],
+             "tags": [{"name": "@JiraGenerated"}, {"name": "@SYN-99"}],
              "steps": [{"result": {"status": "passed"}}]},
         ],
     }]
@@ -114,3 +116,42 @@ def test_sync_reports_unmatched_scenario(monkeypatch):
     update = res["subtask_updates"][0]
     assert update["updated"] is False
     assert update["reason"] == "no matching subtask"
+
+
+def test_sync_ignores_foreign_and_suite_scenarios(monkeypatch):
+    """Scenarios from other tickets / curated suites must not touch subtasks."""
+    calls = _stub_jira(monkeypatch, [
+        {"key": "SYN-44", "fields": {"summary": "BDD AC1 for SYN-43: x"}},
+        {"key": "SYN-45", "fields": {"summary": "BDD AC2 for SYN-43: y"}},
+    ])
+    report = [{
+        "uri": "f.feature",
+        "elements": [
+            {"type": "scenario", "name": "AC1 - first",
+             "tags": [{"name": "@JiraGenerated"}, {"name": "@SYN-43"}],
+             "steps": [{"result": {"status": "passed"}}]},
+            {"type": "scenario", "name": "AC2 - second",
+             "tags": [{"name": "@JiraGenerated"}, {"name": "@SYN-43"}],
+             "steps": [{"result": {"status": "failed", "error_message": "boom"}}]},
+            # Foreign ticket scenario sharing the AC1 index must NOT hijack SYN-44.
+            {"type": "scenario", "name": "AC1 - foreign",
+             "tags": [{"name": "@JiraGenerated"}, {"name": "@SYN-7"}],
+             "steps": [{"result": {"status": "failed", "error_message": "nope"}}]},
+            # Curated suite scenario with no SYN tag is ignored.
+            {"type": "scenario", "name": "CS1 - dbt naming",
+             "tags": [{"name": "@Standards"}, {"name": "@DbtNaming"}],
+             "steps": [{"result": {"status": "passed"}}]},
+        ],
+    }]
+    res = jira_toolset.sync_cucumber_results("SYN-43", report=report)
+    assert res["total"] == 2
+    assert res["passed"] == 1 and res["failed"] == 1
+    assert res["ignored"] == 2
+
+    commented = {k for k, _ in calls["comments"]}
+    transitioned = dict(calls["transitions"])
+    assert commented == {"SYN-44", "SYN-45"}
+    assert transitioned["SYN-44"] == "Done"          # AC1 passed
+    assert transitioned["SYN-45"] == "In Progress"   # AC2 failed -> stays In Progress
+    # The foreign failing AC1 must never have transitioned SYN-44.
+    assert calls["transitions"].count(("SYN-44", "In Progress")) == 0
