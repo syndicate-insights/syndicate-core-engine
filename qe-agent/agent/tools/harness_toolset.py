@@ -51,7 +51,7 @@ def _request(method: str, path: str, query: dict | None = None,
     if body is not None:
         req.add_header("Content-Type", "application/json")
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
             payload = resp.read().decode()
             result = json.loads(payload) if payload else {}
             logger.debug("harness %s %s -> 2xx response_keys=%s", method, url, list(result.keys()) if isinstance(result, dict) else type(result).__name__)
@@ -128,7 +128,7 @@ def trigger_bdd_for_ticket(ticket: str) -> dict:
         headers={"Content-Type": "application/json", "Accept": "application/json"},
     )
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310
+        with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310  # nosec B310
             payload = resp.read().decode()
             try:
                 result = {"status": "queued", "ticket": ticket,

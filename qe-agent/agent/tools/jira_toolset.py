@@ -62,7 +62,7 @@ def _request(method: str, path: str, body: dict | None = None, timeout: int = 30
     for k, v in _auth_header().items():
         req.add_header(k, v)
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
             payload = resp.read().decode()
             result = json.loads(payload) if payload else {}
             logger.debug("jira %s %s -> 2xx response_keys=%s", method, url, list(result.keys()) if isinstance(result, dict) else type(result).__name__)

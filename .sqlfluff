@@ -1,0 +1,22 @@
+[sqlfluff]
+# dbt models are templated with Jinja and target BigQuery.
+templater = jinja
+dialect = bigquery
+max_line_length = 120
+
+# The layout and capitalisation rule groups are disabled for the dbt models:
+#  * Jinja `{{ config(...) }}` blocks render to an empty string, leaving leading
+#    and trailing blank lines that trip the file-boundary layout rules
+#    (LT12/LT13) even though the rendered SQL is correct.
+#  * BigQuery pseudo-columns such as `_FILE_NAME` must keep their documented
+#    upper-case form, which conflicts with the identifier-capitalisation rules.
+# Semantic rule groups (aliasing, ambiguous, references, structure, convention)
+# remain enabled.
+exclude_rules = layout, capitalisation
+
+[sqlfluff:indentation]
+tab_space_size = 4
+indent_unit = space
+
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True

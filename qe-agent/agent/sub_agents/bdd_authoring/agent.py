@@ -11,8 +11,6 @@ from __future__ import annotations
 import logging
 from typing import Iterable
 
-logger = logging.getLogger(__name__)
-
 from google.adk.agents import LlmAgent
 from google.adk.tools import FunctionTool
 
@@ -23,6 +21,8 @@ from agent.sub_agents.bdd_authoring import gherkin
 from agent.tools import github_toolset as gh
 from agent.tools import harness_toolset as harness
 from agent.tools import jira_toolset as jira
+
+logger = logging.getLogger(__name__)
 
 BDD_FEATURE_ROOT = "bdd-tests/src/test/resources/feature"
 

@@ -16,9 +16,11 @@
 
 neo4j:
   name: neo4j
-  # Set a strong password — override via --set neo4j.password=<value> at install time
-  # or store in a Kubernetes secret and reference below.
-  password: "changeme-strong-password"
+  # Credentials are supplied via a pre-created Kubernetes secret (NEO4J_AUTH).
+  # Create it before installing the chart, e.g.:
+  #   kubectl -n qe-hack-syndicate create secret generic neo4j-auth \
+  #     --from-literal=NEO4J_AUTH="neo4j/$(openssl rand -hex 24)"
+  passwordFromSecret: neo4j-auth
   edition: "community"
   acceptLicenseAgreement: "yes"
 
