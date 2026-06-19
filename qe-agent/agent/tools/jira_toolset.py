@@ -31,7 +31,7 @@ def _env(key: str, default: str = "") -> str:
 JIRA_BASE_URL = _env("JIRA_BASE_URL")  # e.g. https://yourorg.atlassian.net
 JIRA_USER = _env("JIRA_USER")          # service account email
 JIRA_TOKEN = _env("JIRA_API_TOKEN")    # API token
-JIRA_PROJECT = _env("JIRA_PROJECT")    # e.g. SYN
+JIRA_PROJECT = _env("JIRA_PROJECT")    # e.g. PROJ
 JIRA_TEST_ISSUETYPE = _env("JIRA_TEST_ISSUETYPE", "Test")
 JIRA_AC_FIELD = _env("JIRA_AC_FIELD", "")  # optional custom field id (e.g. customfield_10100)
 # Per Test-subtask transitions applied after a BDD run syncs results:
@@ -218,7 +218,7 @@ def _scenario_test_key(elem: dict, valid_keys: set[str]) -> str | None:
     """Return the Jira Test subtask key tagged on a Cucumber scenario.
 
     The authoring step tags each scenario with its backing subtask key
-    (e.g. ``@SYN-36``). The Cucumber JSON exposes those as ``tags`` on the
+    (e.g. ``@PROJ-123``). The Cucumber JSON exposes those as ``tags`` on the
     scenario element. We only accept a tag that matches a known subtask key so
     the parent ticket / ``@JiraGenerated`` tags are never mistaken for one.
     """
@@ -232,7 +232,7 @@ def _scenario_belongs(elem: dict, ticket: str, valid_keys: set[str]) -> bool:
     """True when a Cucumber scenario belongs to ``ticket``.
 
     A scenario belongs when it is tagged with the parent ticket key
-    (``@SYN-43``) or with one of that ticket's Test subtask keys. Scenarios
+    (``@PROJ-123``) or with one of that ticket's Test subtask keys. Scenarios
     from other tickets and the shared curated suites are ignored, so a foreign
     ``ACn`` index can never hijack this ticket's subtasks.
     """
@@ -346,7 +346,7 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str | None = None,
     # untouched (no summary comment, no status transition).
 
     # Match each scenario to its Test subtask: prefer the Jira key tagged on the
-    # scenario (@SYN-NN); fall back to the ACn index for older feature files.
+    # scenario (@PROJ-123); fall back to the ACn index for older feature files.
     updates: list[dict] = []
     for scenario in scenarios:
         issue = None

@@ -37,7 +37,7 @@ def feature_for_ticket(ticket: str, summary: str, bullets: list[str],
     """Render a complete .feature file from acceptance-criteria bullets.
 
     When ``test_keys`` is supplied, each scenario is additionally tagged with the
-    Jira ``Test`` subtask key that backs it (e.g. ``@SYN-36``). The BDD results
+    Jira ``Test`` subtask key that backs it (e.g. ``@PROJ-123``). The BDD results
     sync uses that tag to push each scenario's PASS/FAIL to the exact subtask
     instead of inferring the mapping from the ``ACn`` index. The list is aligned
     by position with ``bullets`` (scenario ``ACn`` -> ``test_keys[n-1]``).

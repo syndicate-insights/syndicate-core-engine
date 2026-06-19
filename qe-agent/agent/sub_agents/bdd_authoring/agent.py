@@ -81,7 +81,7 @@ def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
 
     logger.info("author_bdd_scenarios: %d Test subtask(s) created for ticket=%s", len(result["test_issues"]), ticket)
     # 2. Re-render the feature with each scenario tagged by its Jira Test subtask
-    #    key (@SYN-NN) so the results sync can target subtasks directly.
+    #    key (@PROJ-123) so the results sync can target subtasks directly.
     feature_text = gherkin.feature_for_ticket(ticket, summary, bullets, test_keys=test_keys)
     result["feature"] = feature_text
     # 3. Branch + write feature file + open PR against the syndicate-core-engine repo.
