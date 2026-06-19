@@ -27,6 +27,7 @@ from agent.sub_agents.bdd_authoring.agent import (
     harness_latest_bdd,
     jira_read_acceptance_criteria,
     jira_sync_results,
+    run_and_sync_scenario,
     update_bdd_from_failure,
 )
 
@@ -83,6 +84,23 @@ def run_scenario(suite: str, scenario_id: str) -> dict:
     result = runner.run_scenario(suite, scenario_id)
     logger.info("run_scenario suite=%s scenario_id=%s status=%s", suite, scenario_id, result.get("status"))
     return result
+
+
+@app.post("/qe/scenario/{suite}/{scenario_id}/run-sync")
+def run_scenario_and_sync(suite: str, scenario_id: str, ticket: str = "",
+                          execution_url: str | None = None) -> dict:
+    """Run a non-BDD check and sync its PASS/FAIL to the matching Jira subtask.
+
+    Called by the Harness CodingStandards / StaticAnalysis / NonFunctional
+    stages (native HTTP step — no curl, no Cucumber). The top-level ``status``
+    field is the deterministic gate. ``ticket`` is optional: when omitted the
+    check still runs and gates, it just isn't synced to Jira.
+    """
+    logger.info("run_scenario_and_sync suite=%s scenario_id=%s ticket=%s", suite, scenario_id, ticket)
+    out = run_and_sync_scenario(suite, scenario_id, ticket=ticket, execution_url=execution_url)
+    logger.info("run_scenario_and_sync suite=%s scenario_id=%s status=%s synced=%s",
+                suite, scenario_id, out.get("status"), bool((out.get("sync") or {}).get("updated")))
+    return out
 
 
 # --- BDD authoring / Jira / Harness -----------------------------------------
