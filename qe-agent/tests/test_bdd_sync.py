@@ -235,3 +235,19 @@ def test_sync_scenario_result_unknown_scenario(monkeypatch):
     ])
     r = jira_toolset.sync_scenario_result("SYN-43", "CS9", "PASS")
     assert r["updated"] is False and r["reason"] == "no matching subtask"
+
+
+# --- Per-ticket BDD features must route only to Functional/Integration --------
+
+def test_domain_for_ticket_only_functional_or_integration():
+    """Per-ticket features must never land in CS/SA/NonFunctional folders, which
+    the Functional & Integration stage drops (so they'd never run/sync)."""
+    # A coding-standards-sounding ticket (like SYN-104) must NOT route to a
+    # folder the BDD stage deletes.
+    assert gherkin.domain_for_ticket(
+        "SYN-104", "Enforce dbt model naming conventions and manifest lint standards"
+    ) == "Functional"
+    assert gherkin.domain_for_ticket("SYN-1", "BigQuery to Neo4j ingest pipeline") == "Integration"
+    for summ in ["performance latency SLA", "security reliability posture",
+                 "static secret scan", "validate enriched data"]:
+        assert gherkin.domain_for_ticket("SYN-X", summ) in ("Functional", "Integration")
