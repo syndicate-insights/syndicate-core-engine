@@ -356,13 +356,11 @@ def sync_scenario_result(ticket: str, scenario_id: str, status: str,
         comment += f" — {execution_url}"
     for f in (result.get("findings") or [])[:5]:
         comment += f"\n- {str(f)[:300]}"
-    # On failure, attach the full check detail so the fix is actionable.
-    code_block = None
-    if status != "PASS":
-        detail = {k: result[k] for k in ("status", "findings", "expected", "actual", "metrics")
-                  if result.get(k) is not None}
-        if detail:
-            code_block = json.dumps(detail, indent=2)[:4500]
+    # Attach the full check detail (pass or fail) so every subtask comment
+    # carries the evidence behind the result.
+    detail = {k: result[k] for k in ("status", "findings", "expected", "actual", "metrics")
+              if result.get(k) is not None}
+    code_block = json.dumps(detail, indent=2)[:4500] if detail else None
     _comment_issue(issue_key, comment, code_block=code_block)
     status_target = JIRA_TEST_PASS_STATUS if status == "PASS" else JIRA_TEST_FAIL_STATUS
     transition = _transition_issue(issue_key, status_target) if status_target else None
@@ -476,7 +474,12 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str | None = None,
             comment += f" — {execution_url}"
         if scenario.get("error"):
             comment += f"\nFailure: {scenario['error'][:400]}"
-        _comment_issue(issue_key, comment)
+        # Attach the scenario detail (pass or fail) so every subtask comment
+        # carries the evidence behind the result.
+        detail = {k: scenario.get(k) for k in ("name", "status", "feature", "error")
+                  if scenario.get(k) is not None}
+        code_block = json.dumps(detail, indent=2)[:4500] if detail else None
+        _comment_issue(issue_key, comment, code_block=code_block)
         logger.info("sync_cucumber_results: subtask=%s status=%s commented", issue_key, scenario["status"])
 
         status_target = JIRA_TEST_PASS_STATUS if scenario["status"] == "PASS" else JIRA_TEST_FAIL_STATUS

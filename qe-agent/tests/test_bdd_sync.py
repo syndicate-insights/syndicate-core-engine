@@ -77,6 +77,10 @@ def test_sync_matches_by_test_key(monkeypatch):
     # Passing scenario -> Done; failing scenario -> In Progress.
     assert transitioned["SYN-102"] == "Done"
     assert transitioned["SYN-101"] == "In Progress"
+    # Every subtask comment carries the scenario detail (pass and fail).
+    detail_by_issue = {c[0]: c[2] for c in calls["comments"]}
+    assert detail_by_issue["SYN-102"] and '"status": "PASS"' in detail_by_issue["SYN-102"]
+    assert detail_by_issue["SYN-101"] and '"status": "FAIL"' in detail_by_issue["SYN-101"]
 
 
 def test_sync_falls_back_to_ac_index(monkeypatch):
@@ -190,12 +194,15 @@ def test_sync_scenario_result_matches_by_scenario_id(monkeypatch):
         {"key": "SYN-51", "fields": {"summary": "SA3 - Python security scan (bandit)"}},
         {"key": "SYN-52", "fields": {"summary": "N1 - Performance / SLA"}},
     ])
-    # PASS -> Done (short comment, no JSON detail block)
+    # PASS -> Done, with the result detail attached too (every comment carries it)
     r = jira_toolset.sync_scenario_result(
-        "SYN-43", "CS1", "PASS", result={"status": "PASS"}, execution_url="http://e")
+        "SYN-43", "CS1", "PASS",
+        result={"status": "PASS", "metrics": {"files_checked": 9, "violations": 0}},
+        execution_url="http://e")
     assert r["issue"] == "SYN-50" and r["status"] == "PASS"
     pass_comment = next(c for c in calls["comments"] if c[0] == "SYN-50")
-    assert pass_comment[2] is None  # no code block on PASS
+    assert pass_comment[2] is not None  # detail attached on PASS too
+    assert '"violations": 0' in pass_comment[2]
     # FAIL -> In Progress, with the full check detail attached as a JSON block
     fail_result = {
         "status": "FAIL",
