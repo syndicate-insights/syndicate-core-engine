@@ -251,3 +251,33 @@ def test_domain_for_ticket_only_functional_or_integration():
     for summ in ["performance latency SLA", "security reliability posture",
                  "static secret scan", "validate enriched data"]:
         assert gherkin.domain_for_ticket("SYN-X", summ) in ("Functional", "Integration")
+
+
+# --- Scenario-suite mapping must use the agent's registry keys ----------------
+
+def test_bullet_to_gwt_emits_valid_suite_names():
+    """Every generated step must name a suite the agent runner knows, else the
+    BDD step fails with "Unknown suite '<name>'"."""
+    valid = {"static", "standards", "integration", "functional", "nonfunctional"}
+    bullets = [
+        "p99 latency SLA under 5s",
+        "system must be reliable; logging of failures",
+        "rows ingested into neo4j graph",
+        "raw rows become enriched",
+        "sql passes sqlfluff lint",
+        "no hardcoded secret credential",
+        "every model has a primary key and unique test",
+        "validate customer enriched completeness",
+        # The SYN-133 AC2 that regressed: 'logged' must NOT route to nonfunctional.
+        "a customer record has a null email field, then the row should be excluded from the mart and logged in processed_files_metadata",
+    ]
+    for b in bullets:
+        steps = gherkin._bullet_to_gwt(b)
+        suite = steps[0].split('"')[1]
+        assert suite in valid, f"invalid suite {suite!r} for bullet {b!r}"
+
+
+def test_bullet_to_gwt_logged_stays_functional():
+    steps = gherkin._bullet_to_gwt(
+        "the row should be excluded from the mart and logged in processed_files_metadata")
+    assert steps[0] == 'Given the test suite is "functional"'

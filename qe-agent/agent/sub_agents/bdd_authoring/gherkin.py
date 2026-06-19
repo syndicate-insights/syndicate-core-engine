@@ -71,35 +71,50 @@ def feature_for_ticket(ticket: str, summary: str, bullets: list[str],
     return "\n".join(feature).rstrip() + "\n"
 
 
-def _bullet_to_gwt(bullet: str) -> list[str]:
-    """Map natural language bullets to the technical scenario ids the agent serves."""
-    text = bullet.strip().lower()
-    
-    # 1. Non-Functional Mapping (Performance, SLA, Logs, etc.)
-    if any(k in text for k in ("sla", "latency", "performance", "timing")):
-        return ['Given the test suite is "non_functional"', 'When I run scenario "N1"', 'Then the scenario status should be PASS']
-    if any(k in text for k in ("reliability", "security", "fail", "log")):
-        return ['Given the test suite is "non_functional"', 'When I run scenario "N2"', 'Then the scenario status should be PASS']
-    
-    # 2. Integration Mapping (GCS, BQ, Neo4j)
-    if "neo4j" in text:
-        return ['Given the test suite is "integration"', 'When I run scenario "I3"', 'Then the scenario status should be PASS']
-    if "gcs" in text:
-        return ['Given the test suite is "integration"', 'When I run scenario "I1"', 'Then the scenario status should be PASS']
-    if "raw" in text and "enriched" in text:
-        return ['Given the test suite is "integration"', 'When I run scenario "I2"', 'Then the scenario status should be PASS']
-
-    # 3. Static Analysis / Standards
-    if any(k in text for k in ("lint", "sqlfluff", "style")):
-        return ['Given the test suite is "static_analysis"', 'When I run scenario "SA1"', 'Then the scenario status should be PASS']
-    if any(k in text for k in ("secret", "hardcoded", "credential")):
-        return ['Given the test suite is "static_analysis"', 'When I run scenario "SA5"', 'Then the scenario status should be PASS']
-    if any(k in text for k in ("pk", "primary key", "unique")):
-        return ['Given the test suite is "coding_standards"', 'When I run scenario "CS2"', 'Then the scenario status should be PASS']
-
-    # Default to Functional suite
+def _gwt(suite: str, scenario_id: str) -> list[str]:
     return [
-        'Given the test suite is "functional"',
-        'When I run scenario "F5"',
-        'Then the scenario status should be PASS',
+        f'Given the test suite is "{suite}"',
+        f'When I run scenario "{scenario_id}"',
+        "Then the scenario status should be PASS",
     ]
+
+
+def _has(text: str, *words: str) -> bool:
+    """Whole-word keyword match so e.g. 'logged' does not match 'log'."""
+    return any(re.search(rf"\b{re.escape(w)}\b", text) for w in words)
+
+
+def _bullet_to_gwt(bullet: str) -> list[str]:
+    """Map a natural-language AC bullet to a deterministic scenario id.
+
+    Suite names MUST match the agent's runner registry keys
+    (static, standards, integration, functional, nonfunctional) — otherwise the
+    BDD step fails with "Unknown suite '<name>'".
+    """
+    text = bullet.strip().lower()
+
+    # 1. Non-functional (performance / reliability). Whole-word matching avoids
+    #    false hits like 'logged' (a functional data-recording AC) -> 'log'.
+    if _has(text, "sla", "latency", "performance", "throughput", "timing"):
+        return _gwt("nonfunctional", "N1")
+    if _has(text, "reliability", "security", "failure", "fault", "logging"):
+        return _gwt("nonfunctional", "N2")
+
+    # 2. Integration (GCS / BigQuery / Neo4j)
+    if _has(text, "neo4j"):
+        return _gwt("integration", "I3")
+    if _has(text, "gcs"):
+        return _gwt("integration", "I1")
+    if _has(text, "raw") and _has(text, "enriched"):
+        return _gwt("integration", "I2")
+
+    # 3. Static analysis / coding standards
+    if _has(text, "lint", "sqlfluff", "style"):
+        return _gwt("static", "SA1")
+    if _has(text, "secret", "hardcoded", "credential"):
+        return _gwt("static", "SA5")
+    if _has(text, "pk", "unique") or "primary key" in text:
+        return _gwt("standards", "CS2")
+
+    # Default: functional suite
+    return _gwt("functional", "F5")
