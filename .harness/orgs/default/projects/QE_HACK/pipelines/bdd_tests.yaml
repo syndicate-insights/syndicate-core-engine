@@ -25,14 +25,8 @@ pipeline:
       description: Jira ticket whose acceptance criteria drove this run (optional).
       value: <+input>.default("")
   stages:
-    # ---------------------------------------------------------------- Stage 1
-    # Coding Standards + Static Analysis. NON-BDD: these checks are the same on
-    # every ticket and run via the agent's /qe/scenario API (native HTTP step —
-    # no curl, no Maven). The run-sync endpoint also pushes PASS/FAIL to the
-    # matching fixed Jira subtask when a ticket is supplied. All checks run in
-    # parallel within this single stage.
     - stage:
-        name: Coding Standards & Static Analysis
+        name: Coding Standards - Static Analysis
         identifier: coding_standards_static_analysis
         type: Custom
         spec:
@@ -150,13 +144,8 @@ pipeline:
                         outputVariables: []
                         assertion: <+json.object(httpResponseBody).status> == "PASS"
         tags: {}
-    # ---------------------------------------------------------------- Stage 2
-    # Functional & Integration Testing. BDD: runs the Cucumber pack, but only
-    # the Functional and Integration feature files (the other suites' dirs are
-    # dropped from this throwaway CI workspace). Per-scenario PASS/FAIL is synced
-    # to the matching Jira Test subtasks from within the CI workspace.
     - stage:
-        name: Functional & Integration Testing
+        name: Functional - Integration Testing
         identifier: functional_integration_testing
         type: CI
         spec:
@@ -169,7 +158,7 @@ pipeline:
           execution:
             steps:
               - step:
-                  name: Functional & Integration Testing
+                  name: Functional - Integration Testing
                   identifier: functional_integration
                   type: Run
                   timeout: 30m
@@ -223,10 +212,6 @@ pipeline:
                         "<+pipeline.variables.QE_AGENT_URL>/qe/jira/<+pipeline.variables.jiraTicket>/sync-results?execution_url=https://app.harness.io/ng/account/<+account.identifier>/cd/orgs/<+pipeline.orgIdentifier>/projects/<+pipeline.projectIdentifier>/pipelines/<+pipeline.identifier>/executions/<+pipeline.executionId>/pipeline" \
                         || echo "WARN: Jira sync call failed (non-fatal)"
         tags: {}
-    # ---------------------------------------------------------------- Stage 3
-    # Non-Functional Testing. NON-BDD: same fixed checks on every ticket, run via
-    # the agent's /qe/scenario API (native HTTP step) with results synced to the
-    # matching Jira subtasks. Runs after Functional & Integration completes.
     - stage:
         name: Non-Functional Testing
         identifier: non_functional_testing
@@ -237,7 +222,7 @@ pipeline:
               - parallel:
                   - step:
                       type: Http
-                      name: N1 Performance / SLA
+                      name: N1 Performance - SLA
                       identifier: N1
                       timeout: 20m
                       spec:
@@ -248,7 +233,7 @@ pipeline:
                         assertion: <+json.object(httpResponseBody).status> == "PASS"
                   - step:
                       type: Http
-                      name: N2 Reliability / Security posture
+                      name: N2 Reliability - Security posture
                       identifier: N2
                       timeout: 20m
                       spec:
