@@ -198,9 +198,15 @@ def create_test_issue(ticket: str, summary: str, gherkin: str, labels: list[str]
 
 
 def _find_test_subtasks(ticket: str) -> list[dict]:
+    # Jira Cloud removed the legacy GET /rest/api/3/search on 2025-05-01; use the
+    # replacement enhanced-search endpoint /rest/api/3/search/jql. Both return an
+    # ``issues`` array, so downstream parsing is unchanged.
     jql = quote(f'parent = "{ticket}" ORDER BY created ASC')
     fields = quote("summary,status,issuetype,parent")
-    resp = _request("GET", f"/rest/api/3/search?jql={jql}&maxResults=100&fields={fields}")
+    resp = _request("GET", f"/rest/api/3/search/jql?jql={jql}&maxResults=100&fields={fields}")
+    if isinstance(resp, dict) and "error" in resp:
+        logger.error("_find_test_subtasks: ticket=%s search failed: %s", ticket, resp)
+        return []
     return resp.get("issues", []) if isinstance(resp, dict) else []
 
 

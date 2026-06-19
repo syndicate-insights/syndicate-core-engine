@@ -155,3 +155,27 @@ def test_sync_ignores_foreign_and_suite_scenarios(monkeypatch):
     assert transitioned["SYN-45"] == "In Progress"   # AC2 failed -> stays In Progress
     # The foreign failing AC1 must never have transitioned SYN-44.
     assert calls["transitions"].count(("SYN-44", "In Progress")) == 0
+
+
+def test_find_test_subtasks_uses_enhanced_search_endpoint(monkeypatch):
+    """Subtask lookup must hit the new /rest/api/3/search/jql endpoint.
+
+    Jira Cloud removed the legacy /rest/api/3/search on 2025-05-01; using it
+    returns an error and silently yields no subtasks (so results never sync).
+    """
+    seen = {}
+
+    def fake_request(method, path, *args, **kwargs):
+        seen["method"], seen["path"] = method, path
+        return {"issues": [{"key": "SYN-44", "fields": {"summary": "BDD AC1 for SYN-43: x"}}]}
+
+    monkeypatch.setattr(jira_toolset, "_request", fake_request)
+    issues = jira_toolset._find_test_subtasks("SYN-43")
+    assert "/rest/api/3/search/jql?" in seen["path"]
+    assert "/rest/api/3/search?" not in seen["path"]
+    assert issues[0]["key"] == "SYN-44"
+
+
+def test_find_test_subtasks_returns_empty_on_error(monkeypatch):
+    monkeypatch.setattr(jira_toolset, "_request", lambda *a, **k: {"error": 410, "detail": "gone"})
+    assert jira_toolset._find_test_subtasks("SYN-43") == []
