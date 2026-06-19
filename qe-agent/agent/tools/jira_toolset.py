@@ -209,6 +209,11 @@ def _extract_ac_index(text: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def _scenario_tags(elem: dict) -> set[str]:
+    """Return a Cucumber scenario's tag names without the leading ``@``."""
+    return {(tag.get("name") or "").lstrip("@") for tag in (elem.get("tags") or [])}
+
+
 def _scenario_test_key(elem: dict, valid_keys: set[str]) -> str | None:
     """Return the Jira Test subtask key tagged on a Cucumber scenario.
 
@@ -217,11 +222,22 @@ def _scenario_test_key(elem: dict, valid_keys: set[str]) -> str | None:
     scenario element. We only accept a tag that matches a known subtask key so
     the parent ticket / ``@JiraGenerated`` tags are never mistaken for one.
     """
-    for tag in elem.get("tags") or []:
-        name = (tag.get("name") or "").lstrip("@")
+    for name in _scenario_tags(elem):
         if name in valid_keys:
             return name
     return None
+
+
+def _scenario_belongs(elem: dict, ticket: str, valid_keys: set[str]) -> bool:
+    """True when a Cucumber scenario belongs to ``ticket``.
+
+    A scenario belongs when it is tagged with the parent ticket key
+    (``@SYN-43``) or with one of that ticket's Test subtask keys. Scenarios
+    from other tickets and the shared curated suites are ignored, so a foreign
+    ``ACn`` index can never hijack this ticket's subtasks.
+    """
+    tags = _scenario_tags(elem)
+    return ticket in tags or bool(tags & valid_keys)
 
 
 def _comment_issue(issue_key: str, text: str) -> dict:
@@ -257,8 +273,10 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str | None = None,
     agent because the agent pod cannot see the CI workspace filesystem) or as a
     local file path via ``cucumber_json_path`` (used by the CLI / local runs).
 
-    Each scenario's result is written to its matching Test subtask as a comment
-    and a status transition:
+    Only scenarios that belong to ``ticket`` (tagged with the parent key or one
+    of its Test subtask keys) are synced; scenarios from other tickets and the
+    shared curated suites in the same report are ignored. Each matched scenario's
+    result is written to its Test subtask as a comment and a status transition:
       * scenario passed -> JIRA_TEST_PASS_STATUS (default "Done")
       * scenario failed  -> JIRA_TEST_FAIL_STATUS (default "In Progress")
     The parent ticket is left untouched (no comment, no transition).
@@ -290,10 +308,17 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str | None = None,
             by_index[idx] = issue
     valid_keys = set(by_key)
 
+    # Only sync scenarios that belong to this ticket (tagged with the parent key
+    # or one of its subtask keys). Scenarios from other tickets and the shared
+    # curated suites in the same Cucumber report are ignored.
     scenarios: list[dict] = []
+    ignored = 0
     for feature in report:
         for elem in feature.get("elements", []):
             if elem.get("type") != "scenario":
+                continue
+            if not _scenario_belongs(elem, ticket, valid_keys):
+                ignored += 1
                 continue
             steps = elem.get("steps", [])
             failed = [s for s in steps if (s.get("result") or {}).get("status") == "failed"]
@@ -310,11 +335,12 @@ def sync_cucumber_results(ticket: str, cucumber_json_path: str | None = None,
         "total": len(scenarios),
         "passed": sum(1 for s in scenarios if s["status"] == "PASS"),
         "failed": sum(1 for s in scenarios if s["status"] == "FAIL"),
+        "ignored": ignored,
         "execution_url": execution_url,
         "scenarios": scenarios,
     }
-    logger.info("sync_cucumber_results: ticket=%s total=%d passed=%d failed=%d",
-                ticket, summary["total"], summary["passed"], summary["failed"])
+    logger.info("sync_cucumber_results: ticket=%s total=%d passed=%d failed=%d ignored=%d",
+                ticket, summary["total"], summary["passed"], summary["failed"], ignored)
 
     # Results are reported per Test subtask only — the parent ticket is left
     # untouched (no summary comment, no status transition).
