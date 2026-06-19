@@ -13,6 +13,9 @@ metadata:
   namespace: qe-hack-syndicate
 spec:
   schedule: "0 */4 * * *" # Runs every 4hours
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
       template:
@@ -22,6 +25,13 @@ spec:
           containers:
           - name: csv-generator
             image: python:3.11-slim
+            resources:
+              requests:
+                cpu: "250m"
+                memory: "256Mi"
+              limits:
+                cpu: "500m"
+                memory: "512Mi"
             command: ["/bin/sh", "-c"]
             args:
               - |

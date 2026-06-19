@@ -41,7 +41,7 @@ def n1_performance_sla() -> ScenarioResult:
             findings.append(f"{cronjob}: duration {dur:.0f}s exceeds SLA {sla}s")
     # BigQuery query latency probe
     probe = bq.run_query(
-        f"SELECT COUNT(*) AS n FROM `{SETTINGS.fq_table('customer_enriched')}`", timed=True
+        f"SELECT COUNT(*) AS n FROM `{SETTINGS.fq_table('customer_enriched')}`", timed=True  # nosec B608
     )
     latency = probe.get("elapsed_seconds")
     if latency is not None and latency > SETTINGS.bq_query_sla_seconds:

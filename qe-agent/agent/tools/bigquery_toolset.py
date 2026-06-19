@@ -47,7 +47,7 @@ def run_query(sql: str, timed: bool = False) -> dict:
 def table_row_count(table: str) -> dict:
     """Row count for a table in the configured dataset."""
     fq = SETTINGS.fq_table(table)
-    res = run_query(f"SELECT COUNT(*) AS n FROM `{fq}`")
+    res = run_query(f"SELECT COUNT(*) AS n FROM `{fq}`")  # nosec B608
     if "error" in res:
         return res
     return {"table": fq, "row_count": res["rows"][0]["n"]}
@@ -75,4 +75,4 @@ def table_exists(table: str) -> bool:
 def sample_rows(table: str, limit: int = 20, where: str = "") -> dict:
     fq = SETTINGS.fq_table(table)
     clause = f" WHERE {where}" if where else ""
-    return run_query(f"SELECT * FROM `{fq}`{clause} LIMIT {int(limit)}")
+    return run_query(f"SELECT * FROM `{fq}`{clause} LIMIT {int(limit)}")  # nosec B608

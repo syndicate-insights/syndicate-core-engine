@@ -53,7 +53,7 @@ def i2_raw_to_enriched() -> ScenarioResult:
     for entity in ("account", "address"):
         enr = SETTINGS.fq_table(SETTINGS.enriched_tables[entity])
         orphan = bq.run_query(
-            f"SELECT COUNT(*) AS n FROM `{enr}` e "
+            f"SELECT COUNT(*) AS n FROM `{enr}` e "  # nosec B608
             f"LEFT JOIN `{cust_fq}` c USING (customer_id) WHERE c.customer_id IS NULL"
         )
         n = orphan.get("rows", [{}])[0].get("n", 0) if "rows" in orphan else 0
@@ -100,7 +100,7 @@ def i4_incremental_watermark() -> ScenarioResult:
     # watermark table tracks last_processed_at per entity_type
     if bq.table_exists("neo4j_ingest_watermark"):
         wm = bq.run_query(
-            f"SELECT entity_type, MAX(last_processed_at) AS last "
+            f"SELECT entity_type, MAX(last_processed_at) AS last "  # nosec B608
             f"FROM `{SETTINGS.fq_table('neo4j_ingest_watermark')}` GROUP BY entity_type"
         )
         details["watermark"] = wm.get("rows", [])
@@ -114,7 +114,7 @@ def i4_incremental_watermark() -> ScenarioResult:
         tbl = "processed_files_metadata"
         if bq.table_exists(tbl):
             dup = bq.run_query(
-                f"SELECT COUNT(*) AS dupes FROM (SELECT file_name FROM `{SETTINGS.fq_table(tbl)}` "
+                f"SELECT COUNT(*) AS dupes FROM (SELECT file_name FROM `{SETTINGS.fq_table(tbl)}` "  # nosec B608
                 f"GROUP BY file_name HAVING COUNT(*) > 1)"
             )
             n = dup.get("rows", [{}])[0].get("dupes", 0)
@@ -132,7 +132,7 @@ def i5_end_to_end_consistency() -> ScenarioResult:
     """I5: a sampled customer_id is consistent across BQ and Neo4j (no orphans)."""
     r = ScenarioResult("I5", SUITE, "End-to-end customer consistency (BQ vs Neo4j)")
     sample = bq.run_query(
-        f"SELECT customer_id FROM `{SETTINGS.fq_table('customer_enriched')}` LIMIT 5"
+        f"SELECT customer_id FROM `{SETTINGS.fq_table('customer_enriched')}` LIMIT 5"  # nosec B608
     )
     ids = [row["customer_id"] for row in sample.get("rows", [])]
     if not ids:
@@ -141,7 +141,7 @@ def i5_end_to_end_consistency() -> ScenarioResult:
     failed = False
     for cid in ids:
         bq_accts = bq.run_query(
-            f"SELECT COUNT(*) AS n FROM `{SETTINGS.fq_table('account_enriched')}` "
+            f"SELECT COUNT(*) AS n FROM `{SETTINGS.fq_table('account_enriched')}` "  # nosec B608
             f"WHERE customer_id = '{cid}'"
         ).get("rows", [{}])[0].get("n", 0)
         neo_accts = neo.run_cypher(

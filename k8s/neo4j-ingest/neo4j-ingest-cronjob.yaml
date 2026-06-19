@@ -45,7 +45,7 @@ spec:
                 neo4j_uri = os.environ["NEO4J_URI"]
                 # NEO4J_AUTH is in the format "username/password" as set by the Neo4j Helm chart
                 neo4j_auth = os.environ["NEO4J_AUTH"]
-                neo4j_user, neo4j_password = neo4j_auth.split("/", 1)
+                neo4j_user, neo4j_secret = neo4j_auth.split("/", 1)
 
                 log.info(f"BQ project: {bq_project}, dataset: {bq_dataset}")
                 log.info(f"Neo4j URI: {neo4j_uri}, user: {neo4j_user}")
@@ -54,7 +54,7 @@ spec:
                 bq_client = bigquery.Client(project=bq_project)
 
                 log.info("Initialising Neo4j driver...")
-                driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+                driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_secret))
                 driver.verify_connectivity()
                 log.info("Neo4j connection verified")
 

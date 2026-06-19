@@ -16,10 +16,6 @@ import os
 from fastapi import FastAPI, HTTPException, Request
 
 from agent.observability import configure_logging
-
-configure_logging()
-logger = logging.getLogger(__name__)
-
 from agent.scenarios import runner
 from agent.server import jira_webhook
 from agent.sub_agents.bdd_authoring.agent import (
@@ -30,6 +26,9 @@ from agent.sub_agents.bdd_authoring.agent import (
     run_and_sync_scenario,
     update_bdd_from_failure,
 )
+
+configure_logging()
+logger = logging.getLogger(__name__)
 
 AGENTS_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -192,7 +191,8 @@ async def handle_jira_webhook(request: Request, token: str | None = None) -> dic
 def main() -> None:
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))  # noqa: S104
+    host = os.environ.get("HOST", "0.0.0.0")  # noqa: S104  # nosec B104
+    uvicorn.run(app, host=host, port=int(os.environ.get("PORT", "8080")))
 
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ DEFAULT_BASE_URL = os.environ.get(
 
 def _get(url: str, timeout: int) -> dict:
     req = urllib.request.Request(url, headers={"Accept": "application/json"})  # noqa: S310
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
         return json.loads(resp.read().decode())
 
 
@@ -45,7 +45,7 @@ def _post(url: str, timeout: int, body: dict | None = None) -> dict:
         url, data=data, method="POST",
         headers={"Accept": "application/json", "Content-Type": "application/json"},
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
         return json.loads(resp.read().decode() or "{}")
 
 

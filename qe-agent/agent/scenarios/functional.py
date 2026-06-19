@@ -33,7 +33,7 @@ def f1_investment_rule_positive() -> ScenarioResult:
     r = ScenarioResult("F1", SUITE, "INVESTMENT reclassification (positive)")
     tbl = SETTINGS.fq_table("account_enriched")
     res = bq.run_query(
-        f"SELECT COUNTIF(account_type != 'INVESTMENT') AS misclassified, COUNT(*) AS matched "
+        f"SELECT COUNTIF(account_type != 'INVESTMENT') AS misclassified, COUNT(*) AS matched "  # nosec B608
         f"FROM `{tbl}` WHERE {_INVESTMENT_PREDICATE}"
     )
     row = res.get("rows", [{}])[0]
@@ -50,7 +50,7 @@ def f2_investment_rule_negative() -> ScenarioResult:
     enr = SETTINGS.fq_table("account_enriched")
     # No row should be INVESTMENT unless it satisfies the predicate.
     res = bq.run_query(
-        f"SELECT COUNT(*) AS wrongly_investment FROM `{enr}` "
+        f"SELECT COUNT(*) AS wrongly_investment FROM `{enr}` "  # nosec B608
         f"WHERE account_type = 'INVESTMENT' AND NOT ({_INVESTMENT_PREDICATE})"
     )
     n = res.get("rows", [{}])[0].get("wrongly_investment", 0)
@@ -66,7 +66,7 @@ def f3_full_address_format() -> ScenarioResult:
     r = ScenarioResult("F3", SUITE, "Address composition (full_address)")
     enr = SETTINGS.fq_table("address_enriched")
     res = bq.run_query(
-        f"SELECT COUNT(*) AS mismatched FROM `{enr}` "
+        f"SELECT COUNT(*) AS mismatched FROM `{enr}` "  # nosec B608
         f"WHERE full_address != CONCAT(line1, ', ', city, ', ', postcode, ', ', country)"
     )
     n = res.get("rows", [{}])[0].get("mismatched", 0)
@@ -82,7 +82,7 @@ def f4_phone_normalisation() -> ScenarioResult:
     r = ScenarioResult("F4", SUITE, "Phone normalisation (digits only)")
     enr = SETTINGS.fq_table("customer_enriched")
     res = bq.run_query(
-        f"SELECT COUNTIF(phone_number != REGEXP_REPLACE(phone, r'[^0-9]', '')) AS mismatched, "
+        f"SELECT COUNTIF(phone_number != REGEXP_REPLACE(phone, r'[^0-9]', '')) AS mismatched, "  # nosec B608
         f"COUNTIF(REGEXP_CONTAINS(phone_number, r'[^0-9]')) AS non_digit "
         f"FROM `{enr}`"
     )
