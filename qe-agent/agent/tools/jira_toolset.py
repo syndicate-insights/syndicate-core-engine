@@ -197,6 +197,48 @@ def create_test_issue(ticket: str, summary: str, gherkin: str, labels: list[str]
     return {"key": created.get("key"), "self": created.get("self"), "parent": ticket}
 
 
+def create_check_subtask(ticket: str, scenario_id: str, title: str,
+                         acceptance_criteria: str, suite: str) -> dict:
+    """Create a fixed non-BDD check subtask (CodingStandards / StaticAnalysis /
+    NonFunctional) under the parent ticket.
+
+    Unlike ``create_test_issue`` these have no Gherkin — Harness runs them via
+    the agent's ``/qe/scenario`` API, not Cucumber. The scenario id is the first
+    token of the summary (e.g. ``"CS1 - ..."``) so results can be synced back by
+    matching on it.
+    """
+    logger.info("create_check_subtask: parent=%s scenario=%s", ticket, scenario_id)
+    if not JIRA_PROJECT:
+        raise RuntimeError("JIRA_PROJECT must be set.")
+    payload = {
+        "fields": {
+            "project": {"key": JIRA_PROJECT},
+            "parent": {"key": ticket},
+            "summary": f"{scenario_id} - {title}",
+            "issuetype": {"name": JIRA_TEST_ISSUETYPE},
+            "labels": list({"qe-agent", "non-bdd", suite}),
+            "description": {
+                "type": "doc",
+                "version": 1,
+                "content": [
+                    {"type": "heading", "attrs": {"level": 3},
+                     "content": [{"type": "text", "text": "Acceptance criteria"}]},
+                    {"type": "paragraph",
+                     "content": [{"type": "text", "text": acceptance_criteria}]},
+                ],
+            },
+        }
+    }
+    created = _request("POST", "/rest/api/3/issue", payload)
+    if "error" in created:
+        logger.error("create_check_subtask: parent=%s scenario=%s failed: %s", ticket, scenario_id, created)
+        return {"ticket": ticket, "scenario_id": scenario_id, "error": created}
+    logger.info("create_check_subtask: created key=%s parent=%s scenario=%s",
+                created.get("key"), ticket, scenario_id)
+    return {"key": created.get("key"), "self": created.get("self"),
+            "parent": ticket, "scenario_id": scenario_id}
+
+
 def _find_test_subtasks(ticket: str) -> list[dict]:
     # Jira Cloud removed the legacy GET /rest/api/3/search on 2025-05-01; use the
     # replacement enhanced-search endpoint /rest/api/3/search/jql. Both return an
@@ -265,6 +307,56 @@ def _transition_issue(issue_key: str, target_status: str) -> dict:
                 "transition": {"id": tr.get("id")}
             })
     return {"skipped": f"no transition to '{target_status}' from current status"}
+
+
+def _find_subtask_by_scenario_id(subtasks: list[dict], scenario_id: str) -> dict | None:
+    """Return the subtask whose summary starts with ``scenario_id`` (e.g. "CS1").
+
+    Fixed non-BDD check subtasks are created as ``"CS1 - <title>"``, so the
+    scenario id is the leading token.
+    """
+    pat = re.compile(rf"^\s*{re.escape(scenario_id)}\b", re.I)
+    for issue in subtasks:
+        if pat.search((issue.get("fields") or {}).get("summary") or ""):
+            return issue
+    return None
+
+
+def sync_scenario_result(ticket: str, scenario_id: str, status: str,
+                         findings: list[str] | None = None,
+                         execution_url: str | None = None) -> dict:
+    """Sync a single non-BDD check result (CS/SA/N) to its fixed subtask.
+
+    Mirrors the per-subtask behaviour of ``sync_cucumber_results``:
+      * PASS -> comment + JIRA_TEST_PASS_STATUS (default "Done")
+      * not PASS -> comment + JIRA_TEST_FAIL_STATUS (default "In Progress")
+    The parent ticket is left untouched. No-ops cleanly when no ticket / no
+    matching subtask is found.
+    """
+    status = "PASS" if str(status).upper() == "PASS" else "FAIL"
+    if not ticket:
+        return {"scenario_id": scenario_id, "status": status, "updated": False,
+                "reason": "no ticket supplied"}
+    subtasks = _find_test_subtasks(ticket)
+    issue = _find_subtask_by_scenario_id(subtasks, scenario_id)
+    if issue is None:
+        logger.warning("sync_scenario_result: ticket=%s scenario=%s has no matching subtask",
+                       ticket, scenario_id)
+        return {"scenario_id": scenario_id, "status": status, "updated": False,
+                "reason": "no matching subtask"}
+    issue_key = issue.get("key")
+    comment = f"Check {scenario_id}: {status}"
+    if execution_url:
+        comment += f" — {execution_url}"
+    for f in (findings or [])[:5]:
+        comment += f"\n- {str(f)[:300]}"
+    _comment_issue(issue_key, comment)
+    status_target = JIRA_TEST_PASS_STATUS if status == "PASS" else JIRA_TEST_FAIL_STATUS
+    transition = _transition_issue(issue_key, status_target) if status_target else None
+    logger.info("sync_scenario_result: ticket=%s scenario=%s subtask=%s status=%s",
+                ticket, scenario_id, issue_key, status)
+    return {"scenario_id": scenario_id, "issue": issue_key, "status": status,
+            "transition": transition, "updated": True}
 
 
 # --- Pushing Cucumber results back to Jira ------------------------------------

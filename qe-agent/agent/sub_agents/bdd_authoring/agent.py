@@ -18,6 +18,7 @@ from google.adk.tools import FunctionTool
 
 from agent.config import SETTINGS
 from agent.observability import agent_callbacks
+from agent.scenarios import catalog, runner
 from agent.sub_agents.bdd_authoring import gherkin
 from agent.tools import github_toolset as gh
 from agent.tools import harness_toolset as harness
@@ -80,6 +81,21 @@ def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
         test_keys.append(issue.get("key"))
 
     logger.info("author_bdd_scenarios: %d Test subtask(s) created for ticket=%s", len(result["test_issues"]), ticket)
+
+    # 1b. Create the fixed non-BDD check subtasks (CodingStandards, Static
+    #     Analysis, NonFunctional). These are the same on every ticket and have
+    #     no .feature file — Harness runs them via the agent's /qe/scenario API
+    #     and the run-sync endpoint pushes their PASS/FAIL back to these subtasks.
+    result["check_issues"] = []
+    for suite, scenario_id, title, ac_text in catalog.all_checks():
+        issue = jira.create_check_subtask(
+            ticket=ticket, scenario_id=scenario_id, title=title,
+            acceptance_criteria=ac_text, suite=suite,
+        )
+        result["check_issues"].append(issue)
+    logger.info("author_bdd_scenarios: %d non-BDD check subtask(s) created for ticket=%s",
+                len(result["check_issues"]), ticket)
+
     # 2. Re-render the feature with each scenario tagged by its Jira Test subtask
     #    key (@PROJ-123) so the results sync can target subtasks directly.
     feature_text = gherkin.feature_for_ticket(ticket, summary, bullets, test_keys=test_keys)
@@ -147,6 +163,35 @@ def jira_sync_results(ticket: str, cucumber_json_path: str | None = None,
     CI step); ``cucumber_json_path`` is the local-file fallback for the CLI.
     """
     return jira.sync_cucumber_results(ticket, cucumber_json_path, execution_url, report=report)
+
+
+def run_and_sync_scenario(suite: str, scenario_id: str, ticket: str = "",
+                          execution_url: str | None = None) -> dict:
+    """Run one deterministic non-BDD check and sync its result to the subtask.
+
+    Used by the Harness CodingStandards / StaticAnalysis / NonFunctional stages
+    (via an HTTP step, no Cucumber). Runs the scenario, pushes PASS/FAIL to the
+    matching fixed subtask when a ticket is given, and returns a flat ``status``
+    field for the pipeline to gate on (PASS gates green; FAIL/ERROR gate red).
+    """
+    result = runner.run_scenario(suite, scenario_id)
+    raw_status = str(result.get("status", "ERROR")).upper()
+    status = "PASS" if raw_status == "PASS" else "FAIL"
+    sync = None
+    if ticket:
+        sync = jira.sync_scenario_result(
+            ticket, scenario_id, status,
+            findings=result.get("findings"), execution_url=execution_url,
+        )
+    return {
+        "suite": suite,
+        "scenario_id": scenario_id,
+        "status": status,
+        "raw_status": raw_status,
+        "ticket": ticket or None,
+        "sync": sync,
+        "result": result,
+    }
 
 
 def _pr_body(ticket: str, summary: str, domain: str, path: str, ac: dict) -> str:

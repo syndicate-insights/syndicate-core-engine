@@ -179,3 +179,38 @@ def test_find_test_subtasks_uses_enhanced_search_endpoint(monkeypatch):
 def test_find_test_subtasks_returns_empty_on_error(monkeypatch):
     monkeypatch.setattr(jira_toolset, "_request", lambda *a, **k: {"error": 410, "detail": "gone"})
     assert jira_toolset._find_test_subtasks("SYN-43") == []
+
+
+# --- Non-BDD check sync (CodingStandards / StaticAnalysis / NonFunctional) ----
+
+def test_sync_scenario_result_matches_by_scenario_id(monkeypatch):
+    calls = _stub_jira(monkeypatch, [
+        {"key": "SYN-50", "fields": {"summary": "CS1 - dbt model naming convention"}},
+        {"key": "SYN-51", "fields": {"summary": "SA3 - Python security scan (bandit)"}},
+        {"key": "SYN-52", "fields": {"summary": "N1 - Performance / SLA"}},
+    ])
+    # PASS -> Done
+    r = jira_toolset.sync_scenario_result("SYN-43", "CS1", "PASS", execution_url="http://e")
+    assert r["issue"] == "SYN-50" and r["status"] == "PASS"
+    # FAIL -> In Progress
+    r = jira_toolset.sync_scenario_result("SYN-43", "SA3", "FAIL", findings=["bandit HIGH"])
+    assert r["issue"] == "SYN-51" and r["status"] == "FAIL"
+    transitioned = dict(calls["transitions"])
+    assert transitioned["SYN-50"] == "Done"
+    assert transitioned["SYN-51"] == "In Progress"
+    # N1 untouched (we didn't sync it)
+    assert "SYN-52" not in transitioned
+
+
+def test_sync_scenario_result_no_ticket_is_noop(monkeypatch):
+    _stub_jira(monkeypatch, [])
+    r = jira_toolset.sync_scenario_result("", "CS1", "PASS")
+    assert r["updated"] is False and r["reason"] == "no ticket supplied"
+
+
+def test_sync_scenario_result_unknown_scenario(monkeypatch):
+    _stub_jira(monkeypatch, [
+        {"key": "SYN-50", "fields": {"summary": "CS1 - dbt model naming convention"}},
+    ])
+    r = jira_toolset.sync_scenario_result("SYN-43", "CS9", "PASS")
+    assert r["updated"] is False and r["reason"] == "no matching subtask"
