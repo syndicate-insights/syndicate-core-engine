@@ -181,7 +181,7 @@ def run_and_sync_scenario(suite: str, scenario_id: str, ticket: str = "",
     if ticket:
         sync = jira.sync_scenario_result(
             ticket, scenario_id, status,
-            findings=result.get("findings"), execution_url=execution_url,
+            result=result, execution_url=execution_url,
         )
     return {
         "suite": suite,
