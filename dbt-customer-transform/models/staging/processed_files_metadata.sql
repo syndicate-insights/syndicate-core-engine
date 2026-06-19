@@ -23,6 +23,7 @@
     select
         cast(null as string) as file_name,
         cast(null as timestamp) as processed_at
+    order by file_name
     limit 0
 
 {% endif %}

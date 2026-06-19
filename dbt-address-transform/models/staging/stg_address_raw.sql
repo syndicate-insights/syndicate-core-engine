@@ -20,7 +20,7 @@ select
     _FILE_NAME as source_file
 from {{ source('gcs_raw', 'address_raw_external') }}
 where _FILE_NAME not in (
-    select file_name
-    from {{ ref('processed_files_metadata') }}
-    where file_name is not null
+    select pfm.file_name
+    from {{ ref('processed_files_metadata') }} as pfm
+    where pfm.file_name is not null
 )

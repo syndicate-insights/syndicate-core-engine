@@ -47,11 +47,18 @@ def s_sql_lint() -> ScenarioResult:
     r.metrics = {"files_checked": len(models), "violations": total}
     if total:
         r.fail(f"sqlfluff reported {total} style violations across dbt models.")
+        # Report the exact line + rule for each violation so it's fixable
+        # straight from the JSON output.
+        # sqlfluff renamed these keys across versions (line_no -> start_line_no),
+        # so read whichever the installed version emits.
         r.actual = [
-            {"file": f["filepath"], "violations": len(f.get("violations", []))}
+            {"file": f["filepath"],
+             "line": v.get("start_line_no") or v.get("line_no"),
+             "col": v.get("start_line_pos") or v.get("line_pos"),
+             "code": v.get("code"), "description": v.get("description")}
             for f in violations
-            if f.get("violations")
-        ][:20]
+            for v in f.get("violations", [])
+        ][:30]
     return r
 
 
@@ -66,7 +73,11 @@ def s_python_lint() -> ScenarioResult:
     r.metrics = {"issues": len(issues)}
     if issues:
         r.fail(f"ruff reported {len(issues)} lint issues.")
-        r.actual = [{"file": i["filename"], "code": i["code"], "msg": i["message"]} for i in issues[:20]]
+        r.actual = [
+            {"file": i["filename"], "line": (i.get("location") or {}).get("row"),
+             "code": i["code"], "msg": i["message"]}
+            for i in issues[:30]
+        ]
     return r
 
 
@@ -83,7 +94,11 @@ def s_security_scan() -> ScenarioResult:
     r.metrics = {"total_findings": len(results), "high_or_medium": len(high)}
     if high:
         r.fail(f"bandit found {len(high)} HIGH/MEDIUM severity issues.")
-        r.actual = [{"file": x["filename"], "test": x["test_name"], "sev": x["issue_severity"]} for x in high[:20]]
+        r.actual = [
+            {"file": x["filename"], "line": x.get("line_number"),
+             "test": x["test_name"], "sev": x["issue_severity"]}
+            for x in high[:30]
+        ]
     return r
 
 
@@ -124,7 +139,8 @@ def s_secret_scan() -> ScenarioResult:
                 # ignore obvious env-var templating / placeholders
                 if "env_var" in m.group(0) or "valueFrom" in text[max(0, m.start() - 60):m.start()]:
                     continue
-                hits.append({"file": str(path.relative_to(_repo())), "type": name})
+                line = text.count("\n", 0, m.start()) + 1
+                hits.append({"file": str(path.relative_to(_repo())), "type": name, "line": line})
     r.metrics = {"hits": len(hits)}
     if hits:
         r.fail(f"Found {len(hits)} potential hardcoded secrets.")
