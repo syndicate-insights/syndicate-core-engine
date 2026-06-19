@@ -8,12 +8,12 @@ Examples:
     qe-cli suite functional
     qe-cli scenario functional F1
     qe-cli scenarios                                 # list everything
-    qe-cli jira ac SYN-123
-    qe-cli jira author SYN-123 [--dry-run]
-    qe-cli jira sync-results --ticket SYN-123 \\
+    qe-cli jira ac PROJ-123
+    qe-cli jira author PROJ-123 [--dry-run]
+    qe-cli jira sync-results --ticket PROJ-123 \\
         --cucumber-json bdd-tests/target/cucumber.json \\
         --pipeline bdd_tests --execution <plan_execution_id>
-    qe-cli jira reconcile SYN-123 --execution <plan_execution_id>
+    qe-cli jira reconcile PROJ-123 --execution <plan_execution_id>
     qe-cli harness latest
 """
 
