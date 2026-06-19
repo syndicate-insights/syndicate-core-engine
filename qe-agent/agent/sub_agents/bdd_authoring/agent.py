@@ -65,6 +65,14 @@ def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
         logger.info("author_bdd_scenarios: dry_run=True, skipping Jira + PR creation for ticket=%s", ticket)
         return result
 
+    # Idempotency guard: the Jira webhook can be delivered more than once (Jira
+    # retries when a response is slow, and authoring takes ~15s). If this ticket
+    # was already authored, skip so we don't create duplicate subtasks + PRs.
+    if jira.already_authored(ticket):
+        logger.info("author_bdd_scenarios: ticket=%s already authored — skipping to avoid duplicates", ticket)
+        result["skipped"] = "already authored"
+        return result
+
     # 1. Create one Jira Test subtask per Cucumber scenario, tracking each new
     #    key in scenario order so we can tag the corresponding scenario with it.
     logger.info("author_bdd_scenarios: creating %d Jira Test subtask(s) for ticket=%s", len(bullets or ["acceptance criterion 1"]), ticket)

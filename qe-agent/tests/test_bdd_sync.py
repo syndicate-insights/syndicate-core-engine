@@ -281,3 +281,19 @@ def test_bullet_to_gwt_logged_stays_functional():
     steps = gherkin._bullet_to_gwt(
         "the row should be excluded from the mart and logged in processed_files_metadata")
     assert steps[0] == 'Given the test suite is "functional"'
+
+
+# --- Authoring idempotency (no duplicate subtasks/PRs on webhook retries) -----
+
+def test_already_authored_detects_prior_bdd_subtasks(monkeypatch):
+    monkeypatch.setattr(jira_toolset, "_find_test_subtasks",
+                        lambda t: [{"key": "SYN-134", "fields": {"summary": "BDD AC1 for SYN-133: x"}}])
+    assert jira_toolset.already_authored("SYN-133") is True
+
+
+def test_already_authored_false_without_bdd_subtasks(monkeypatch):
+    monkeypatch.setattr(jira_toolset, "_find_test_subtasks",
+                        lambda t: [{"key": "SYN-200", "fields": {"summary": "A human-made task"}}])
+    assert jira_toolset.already_authored("SYN-133") is False
+    monkeypatch.setattr(jira_toolset, "_find_test_subtasks", lambda t: [])
+    assert jira_toolset.already_authored("SYN-133") is False
