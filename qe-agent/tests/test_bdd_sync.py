@@ -37,7 +37,8 @@ def _stub_jira(monkeypatch, subtasks):
     calls: dict[str, list] = {"comments": [], "transitions": []}
     monkeypatch.setattr(jira_toolset, "_find_test_subtasks", lambda ticket: subtasks)
     monkeypatch.setattr(jira_toolset, "_comment_issue",
-                        lambda key, text: calls["comments"].append((key, text)) or {})
+                        lambda key, text, code_block=None:
+                            calls["comments"].append((key, text, code_block)) or {})
     monkeypatch.setattr(jira_toolset, "_transition_issue",
                         lambda key, status: calls["transitions"].append((key, status)) or {"ok": True})
     return calls
@@ -68,7 +69,7 @@ def test_sync_matches_by_test_key(monkeypatch):
     assert ups["AC2 - second"]["status"] == "FAIL"
 
     # Comments and transitions go to the subtasks only — never the parent SYN-99.
-    commented = {k for k, _ in calls["comments"]}
+    commented = {c[0] for c in calls["comments"]}
     transitioned = dict(calls["transitions"])
     assert commented == {"SYN-101", "SYN-102"}
     assert "SYN-99" not in commented
@@ -148,7 +149,7 @@ def test_sync_ignores_foreign_and_suite_scenarios(monkeypatch):
     assert res["passed"] == 1 and res["failed"] == 1
     assert res["ignored"] == 2
 
-    commented = {k for k, _ in calls["comments"]}
+    commented = {c[0] for c in calls["comments"]}
     transitioned = dict(calls["transitions"])
     assert commented == {"SYN-44", "SYN-45"}
     assert transitioned["SYN-44"] == "Done"          # AC1 passed
@@ -189,12 +190,25 @@ def test_sync_scenario_result_matches_by_scenario_id(monkeypatch):
         {"key": "SYN-51", "fields": {"summary": "SA3 - Python security scan (bandit)"}},
         {"key": "SYN-52", "fields": {"summary": "N1 - Performance / SLA"}},
     ])
-    # PASS -> Done
-    r = jira_toolset.sync_scenario_result("SYN-43", "CS1", "PASS", execution_url="http://e")
+    # PASS -> Done (short comment, no JSON detail block)
+    r = jira_toolset.sync_scenario_result(
+        "SYN-43", "CS1", "PASS", result={"status": "PASS"}, execution_url="http://e")
     assert r["issue"] == "SYN-50" and r["status"] == "PASS"
-    # FAIL -> In Progress
-    r = jira_toolset.sync_scenario_result("SYN-43", "SA3", "FAIL", findings=["bandit HIGH"])
+    pass_comment = next(c for c in calls["comments"] if c[0] == "SYN-50")
+    assert pass_comment[2] is None  # no code block on PASS
+    # FAIL -> In Progress, with the full check detail attached as a JSON block
+    fail_result = {
+        "status": "FAIL",
+        "findings": ["sqlfluff reported 18 style violations."],
+        "actual": [{"file": "a.sql", "violations": 6}],
+        "metrics": {"files_checked": 9, "violations": 18},
+    }
+    r = jira_toolset.sync_scenario_result("SYN-43", "SA3", "FAIL", result=fail_result)
     assert r["issue"] == "SYN-51" and r["status"] == "FAIL"
+    fail_comment = next(c for c in calls["comments"] if c[0] == "SYN-51")
+    assert fail_comment[2] is not None  # JSON detail attached on FAIL
+    assert '"violations": 18' in fail_comment[2]
+    assert '"file": "a.sql"' in fail_comment[2]
     transitioned = dict(calls["transitions"])
     assert transitioned["SYN-50"] == "Done"
     assert transitioned["SYN-51"] == "In Progress"
