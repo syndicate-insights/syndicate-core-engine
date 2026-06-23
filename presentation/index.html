@@ -1,0 +1,2279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Insight Syndicate · QE Hack — Autonomous Quality Engineering Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            /* Lloyds Technology Centre brand palette (from PowerPoint theme) */
+            --green: #00855D;
+            /* accent1 — Lloyds green (primary) */
+            --green-light: #16A77C;
+            /* brighter working green */
+            --green-bright: #2BC08F;
+            /* light/vivid green — now dominant */
+            --green-soft: #E7F5EE;
+            /* page wash */
+            --green-soft2: #DCF1E7;
+            /* deeper wash for alternating slides */
+            --green-deep: #024731;
+            /* accent6 — deep green */
+            --purple: #6B41EA;
+            /* accent2 */
+            --orange: #F15037;
+            /* accent3 */
+            --blue: #1467B5;
+            /* accent4 */
+            --magenta: #C435B8;
+            /* accent5 */
+            --ink: #1b1b1d;
+            --ink-2: #323233;
+            /* dk2 */
+            --mist: #F1F1F1;
+            /* lt2 */
+            --paper: #ffffff;
+            --muted: #6a6a72;
+            --line: rgba(50, 50, 51, .12);
+            --card: #ffffff;
+            --shadow: 0 18px 50px -24px rgba(2, 71, 49, .45);
+            --maxw: 1180px;
+            --head: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+            --mono: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+        }
+
+        /* ===== brand SVG icons (recoloured via CSS mask) ===== */
+        .ico {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            background-color: currentColor;
+            -webkit-mask: var(--i) center/contain no-repeat;
+            mask: var(--i) center/contain no-repeat;
+            vertical-align: -.14em;
+            flex: none
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: var(--head);
+            color: var(--ink);
+            background: var(--green-soft);
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.5;
+        }
+
+        .deck {
+            scroll-snap-type: y proximity
+        }
+
+        section.slide {
+            min-height: 100vh;
+            scroll-snap-align: start;
+            padding: 96px 40px 110px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            background: var(--green-soft);
+        }
+
+        section.slide:nth-of-type(even) {
+            background: var(--green-soft2)
+        }
+
+        .wrap {
+            width: 100%;
+            max-width: var(--maxw);
+            margin: 0 auto;
+            position: relative;
+            z-index: 2
+        }
+
+        /* ===== top progress + nav ===== */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 26px;
+            background: rgba(255, 255, 255, .82);
+            backdrop-filter: saturate(180%) blur(14px);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            letter-spacing: -.01em
+        }
+
+        .brand .mark {
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+            background: conic-gradient(from 200deg, var(--green), var(--green-deep) 40%, var(--purple) 75%, var(--green));
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 800;
+            box-shadow: 0 6px 16px -6px rgba(0, 133, 93, .7);
+        }
+
+        .brand small {
+            display: block;
+            font-weight: 500;
+            color: var(--muted);
+            font-size: 11px;
+            letter-spacing: .02em
+        }
+
+        .topbar nav {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap
+        }
+
+        .topbar nav a {
+            font-size: 12.5px;
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 7px 11px;
+            border-radius: 8px;
+            transition: .2s;
+            white-space: nowrap;
+        }
+
+        .topbar nav a:hover {
+            color: var(--green-deep);
+            background: var(--mist)
+        }
+
+        .progress {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            height: 3px;
+            background: var(--green-bright);
+            width: 0;
+            z-index: 51;
+            transition: width .15s
+        }
+
+        /* ===== bottom control bar (nav buttons) ===== */
+        .controls {
+            position: fixed;
+            left: 50%;
+            bottom: 22px;
+            transform: translateX(-50%);
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .92);
+            backdrop-filter: saturate(180%) blur(14px);
+            border: 1px solid rgba(0, 133, 93, .22);
+            box-shadow: 0 14px 38px -16px rgba(2, 71, 49, .5);
+        }
+
+        .controls button {
+            font-family: var(--head);
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-weight: 700;
+            font-size: 13px;
+            border-radius: 999px;
+            padding: 9px 15px;
+            color: #fff;
+            background: linear-gradient(135deg, var(--green-bright), var(--green));
+            transition: .18s;
+        }
+
+        .controls button:hover {
+            filter: brightness(1.06);
+            transform: translateY(-1px)
+        }
+
+        .controls button:disabled {
+            opacity: .4;
+            cursor: default;
+            transform: none;
+            filter: none
+        }
+
+        .controls button.ghost {
+            background: transparent;
+            color: var(--green-deep);
+            padding: 9px 12px
+        }
+
+        .controls button.ghost:hover {
+            background: var(--green-soft)
+        }
+
+        .controls button.ghost.on {
+            background: var(--green);
+            color: #fff
+        }
+
+        .controls .count {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--green-deep);
+            padding: 0 8px;
+            font-variant-numeric: tabular-nums;
+            min-width: 54px;
+            text-align: center
+        }
+
+        .controls .ico {
+            width: 15px;
+            height: 15px
+        }
+
+        /* ===== notes drawer ===== */
+        .notes-panel {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 55;
+            background: #fff;
+            border-top: 3px solid var(--green-bright);
+            box-shadow: 0 -18px 50px -20px rgba(2, 71, 49, .4);
+            transform: translateY(105%);
+            transition: transform .32s cubic-bezier(.4, 0, .2, 1);
+            padding: 22px 28px 84px;
+            max-height: 42vh;
+            overflow: auto;
+        }
+
+        .notes-panel.open {
+            transform: translateY(0)
+        }
+
+        .notes-panel .nhead {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px
+        }
+
+        .notes-panel .nhead .ico {
+            width: 18px;
+            height: 18px;
+            color: var(--green)
+        }
+
+        .notes-panel .nhead h4 {
+            font-size: 12px;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--green);
+            font-weight: 800
+        }
+
+        .notes-panel .nhead .where {
+            margin-left: auto;
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600
+        }
+
+        .notes-panel .ntitle {
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: -.01em;
+            margin-bottom: 8px
+        }
+
+        .notes-panel ul {
+            list-style: none;
+            display: grid;
+            gap: 8px;
+            max-width: 92ch
+        }
+
+        .notes-panel li {
+            position: relative;
+            padding-left: 20px;
+            font-size: 14px;
+            color: var(--ink-2);
+            line-height: 1.5
+        }
+
+        .notes-panel li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 7px;
+            height: 7px;
+            border-radius: 2px;
+            background: var(--green-bright)
+        }
+
+        /* ===== dot nav ===== */
+        .dots {
+            position: fixed;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            gap: 11px
+        }
+
+        .dots a {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--line);
+            transition: .25s;
+            border: 2px solid transparent
+        }
+
+        .dots a:hover {
+            background: var(--muted)
+        }
+
+        .dots a.active {
+            background: var(--green);
+            box-shadow: 0 0 0 4px rgba(0, 133, 93, .16)
+        }
+
+        /* ===== typography helpers ===== */
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--green);
+            margin-bottom: 22px;
+        }
+
+        .eyebrow::before {
+            content: "";
+            width: 26px;
+            height: 2px;
+            background: var(--green);
+            border-radius: 2px
+        }
+
+        h1 {
+            font-size: clamp(34px, 5.4vw, 66px);
+            line-height: 1.04;
+            letter-spacing: -.03em;
+            font-weight: 800
+        }
+
+        h2 {
+            font-size: clamp(28px, 3.8vw, 46px);
+            line-height: 1.08;
+            letter-spacing: -.025em;
+            font-weight: 800;
+            margin-bottom: 18px
+        }
+
+        h3 {
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: -.01em
+        }
+
+        .lead {
+            font-size: clamp(17px, 1.9vw, 21px);
+            color: var(--ink-2);
+            max-width: 60ch;
+            line-height: 1.55
+        }
+
+        .muted {
+            color: var(--muted)
+        }
+
+        .mono {
+            font-family: var(--mono)
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--ink-2);
+            border: 1px solid var(--line);
+            padding: 7px 13px;
+            border-radius: 999px;
+            background: #fff
+        }
+
+        .tag .d {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%
+        }
+
+        .tagrow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+            margin-top: 30px
+        }
+
+        /* ===== grids / cards ===== */
+        .grid {
+            display: grid;
+            gap: 18px
+        }
+
+        .g2 {
+            grid-template-columns: repeat(2, 1fr)
+        }
+
+        .g3 {
+            grid-template-columns: repeat(3, 1fr)
+        }
+
+        .g4 {
+            grid-template-columns: repeat(4, 1fr)
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, .02);
+            transition: .25s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+            border-color: rgba(0, 133, 93, .35)
+        }
+
+        .card .ic {
+            width: 42px;
+            height: 42px;
+            border-radius: 11px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 16px;
+            font-size: 20px
+        }
+
+        .card p {
+            color: var(--muted);
+            font-size: 14.5px;
+            margin-top: 8px
+        }
+
+        .kicker {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--green)
+        }
+
+        /* tinted icon chips */
+        .t-green {
+            background: rgba(0, 133, 93, .12);
+            color: var(--green)
+        }
+
+        .t-purple {
+            background: rgba(107, 65, 234, .12);
+            color: var(--purple)
+        }
+
+        .t-orange {
+            background: rgba(241, 80, 55, .12);
+            color: var(--orange)
+        }
+
+        .t-blue {
+            background: rgba(20, 103, 181, .12);
+            color: var(--blue)
+        }
+
+        .t-magenta {
+            background: rgba(196, 53, 184, .12);
+            color: var(--magenta)
+        }
+
+        .t-deep {
+            background: rgba(2, 71, 49, .12);
+            color: var(--green-deep)
+        }
+
+        /* stat callouts */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin-top: 34px
+        }
+
+        .stat {
+            border-left: 3px solid var(--green);
+            padding-left: 16px
+        }
+
+        .stat .n {
+            font-size: clamp(30px, 4vw, 46px);
+            font-weight: 800;
+            letter-spacing: -.03em;
+            line-height: 1
+        }
+
+        .stat .l {
+            color: var(--muted);
+            font-size: 13.5px;
+            margin-top: 6px;
+            max-width: 22ch
+        }
+
+        /* problem list */
+        .plist {
+            list-style: none;
+            display: grid;
+            gap: 12px;
+            margin-top: 8px
+        }
+
+        .plist li {
+            display: flex;
+            gap: 13px;
+            align-items: flex-start;
+            font-size: 15px;
+            color: var(--ink-2)
+        }
+
+        .plist li .x {
+            flex: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 7px;
+            background: rgba(241, 80, 55, .12);
+            color: var(--orange);
+            display: grid;
+            place-items: center;
+            font-size: 13px;
+            font-weight: 800;
+            margin-top: 1px
+        }
+
+        .clist li .x {
+            background: rgba(0, 133, 93, .13);
+            color: var(--green)
+        }
+
+        /* ===== architecture diagram ===== */
+        .arch {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 16px;
+            align-items: stretch;
+            margin-top: 26px
+        }
+
+        .archfig {
+            margin: 18px 0 0;
+            text-align: center;
+        }
+
+        .archfig img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 70vh;
+            object-fit: contain;
+            margin: 0 auto;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: #fff;
+            padding: 14px;
+            box-shadow: 0 18px 50px rgba(13, 31, 22, .12);
+        }
+
+        .lane {
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 16px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 12px
+        }
+
+        .lane h4 {
+            font-size: 12px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 700;
+            margin-bottom: 2px
+        }
+
+        .node {
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            padding: 11px 13px;
+            font-size: 13.5px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            background: #fff
+        }
+
+        .node small {
+            display: block;
+            font-weight: 500;
+            color: var(--muted);
+            font-size: 11.5px
+        }
+
+        .node .b {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex: none
+        }
+
+        .lane.core {
+            background: linear-gradient(180deg, rgba(0, 133, 93, .06), rgba(107, 65, 234, .05));
+            border-color: rgba(0, 133, 93, .3)
+        }
+
+        .lane.core .node {
+            border-color: rgba(0, 133, 93, .22)
+        }
+
+        .subnodes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px
+        }
+
+        .subnode {
+            font-size: 11.5px;
+            font-weight: 600;
+            border: 1px dashed var(--line);
+            border-radius: 9px;
+            padding: 8px 9px;
+            color: var(--ink-2);
+            background: #fff
+        }
+
+        .flowstrip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 22px;
+            align-items: center;
+            justify-content: center
+        }
+
+        .flowstrip .step {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--ink-2);
+            background: #fff;
+            border: 1px solid var(--line);
+            padding: 8px 13px;
+            border-radius: 999px
+        }
+
+        .flowstrip .arr {
+            color: var(--green);
+            font-weight: 800
+        }
+
+        /* numbered flow */
+        .steps {
+            counter-reset: s;
+            display: grid;
+            gap: 14px;
+            margin-top: 10px
+        }
+
+        .step-row {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 16px;
+            align-items: flex-start;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 16px 18px;
+            background: #fff;
+            transition: .2s
+        }
+
+        .step-row:hover {
+            border-color: rgba(0, 133, 93, .35);
+            box-shadow: var(--shadow)
+        }
+
+        .step-row .num {
+            counter-increment: s;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--green);
+            color: #fff;
+            font-weight: 800;
+            display: grid;
+            place-items: center;
+            font-size: 15px
+        }
+
+        .step-row .num::before {
+            content: counter(s)
+        }
+
+        .step-row h3 {
+            font-size: 15.5px;
+            margin-bottom: 3px
+        }
+
+        .step-row p {
+            color: var(--muted);
+            font-size: 13.5px
+        }
+
+        .step-row .endpoint {
+            font-family: var(--mono);
+            font-size: 11.5px;
+            color: var(--green-deep);
+            background: rgba(0, 133, 93, .08);
+            padding: 2px 7px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 6px
+        }
+
+        /* ===== tables ===== */
+        table.tbl {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 6px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            overflow: hidden
+        }
+
+        table.tbl th,
+        table.tbl td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--line)
+        }
+
+        table.tbl th {
+            background: var(--mist);
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: var(--ink-2)
+        }
+
+        table.tbl tr:last-child td {
+            border-bottom: none
+        }
+
+        table.tbl td.num,
+        table.tbl th.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600
+        }
+
+        table.tbl tr.total td {
+            background: rgba(0, 133, 93, .07);
+            font-weight: 800;
+            color: var(--green-deep)
+        }
+
+        .pill {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 999px
+        }
+
+        .pill.free {
+            background: rgba(0, 133, 93, .12);
+            color: var(--green)
+        }
+
+        .pill.gcp {
+            background: rgba(20, 103, 181, .12);
+            color: var(--blue)
+        }
+
+        .pill.paid {
+            background: rgba(241, 80, 55, .12);
+            color: var(--orange)
+        }
+
+        /* team cards */
+        .team {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 6px
+        }
+
+        .member {
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 20px;
+            background: #fff;
+            position: relative
+        }
+
+        .member .av {
+            width: 46px;
+            height: 46px;
+            border-radius: 13px;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-weight: 800;
+            font-size: 18px;
+            margin-bottom: 14px
+        }
+
+        .member h3 {
+            font-size: 15.5px
+        }
+
+        .member .role {
+            font-size: 12.5px;
+            color: var(--muted);
+            font-weight: 600
+        }
+
+        .member ul {
+            list-style: none;
+            margin-top: 12px;
+            display: grid;
+            gap: 7px
+        }
+
+        .member ul li {
+            font-size: 12.5px;
+            color: var(--ink-2);
+            padding-left: 16px;
+            position: relative
+        }
+
+        .member ul li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green)
+        }
+
+        /* big cost banner */
+        .banner {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin-top: 26px
+        }
+
+        .banner .b {
+            border-radius: 18px;
+            padding: 24px;
+            color: #fff;
+            position: relative;
+            overflow: hidden
+        }
+
+        .banner .b .n {
+            font-size: clamp(26px, 3.4vw, 40px);
+            font-weight: 800;
+            letter-spacing: -.02em;
+            line-height: 1.05
+        }
+
+        .banner .b .l {
+            font-size: 13px;
+            opacity: .92;
+            margin-top: 8px;
+            font-weight: 500
+        }
+
+        .banner .b .s {
+            font-size: 11.5px;
+            opacity: .8;
+            margin-top: 10px
+        }
+
+        .bg-green {
+            background: linear-gradient(135deg, var(--green), var(--green-deep))
+        }
+
+        .bg-purple {
+            background: linear-gradient(135deg, var(--purple), #4321a3)
+        }
+
+        .bg-blue {
+            background: linear-gradient(135deg, var(--blue), #0c3f70)
+        }
+
+        .bg-ink {
+            background: linear-gradient(135deg, var(--ink-2), #111)
+        }
+
+        .note {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 16px;
+            font-style: italic
+        }
+
+        /* ===== compact architecture band (solution slide) ===== */
+        .mini-arch {
+            display: flex;
+            align-items: stretch;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .ma-group {
+            flex: 1;
+            min-width: 150px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #fff;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .ma-group.core {
+            flex: 1.5;
+            background: linear-gradient(180deg, rgba(43, 192, 143, .12), rgba(0, 133, 93, .06));
+            border-color: rgba(0, 133, 93, .35);
+        }
+        .ma-label {
+            font-size: 10.5px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: var(--green);
+        }
+        .ma-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ink-2);
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            padding: 8px 10px;
+            background: #fff;
+        }
+        .ma-box .ico {
+            width: 16px;
+            height: 16px;
+            color: var(--green);
+        }
+        .ma-sub {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+        .ma-arrow {
+            align-self: center;
+            color: var(--green-bright);
+            font-weight: 800;
+            font-size: 20px;
+        }
+        .ma-foot {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        .ma-foot strong {
+            color: var(--green-deep);
+        }
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--ink-2);
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 7px 13px;
+        }
+        .chip b {
+            color: var(--green-deep);
+        }
+
+        /* ===== acceptance-criteria cards ===== */
+        .crit {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .crit .card {
+            padding: 16px 17px;
+        }
+        .crit .top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 7px;
+        }
+        .crit .num {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--green);
+            background: rgba(0, 133, 93, .12);
+            border-radius: 7px;
+            padding: 2px 7px;
+        }
+        .crit .ico {
+            width: 19px;
+            height: 19px;
+            color: var(--green);
+        }
+        .crit h3 {
+            font-size: 14.5px;
+        }
+        .crit p {
+            color: var(--muted);
+            font-size: 12.5px;
+            margin-top: 4px;
+            line-height: 1.45;
+        }
+
+        .split {
+            display: grid;
+            grid-template-columns: 1.05fr .95fr;
+            gap: 40px;
+            align-items: center
+        }
+
+        /* decorative blobs */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(70px);
+            opacity: .16;
+            z-index: 1
+        }
+
+        .b1 {
+            width: 420px;
+            height: 420px;
+            background: var(--green);
+            top: -120px;
+            right: -80px
+        }
+
+        .b2 {
+            width: 360px;
+            height: 360px;
+            background: var(--purple);
+            bottom: -120px;
+            left: -90px;
+            opacity: .13
+        }
+
+        /* hero specifics */
+        #hero {
+            background:
+                radial-gradient(120% 120% at 80% 0%, rgba(43, 192, 143, .22), transparent 55%),
+                radial-gradient(100% 100% at 0% 100%, rgba(0, 133, 93, .16), transparent 50%),
+                linear-gradient(180deg, var(--green-soft), #fff)
+        }
+
+        .hero-foot {
+            margin-top: 40px;
+            padding-top: 22px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 26px
+        }
+
+        .hero-foot div {
+            font-size: 13px
+        }
+
+        .hero-foot .k {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .06em
+        }
+
+        .hero-foot .v {
+            font-weight: 700;
+            margin-top: 3px
+        }
+
+        .sec-head {
+            max-width: 64ch;
+            margin-bottom: 20px
+        }
+
+        .two {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start
+        }
+
+        footer.end {
+            padding: 60px 40px;
+            background: var(--ink);
+            color: #fff;
+            text-align: center
+        }
+
+        footer.end .mark {
+            margin: 0 auto 18px
+        }
+
+        footer.end p {
+            color: rgba(255, 255, 255, .6);
+            font-size: 13px;
+            max-width: 50ch;
+            margin: 10px auto 0
+        }
+
+        @media(max-width:980px) {
+
+            .g3,
+            .g4,
+            .team,
+            .banner,
+            .stats,
+            .crit,
+            .arch {
+                grid-template-columns: 1fr
+            }
+
+            .two,
+            .split {
+                grid-template-columns: 1fr;
+                gap: 24px
+            }
+
+            .g2 {
+                grid-template-columns: 1fr
+            }
+
+            .topbar nav {
+                display: none
+            }
+
+            .dots {
+                display: none
+            }
+
+            section.slide {
+                padding: 84px 22px 60px
+            }
+        }
+
+        /* ===== PRINT / PDF EXPORT — one 16:9 page per slide ===== */
+        @media print {
+            @page {
+                size: 13.333in 7.5in;
+                margin: 0;
+            }
+            *, *::before, *::after {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            html, body { background: #fff !important; }
+            .topbar, .progress, .dots, .controls, .notes-panel, .blob { display: none !important; }
+            .deck { scroll-snap-type: none !important; }
+
+            section.slide {
+                width: 13.333in;
+                height: 7.5in;
+                min-height: 0 !important;
+                padding: 0.46in 0.62in !important;
+                margin: 0 !important;
+                page-break-after: always;
+                break-after: page;
+                page-break-inside: avoid;
+                break-inside: avoid;
+                overflow: hidden !important;
+                display: flex;
+                align-items: center;
+            }
+            section.slide:last-of-type { page-break-after: avoid; break-after: auto; }
+            #hero { background:
+                radial-gradient(120% 120% at 80% 0%, rgba(43,192,143,.22), transparent 55%),
+                radial-gradient(100% 100% at 0% 100%, rgba(0,133,93,.16), transparent 50%),
+                linear-gradient(180deg, var(--green-soft), #fff) !important; }
+
+            .wrap { max-width: none !important; width: 100% !important; }
+
+            /* tighten dense slides so nothing clips on a fixed page */
+            h1 { font-size: 52px !important; }
+            h2 { font-size: 33px !important; margin-bottom: 12px !important; }
+            .lead { font-size: 15.5px !important; }
+            .eyebrow { margin-bottom: 14px !important; }
+            .grid { gap: 12px !important; }
+            .card { padding: 16px !important; }
+            .card p { font-size: 12.5px !important; }
+            .stats, .tagrow, .flowstrip, .banner, .team { margin-top: 16px !important; }
+            .steps { gap: 9px !important; }
+            .step-row { padding: 11px 14px !important; }
+            .member { padding: 15px !important; }
+            table.tbl { font-size: 12px !important; }
+            table.tbl th, table.tbl td { padding: 8px 12px !important; }
+            .two, .split { gap: 24px !important; }
+            .hero-foot { margin-top: 26px !important; padding-top: 16px !important; }
+            footer.end { display: none !important; }
+            .archfig { margin-top: 12px !important; }
+            .archfig img { max-height: 5.05in !important; padding: 8px !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="topbar">
+        <div class="brand">
+            <span class="mark">Q</span>
+            <span>QE Agent
+                <small>Insight Syndicate · Lloyds Technology Centre</small>
+            </span>
+        </div>
+        <nav>
+            <a href="#problem">Problem</a>
+            <a href="#solution">Solution</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#flow">How it works</a>
+            <a href="#tools">Toolsets</a>
+            <a href="#capabilities">Capabilities</a>
+            <a href="#criteria">Criteria</a>
+            <a href="#team">Team</a>
+            <a href="#people-cost">People cost</a>
+            <a href="#poc-cost">PoC cost</a>
+            <a href="#prod-cost">LBG cost</a>
+            <a href="#roadmap">Roadmap</a>
+        </nav>
+    </div>
+    <div class="progress" id="progress"></div>
+
+    <div class="dots" id="dots"></div>
+
+    <main class="deck" id="deck">
+
+        <!-- 1 · HERO -->
+        <section class="slide" id="hero">
+            <div class="blob b1"></div>
+            <div class="blob b2"></div>
+            <div class="wrap">
+                <span class="eyebrow">Insight Syndicate · Quality Engineering Hackathon</span>
+                <h1>An autonomous<br /><span style="color:var(--green)">Quality Engineering</span> agent.</h1>
+                <p class="lead" style="margin-top:24px">
+                    From a single Jira ticket to <strong>generated test scenarios</strong>, <strong>triggered
+                        pipelines</strong>
+                    and <strong>trusted, auditable evidence written straight back to the ticket</strong> — with minimal
+                    human effort.
+                    A proof of concept built to drive the MVP inside the Economic Crime Prevention Platform.
+                </p>
+                <div class="tagrow">
+                    <span class="tag"><span class="d" style="background:var(--green)"></span>Google ADK + Gemini on
+                        Vertex AI</span>
+                    <span class="tag"><span class="d" style="background:var(--blue)"></span>GKE</span>
+                    <span class="tag"><span class="d" style="background:var(--purple)"></span>Harness CI/CD</span>
+                    <span class="tag"><span class="d" style="background:var(--orange)"></span>Jira / Xray</span>
+                    <span class="tag"><span class="d" style="background:var(--magenta)"></span>GitHub · BigQuery · GCS ·
+                        Neo4j</span>
+                </div>
+                <div class="hero-foot">
+                    <div>
+                        <div class="k">Scope</div>
+                        <div class="v">PoC → MVP blueprint</div>
+                    </div>
+                    <div>
+                        <div class="k">Reach</div>
+                        <div class="v">ECP: 4 labs · ~40 teams</div>
+                    </div>
+                    <div>
+                        <div class="k">Adoption</div>
+                        <div class="v">Built once · reused as a template</div>
+                    </div>
+                    <div>
+                        <div class="k">Foundation for</div>
+                        <div class="v">Group-wide rollout</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2 · PROBLEM -->
+        <section class="slide" id="problem">
+            <div class="wrap">
+                <span class="eyebrow">The problem</span>
+                <div class="two">
+                    <div>
+                        <h2>Testing can't keep pace with how fast ECP changes.</h2>
+                        <p class="lead">
+                            ECP products evolve rapidly across complex data flows, integrations and user journeys.
+                            Traditional testing leans heavily on manual effort, deep product knowledge and early,
+                            clear requirements — slowing feedback and increasing delivery risk.
+                        </p>
+                        <div class="stats">
+                            <div class="stat">
+                                <div class="n">4</div>
+                                <div class="l">labs across the platform</div>
+                            </div>
+                            <div class="stat">
+                                <div class="n">~40</div>
+                                <div class="l">teams solving the same testing problem independently</div>
+                            </div>
+                            <div class="stat">
+                                <div class="n">100%</div>
+                                <div class="l">manual test design today before a change can ship with confidence</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card">
+                            <h3 style="margin-bottom:14px">Where teams lose time today</h3>
+                            <ul class="plist">
+                                <li><span class="x">!</span> Heavy reliance on manual test design and deep product
+                                    knowledge</li>
+                                <li><span class="x">!</span> Slow feedback on whether a change is safe to release</li>
+                                <li><span class="x">!</span> Duplicated effort — every team builds its own approach</li>
+                                <li><span class="x">!</span> Inconsistent quality and uneven test evidence</li>
+                                <li><span class="x">!</span> Coverage depends on requirements being clear and early</li>
+                                <li><span class="x">!</span> Results manually transcribed back into tickets, if at all
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3 · SOLUTION -->
+        <section class="slide" id="solution">
+            <div class="blob b1" style="opacity:.1"></div>
+            <div class="wrap">
+                <span class="eyebrow">The solution</span>
+                <div class="sec-head">
+                    <h2>An intelligent assistant that tests the change for you.</h2>
+                    <p class="lead">
+                        Give the agent a product change — a Jira story, acceptance criteria, an API or config update —
+                        and it decides <em>what</em> to test and <em>why</em>, runs meaningful automated tests, and
+                        produces
+                        clear evidence stakeholders can trust. Built once and offered as a standard template:
+                        a team of <strong>1 engineer + 1 QE can adopt it in a single sprint</strong>.
+                    </p>
+                </div>
+                <div class="grid g3">
+                    <div class="card">
+                        <div class="ic t-green"><span class="ico" style="--i:url(assets/icons/generate.svg)"></span></div>
+                        <h3>Generate</h3>
+                        <p>Reads acceptance criteria and authors Cucumber/BDD scenarios plus Jira <em>Test</em> subtasks
+                            — opening a GitHub PR with the new features.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-blue"><span class="ico" style="--i:url(assets/icons/play.svg)"></span></div>
+                        <h3>Execute</h3>
+                        <p>Triggers the Harness testing pipelines automatically when a ticket moves to <em>Testing</em>,
+                            running deterministic + BDD suites against the live pipeline.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-purple"><span class="ico" style="--i:url(assets/icons/evidence.svg)"></span></div>
+                        <h3>Evidence</h3>
+                        <p>Writes pass/fail results back onto the ticket — updating Xray or regular subtasks — and
+                            triages failures into follow-up PRs. Fully auditable.</p>
+                    </div>
+                </div>
+
+                <!-- compact architecture diagram -->
+                <div class="mini-arch">
+                    <div class="ma-group">
+                        <div class="ma-label">Sources of truth</div>
+                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/tickets.svg)"></span>Jira / Xray</div>
+                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/links.svg)"></span>GitHub</div>
+                    </div>
+                    <div class="ma-arrow">→</div>
+                    <div class="ma-group core">
+                        <div class="ma-label">GKE · QE Agent</div>
+                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/ai.svg)"></span>ADK + Gemini orchestrator</div>
+                        <div class="ma-sub">6 sub-agents · 8 toolsets · read-only Workload Identity</div>
+                    </div>
+                    <div class="ma-arrow">→</div>
+                    <div class="ma-group">
+                        <div class="ma-label">Execute &amp; gate</div>
+                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/switch.svg)"></span>Harness pipelines</div>
+                    </div>
+                    <div class="ma-arrow">→</div>
+                    <div class="ma-group">
+                        <div class="ma-label">Evidence</div>
+                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/evidence.svg)"></span>Results on ticket</div>
+                    </div>
+                </div>
+                <div class="ma-foot">Pipeline under test: <strong>GCS → dbt / BigQuery → Neo4j</strong> — all on GKE in the <span class="mono">qe-hack-syndicate</span> namespace. <span style="color:var(--muted)">(Full view on the next slide.)</span></div>
+                <div class="chips">
+                    <span class="chip"><b>Deterministic</b> · strict PASS / FAIL / ERROR</span>
+                    <span class="chip"><b>Low adoption risk</b> · only tooling LBG already runs</span>
+                    <span class="chip"><b>Scalable</b> · one template, ~40 teams</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4 · ARCHITECTURE -->
+        <section class="slide" id="architecture">
+            <div class="wrap">
+                <span class="eyebrow">Architecture · deployed on GKE</span>
+                <h2>One agent, three connected worlds.</h2>
+                <p class="lead">The agent runs as a single Deployment in the <span class="mono">qe-hack-syndicate</span>
+                    namespace on GKE, brokering Jira, GitHub and Harness while reading the data pipeline it tests
+                    (GCS → dbt/BigQuery → Neo4j) and reasoning with Gemini on Vertex.</p>
+                <figure class="archfig">
+                    <img src="assets/img/architecture.png"
+                        alt="QE Agent architecture on Google Cloud Platform: GKE namespace hosting the synthetic data generator, dbt, Neo4j and the Model Context Protocol server; Cloud Storage, BigQuery and Dataflow feeding the graph; Vertex Studio with Gemini; and the Harness QE pipeline running connectivity, SAST and functional testing stages with results written back to Jira and GitHub." />
+                </figure>
+            </div>
+        </section>
+
+        <!-- 5 · FLOW -->
+        <section class="slide" id="flow">
+            <div class="wrap">
+                <span class="eyebrow">How it works · event-driven</span>
+                <h2>From acceptance criteria to evidence — hands-off.</h2>
+                <div class="steps" style="margin-top:24px">
+                    <div class="step-row">
+                        <div class="num"></div>
+                        <div>
+                            <h3>A ticket is created</h3>
+                            <p>Jira emits <span class="mono">issue_created</span> to the agent. It verifies the token
+                                and reads the acceptance criteria.</p>
+                            <span class="endpoint">POST /qe/jira/webhook</span>
+                        </div>
+                    </div>
+                    <div class="step-row">
+                        <div class="num"></div>
+                        <div>
+                            <h3>The agent authors the tests</h3>
+                            <p>The <span class="mono">bdd_authoring_agent</span> generates <span
+                                    class="mono">.feature</span> files, creates linked Jira <em>Test</em> subtasks, and
+                                opens a GitHub PR.</p>
+                        </div>
+                    </div>
+                    <div class="step-row">
+                        <div class="num"></div>
+                        <div>
+                            <h3>The ticket moves to "Testing"</h3>
+                            <p>An <span class="mono">issue_updated</span> status transition fires the Harness <span
+                                    class="mono">bdd_tests</span> pipeline via a custom webhook trigger.</p>
+                        </div>
+                    </div>
+                    <div class="step-row">
+                        <div class="num"></div>
+                        <div>
+                            <h3>Pipelines run the suites</h3>
+                            <p>Harness calls the deterministic <span class="mono">/qe/scenario/…</span> endpoints and
+                                the Cucumber pack — the same code path runs in CI, the agent and the CLI.</p>
+                        </div>
+                    </div>
+                    <div class="step-row">
+                        <div class="num"></div>
+                        <div>
+                            <h3>Evidence is written back</h3>
+                            <p>Results are synced onto the ticket's subtasks / Xray execution history. Failing runs are
+                                triaged and reconciled into follow-up PRs.</p>
+                            <span class="endpoint">POST /qe/jira/{ticket}/sync-results</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6 · TOOLSETS -->
+        <section class="slide" id="tools">
+            <div class="wrap">
+                <span class="eyebrow">Toolsets · already in the LBG estate</span>
+                <h2>Nothing new to buy. Everything is reused.</h2>
+                <p class="lead">Every integration the agent depends on is tooling LBG already runs in production — which
+                    is exactly why this PoC is straightforward to land internally.</p>
+                <div class="grid g4" style="margin-top:24px">
+                    <div class="card">
+                        <div class="ic t-orange"><span class="ico" style="--i:url(assets/icons/tickets.svg)"></span></div>
+                        <h3>Jira / Xray</h3>
+                        <p>Source of acceptance criteria, status transitions and the home for test evidence.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-deep"><span class="ico" style="--i:url(assets/icons/links.svg)"></span></div>
+                        <h3>GitHub</h3>
+                        <p>Code, generated features and agent-authored pull requests.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-magenta"><span class="ico" style="--i:url(assets/icons/switch.svg)"></span></div>
+                        <h3>Harness</h3>
+                        <p>CI/CD pipelines that execute and gate every test suite.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-blue"><span class="ico" style="--i:url(assets/icons/graph.svg)"></span></div>
+                        <h3>BigQuery</h3>
+                        <p>Raw → enriched data the functional &amp; integration suites assert against.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-green"><span class="ico" style="--i:url(assets/icons/document.svg)"></span></div>
+                        <h3>Cloud Storage</h3>
+                        <p>Raw CSV landing zone for the synthetic data pipeline.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-blue"><span class="ico" style="--i:url(assets/icons/cloud.svg)"></span></div>
+                        <h3>GKE</h3>
+                        <p>Hosts the agent, the data pipeline cronjobs and Neo4j.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-purple"><span class="ico" style="--i:url(assets/icons/technology.svg)"></span></div>
+                        <h3>Neo4j + dbt</h3>
+                        <p>Graph model &amp; transforms — validated end-to-end by the agent.</p>
+                    </div>
+                    <div class="card"
+                        style="background:linear-gradient(135deg,rgba(0,133,93,.1),rgba(107,65,234,.08));border-color:rgba(0,133,93,.3)">
+                        <div class="ic t-green"><span class="ico" style="--i:url(assets/icons/shield.svg)"></span></div>
+                        <h3>Workload Identity</h3>
+                        <p>Least-privilege, read-only GCP access — no JSON keys in cluster.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7 · CAPABILITIES -->
+        <section class="slide" id="capabilities">
+            <div class="wrap">
+                <span class="eyebrow">Capabilities · six QE goals</span>
+                <h2>A complete quality sweep, deterministic by design.</h2>
+                <div class="grid g3" style="margin-top:22px">
+                    <div class="card">
+                        <div class="ic t-green"><span class="ico" style="--i:url(assets/icons/search.svg)"></span></div>
+                        <div class="kicker">SA1–SA5</div>
+                        <h3 style="margin-top:6px">Static analysis</h3>
+                        <p>sqlfluff, ruff, bandit, yamllint — zero violations, no hardcoded secrets.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-blue"><span class="ico" style="--i:url(assets/icons/spanner.svg)"></span></div>
+                        <div class="kicker">CS1–CS5</div>
+                        <h3 style="margin-top:6px">Coding standards</h3>
+                        <p>Model naming, documented sources, pinned images, resource limits, FK consistency.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-magenta"><span class="ico" style="--i:url(assets/icons/switch.svg)"></span></div>
+                        <div class="kicker">I1–I5</div>
+                        <h3 style="margin-top:6px">Integration testing</h3>
+                        <p>GCS↔BigQuery parity, no orphan FKs, Neo4j nodes &amp; relationships, watermark integrity.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-orange"><span class="ico" style="--i:url(assets/icons/execute.svg)"></span></div>
+                        <div class="kicker">F1–F6</div>
+                        <h3 style="margin-top:6px">Functional testing</h3>
+                        <p>Business rules — investment classification, address &amp; phone normalisation, dbt tests.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-purple"><span class="ico" style="--i:url(assets/icons/timer.svg)"></span></div>
+                        <div class="kicker">N1–N2</div>
+                        <h3 style="margin-top:6px">Non-functional</h3>
+                        <p>SLA/performance windows, reliability &amp; security — safe cronjobs, clean logs, bound SAs.
+                        </p>
+                    </div>
+                    <div class="card"
+                        style="border-color:rgba(0,133,93,.35);background:linear-gradient(135deg,rgba(0,133,93,.08),#fff)">
+                        <div class="ic t-green"><span class="ico" style="--i:url(assets/icons/ai.svg)"></span></div>
+                        <div class="kicker">BDD authoring</div>
+                        <h3 style="margin-top:6px">Generate &amp; reconcile</h3>
+                        <p>Turns Jira AC into Cucumber features, creates Jira Tests, opens PRs and fixes failing runs.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8 · ACCEPTANCE CRITERIA -->
+        <section class="slide" id="criteria">
+            <div class="wrap">
+                <span class="eyebrow">Hackathon acceptance criteria</span>
+                <h2>Built to score on every measure.</h2>
+                <p class="lead">The seven judging criteria mapped to concrete evidence already in the solution.</p>
+                <div class="crit">
+                    <div class="card">
+                        <div class="top"><span class="num">2.1</span><span class="ico" style="--i:url(assets/icons/evidence.svg)"></span></div>
+                        <h3>Valid product testing</h3>
+                        <p>Six deterministic suites assert real business rules against live BigQuery &amp; Neo4j data — strict PASS/FAIL, no false confidence.</p>
+                    </div>
+                    <div class="card">
+                        <div class="top"><span class="num">2.2</span><span class="ico" style="--i:url(assets/icons/ai.svg)"></span></div>
+                        <h3>Autonomy</h3>
+                        <p>A Jira webhook drives authoring, pipeline execution and result write-back with no human in the loop; failures auto-triage into PRs.</p>
+                    </div>
+                    <div class="card">
+                        <div class="top"><span class="num">2.3</span><span class="ico" style="--i:url(assets/icons/switch.svg)"></span></div>
+                        <h3>Easy LBG implementation</h3>
+                        <p>Runs only on tooling LBG already operates — Jira/Xray, GitHub, Harness, GKE, BigQuery. A team adopts the template in one sprint.</p>
+                    </div>
+                    <div class="card">
+                        <div class="top"><span class="num">2.4</span><span class="ico" style="--i:url(assets/icons/document.svg)"></span></div>
+                        <h3>User-friendly &amp; User Manual</h3>
+                        <p>Plain <span class="mono">/qe</span> REST API and a thin <span class="mono">qe-cli</span>, backed by a full user manual — README, integration guide, IAM &amp; run-books.</p>
+                    </div>
+                    <div class="card">
+                        <div class="top"><span class="num">2.5</span><span class="ico" style="--i:url(assets/icons/people3.svg)"></span></div>
+                        <h3>Whole-team understanding</h3>
+                        <p>Deterministic design and documented runbooks mean every one of the four squad members can explain, run and extend the agent.</p>
+                    </div>
+                    <div class="card">
+                        <div class="top"><span class="num">2.6</span><span class="ico" style="--i:url(assets/icons/growth.svg)"></span></div>
+                        <h3>Maintainability &amp; scalability</h3>
+                        <p>Single shared codebase, pinned images, Workload Identity, config-driven per team. Built once; scales to ~40 teams at marginal cost.</p>
+                    </div>
+                    <div class="card">
+                        <div class="top"><span class="num">2.7</span><span class="ico" style="--i:url(assets/icons/trophy.svg)"></span></div>
+                        <h3>Group-wide enhancements</h3>
+                        <p>Multi-tenant templating, pluggable toolsets, a model-agnostic LLM layer and a central evidence dashboard for the Group-wide entry.</p>
+                    </div>
+                    <div class="card" style="background:linear-gradient(135deg,rgba(43,192,143,.14),rgba(0,133,93,.06));border-color:rgba(0,133,93,.35)">
+                        <div class="top"><span class="ico" style="--i:url(assets/icons/star.svg)"></span></div>
+                        <h3>Designed against the scorecard</h3>
+                        <p>Every slide that follows — team, cost, run cost and roadmap — maps directly back to criteria 2.3, 2.5, 2.6 and 2.7.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8 · TEAM -->
+        <section class="slide" id="team">
+            <div class="wrap">
+                <span class="eyebrow">Delivering the MVP inside LBG</span>
+                <h2>A focused squad of four.</h2>
+                <p class="lead">A lean, cross-functional team can take this PoC to a production-ready, end-to-end MVP in
+                    <strong>one to two quarters</strong>.</p>
+                <div class="team" style="margin-top:24px">
+                    <div class="member">
+                        <div class="av" style="background:var(--blue)"><span class="ico" style="--i:url(assets/icons/personcog.svg)"></span></div>
+                        <h3>Senior DevOps Engineer</h3>
+                        <div class="role">Platform &amp; delivery</div>
+                        <ul>
+                            <li>GKE, Workload Identity, RBAC</li>
+                            <li>Harness pipelines &amp; triggers</li>
+                            <li>Secrets, networking, observability</li>
+                        </ul>
+                    </div>
+                    <div class="member">
+                        <div class="av" style="background:var(--green)"><span class="ico" style="--i:url(assets/icons/laptop.svg)"></span></div>
+                        <h3>Backend Engineer</h3>
+                        <div class="role">Python developer</div>
+                        <ul>
+                            <li>ADK agent &amp; toolsets</li>
+                            <li>Deterministic /qe API</li>
+                            <li>Jira / GitHub / Harness integration</li>
+                        </ul>
+                    </div>
+                    <div class="member">
+                        <div class="av" style="background:var(--purple)"><span class="ico" style="--i:url(assets/icons/shield.svg)"></span></div>
+                        <h3>Senior Quality Engineer</h3>
+                        <div class="role">Test strategy &amp; BDD</div>
+                        <ul>
+                            <li>Scenario design &amp; coverage</li>
+                            <li>Cucumber / Xray integration</li>
+                            <li>Quality gates &amp; evidence model</li>
+                        </ul>
+                    </div>
+                    <div class="member">
+                        <div class="av" style="background:var(--orange)"><span class="ico" style="--i:url(assets/icons/people3.svg)"></span></div>
+                        <h3>Customer Journey Manager</h3>
+                        <div class="role">Product &amp; adoption</div>
+                        <ul>
+                            <li>Backlog &amp; stakeholder alignment</li>
+                            <li>Adoption across teams/labs</li>
+                            <li>Value tracking &amp; reporting</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="note">Indicative shaping. The CJM can run at ~0.5 FTE; engineering is the core of the build.
+                    Deterministic design + documented runbooks mean every member fully understands and can operate the
+                    solution.
+                </p>
+            </div>
+        </section>
+
+        <!-- 9 · PEOPLE COST -->
+        <section class="slide" id="people-cost">
+            <div class="wrap">
+                <span class="eyebrow">Investment · people cost (UK market)</span>
+                <h2>A few focused hours a week — not full-time headcount.</h2>
+                <div class="two" style="margin-top:18px">
+                    <div>
+                        <table class="tbl">
+                            <thead>
+                                <tr>
+                                    <th>Role</th>
+                                    <th class="num">Loaded £/hr</th>
+                                    <th class="num">5–6 hrs/wk</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Senior DevOps Engineer</td>
+                                    <td class="num">£55</td>
+                                    <td class="num">£275–£330</td>
+                                </tr>
+                                <tr>
+                                    <td>Backend (Python) Engineer</td>
+                                    <td class="num">£48</td>
+                                    <td class="num">£240–£288</td>
+                                </tr>
+                                <tr>
+                                    <td>Senior Quality Engineer</td>
+                                    <td class="num">£52</td>
+                                    <td class="num">£260–£312</td>
+                                </tr>
+                                <tr>
+                                    <td>Customer Journey Manager</td>
+                                    <td class="num">£50</td>
+                                    <td class="num">£250–£300</td>
+                                </tr>
+                                <tr class="total">
+                                    <td>Full squad / week</td>
+                                    <td class="num">£205/hr</td>
+                                    <td class="num">£1,025–£1,230</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="note">Fully-loaded hourly = base salary + ~30% employer NI, pension &amp; overheads,
+                            over ~1,800 productive hours/yr. UK 2025/26 perm rates, financial-services / fintech market.
+                            Each engineer commits just 5–6 focused hours per week.</p>
+                    </div>
+                    <div>
+                        <div class="banner" style="grid-template-columns:1fr 1fr">
+                            <div class="b bg-green">
+                                <div class="n">~£13k–£16k</div>
+                                <div class="l">per quarter (~13 weeks)</div>
+                                <div class="s">Whole squad, 5–6 hrs each per week</div>
+                            </div>
+                            <div class="b bg-purple">
+                                <div class="n">~£27k–£32k</div>
+                                <div class="l">2-quarter MVP (end-to-end)</div>
+                                <div class="s">Production-ready, full squad</div>
+                            </div>
+                        </div>
+                        <div class="card" style="margin-top:18px">
+                            <h3 style="margin-bottom:10px">A fraction of a single FTE</h3>
+                            <p class="muted" style="font-size:14.5px">At 5–6 hours each per week, the all-in people cost
+                                lands around
+                                <strong style="color:var(--green-deep)">£27k–£32k</strong> for a fully delivered,
+                                production-ready MVP — well under one full-time engineer for a quarter, and a one-off
+                                build that every team then reuses.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10 · POC COST -->
+        <section class="slide" id="poc-cost">
+            <div class="wrap">
+                <span class="eyebrow">Run cost · the Hackathon PoC</span>
+                <h2>Running the PoC is effectively pocket change.</h2>
+                <p class="lead">SaaS tooling sits on free trials/tiers; the only real spend is a small GCP footprint on
+                    GKE.</p>
+                <div class="two" style="margin-top:18px">
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>Tier</th>
+                                <th class="num">~ / month</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>GKE node pool (2× e2-standard-2)</td>
+                                <td><span class="pill gcp">GCP</span></td>
+                                <td class="num">£80</td>
+                            </tr>
+                            <tr>
+                                <td>Load balancers + networking (2 LBs, egress)</td>
+                                <td><span class="pill gcp">GCP</span></td>
+                                <td class="num">£35</td>
+                            </tr>
+                            <tr>
+                                <td>Vertex AI — Gemini (agent calls)</td>
+                                <td><span class="pill gcp">GCP</span></td>
+                                <td class="num">£20</td>
+                            </tr>
+                            <tr>
+                                <td>BigQuery + GCS + Artifact Registry</td>
+                                <td><span class="pill gcp">GCP</span></td>
+                                <td class="num">£10</td>
+                            </tr>
+                            <tr>
+                                <td>Persistent disks (Neo4j + pipeline)</td>
+                                <td><span class="pill gcp">GCP</span></td>
+                                <td class="num">£5</td>
+                            </tr>
+                            <tr>
+                                <td>Harness</td>
+                                <td><span class="pill free">Free trial</span></td>
+                                <td class="num">£0</td>
+                            </tr>
+                            <tr>
+                                <td>Jira / Xray</td>
+                                <td><span class="pill free">Free tier</span></td>
+                                <td class="num">£0</td>
+                            </tr>
+                            <tr>
+                                <td>GitHub</td>
+                                <td><span class="pill free">Free</span></td>
+                                <td class="num">£0</td>
+                            </tr>
+                            <tr>
+                                <td>Neo4j (community) · dbt Core</td>
+                                <td><span class="pill free">Free / OSS</span></td>
+                                <td class="num">£0</td>
+                            </tr>
+                            <tr class="total">
+                                <td>Total PoC run cost</td>
+                                <td></td>
+                                <td class="num">≈ £150 / month</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div>
+                        <div class="banner" style="grid-template-columns:1fr">
+                            <div class="b bg-ink">
+                                <div class="n">≈ £150 / month</div>
+                                <div class="l">All-in cloud spend for the live PoC</div>
+                                <div class="s">≈ £40–£50 for a typical Hackathon run window. Self-hosted Neo4j on GKE
+                                    keeps graph costs at zero beyond compute.</div>
+                            </div>
+                        </div>
+                        <div class="card" style="margin-top:18px">
+                            <h3 style="margin-bottom:8px">Why so cheap?</h3>
+                            <p class="muted" style="font-size:14.5px">Synthetic data is tiny (well within BigQuery &amp;
+                                GCS free tiers), Gemini calls are modest and read-only, and every third-party platform
+                                runs on a free trial or open-source edition.</p>
+                        </div>
+                    </div>
+                </div>
+                <p class="note">Indicative GCP us-central1 list pricing, GBP at ~0.79 USD→GBP. Excludes any GCP
+                    free-trial credits, which would reduce this further.</p>
+            </div>
+        </section>
+
+        <!-- 11 · PROD COST -->
+        <section class="slide" id="prod-cost">
+            <div class="wrap">
+                <span class="eyebrow">Run cost · deployed inside LBG</span>
+                <h2>At production scale, cost per team collapses.</h2>
+                <p class="lead">In LBG the platform licences (Harness, Jira/Xray, GitHub Enterprise, GCP org) are
+                    already paid — so the marginal cost is a hardened, HA agent footprint shared across many teams.</p>
+                <div class="two" style="margin-top:18px">
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Note</th>
+                                <th class="num">~ / month</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>GKE (regional, HA agent + supporting)</td>
+                                <td>Shared cluster, marginal</td>
+                                <td class="num">£700</td>
+                            </tr>
+                            <tr>
+                                <td>Neo4j (AuraDB Pro / HA cluster)</td>
+                                <td>Production graph</td>
+                                <td class="num">£600</td>
+                            </tr>
+                            <tr>
+                                <td>Vertex AI — Gemini at scale</td>
+                                <td>~40 teams authoring/triaging</td>
+                                <td class="num">£450</td>
+                            </tr>
+                            <tr>
+                                <td>BigQuery (scaled data + queries)</td>
+                                <td>Storage + on-demand</td>
+                                <td class="num">£300</td>
+                            </tr>
+                            <tr>
+                                <td>Networking, LBs &amp; egress</td>
+                                <td>HA ingress</td>
+                                <td class="num">£150</td>
+                            </tr>
+                            <tr>
+                                <td>Logging, monitoring &amp; secrets</td>
+                                <td>Observability</td>
+                                <td class="num">£100</td>
+                            </tr>
+                            <tr>
+                                <td>Harness · Jira/Xray · GitHub Enterprise</td>
+                                <td><span class="pill paid">Existing LBG licences</span></td>
+                                <td class="num">£0*</td>
+                            </tr>
+                            <tr class="total">
+                                <td>Marginal platform cost</td>
+                                <td></td>
+                                <td class="num">≈ £2,300 / month</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div>
+                        <div class="banner" style="grid-template-columns:1fr 1fr">
+                            <div class="b bg-blue">
+                                <div class="n">£2k–£3.5k</div>
+                                <div class="l">per month, whole platform</div>
+                                <div class="s">Shared across all adopting teams</div>
+                            </div>
+                            <div class="b bg-green">
+                                <div class="n">~£60</div>
+                                <div class="l">marginal cost per team / month</div>
+                                <div class="s">At ~40 teams on the shared template</div>
+                            </div>
+                        </div>
+                        <div class="card" style="margin-top:18px">
+                            <h3 style="margin-bottom:8px">The "build once" economics</h3>
+                            <p class="muted" style="font-size:14.5px">Because the core services are built once and
+                                reused, each additional team adds only Gemini usage and a little compute. A single team
+                                can onboard in <strong>one sprint</strong> — making the per-team ROI compelling as
+                                adoption grows.</p>
+                        </div>
+                    </div>
+                </div>
+                <p class="note">* Licences already owned by LBG; shown as zero marginal cost. Figures are indicative
+                    planning estimates, not a procurement quote.</p>
+            </div>
+        </section>
+
+        <!-- 12 · ROADMAP -->
+        <section class="slide" id="roadmap">
+            <div class="wrap">
+                <span class="eyebrow">Path to MVP · 1–2 quarters</span>
+                <h2>From Hackathon PoC to reusable platform.</h2>
+                <div class="grid g4" style="margin-top:24px">
+                    <div class="card">
+                        <div class="kicker">Q1 · Weeks 1–4</div>
+                        <h3 style="margin-top:6px">Harden the core</h3>
+                        <p>Productionise the agent &amp; toolsets, secrets, RBAC, CI/CD on the LBG estate.</p>
+                    </div>
+                    <div class="card">
+                        <div class="kicker">Q1 · Weeks 5–8</div>
+                        <h3 style="margin-top:6px">Prove on a real service</h3>
+                        <p>Wire one ECP team's Jira project end-to-end; validate evidence &amp; gating.</p>
+                    </div>
+                    <div class="card">
+                        <div class="kicker">Q1 · Weeks 9–12</div>
+                        <h3 style="margin-top:6px">Template &amp; document</h3>
+                        <p>Package the reusable template, onboarding guide and Xray integration.</p>
+                    </div>
+                    <div class="card"
+                        style="border-color:rgba(0,133,93,.35);background:linear-gradient(135deg,rgba(0,133,93,.08),#fff)">
+                        <div class="kicker">Q2 · Scale</div>
+                        <h3 style="margin-top:6px">Roll out &amp; measure</h3>
+                        <p>Onboard further teams, track value, and prepare the Group-wide case.</p>
+                    </div>
+                </div>
+                <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+                    <div class="stat">
+                        <div class="n">1 sprint</div>
+                        <div class="l">for a team to adopt the template</div>
+                    </div>
+                    <div class="stat">
+                        <div class="n">1–2 Q</div>
+                        <div class="l">to a production-ready MVP</div>
+                    </div>
+                    <div class="stat">
+                        <div class="n">~40 teams</div>
+                        <div class="l">addressable on the shared pattern</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 13 · CLOSE -->
+        <section class="slide" id="close">
+            <div class="blob b1"></div>
+            <div class="blob b2"></div>
+            <div class="wrap" style="text-align:center;max-width:840px">
+                <span class="eyebrow" style="justify-content:center">Why it lands at LBG</span>
+                <h2 style="font-size:clamp(30px,4.4vw,52px)">Faster feedback, consistent quality,<br />trusted evidence
+                    — on tools we already run.</h2>
+                <p class="lead" style="margin:22px auto 0;max-width:60ch">
+                    A lean squad delivers a reusable MVP in 1–2 quarters for around <strong>£27k–£32k</strong> of
+                    people cost — just 5–6 hours each per week —
+                    running for <strong>~£2–3.5k a month</strong> across the whole platform — roughly <strong>£60 per
+                        team</strong>.
+                    Built once, adopted in a sprint, and ready to scale Group-wide.
+                </p>
+                <div class="tagrow" style="justify-content:center">
+                    <span class="tag"><span class="d" style="background:var(--green)"></span>Reduce duplicated
+                        effort</span>
+                    <span class="tag"><span class="d" style="background:var(--blue)"></span>Faster, consistent
+                        coverage</span>
+                    <span class="tag"><span class="d" style="background:var(--purple)"></span>Auditable evidence</span>
+                    <span class="tag"><span class="d" style="background:var(--orange)"></span>Group-wide
+                        foundation</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- speaker notes drawer -->
+    <div class="notes-panel" id="notesPanel" aria-hidden="true">
+        <div class="nhead">
+            <span class="ico" style="--i:url(assets/icons/document.svg)"></span>
+            <h4>Speaker notes</h4>
+            <span class="where" id="notesWhere"></span>
+        </div>
+        <div class="ntitle" id="notesTitle"></div>
+        <ul id="notesList"></ul>
+    </div>
+
+    <!-- navigation controls -->
+    <div class="controls" role="navigation" aria-label="Slide navigation">
+        <button class="ghost" id="btnPrev" title="Previous slide (←)" aria-label="Previous slide">
+            <span class="ico" style="--i:url(assets/icons/prev.svg)"></span> Prev
+        </button>
+        <span class="count" id="count">1 / 14</span>
+        <button id="btnNext" title="Next slide (→)">
+            Next <span class="ico" style="--i:url(assets/icons/next.svg)"></span>
+        </button>
+        <button class="ghost" id="btnNotes" title="Toggle speaker notes (N)" aria-pressed="false">
+            <span class="ico" style="--i:url(assets/icons/document.svg)"></span> Notes
+        </button>
+    </div>
+
+    <footer class="end">
+        <div class="brand" style="justify-content:center;color:#fff">
+            <span class="mark">Q</span>
+            <span style="color:#fff">Quality Engineering Agent
+                <small style="color:rgba(255,255,255,.55)">Insight Syndicate · Lloyds Technology Centre</small>
+            </span>
+        </div>
+        <p>Proof of concept for the Economic Crime Prevention Platform · driving the MVP toward Group-wide adoption.</p>
+    </footer>
+
+    <script>
+        const slides = [...document.querySelectorAll('section.slide')];
+        const dots = document.getElementById('dots');
+        const labels = ['Intro', 'Problem', 'Solution', 'Architecture', 'Flow', 'Toolsets', 'Capabilities', 'Criteria', 'Team', 'People', 'PoC', 'LBG', 'Roadmap', 'Close'];
+        slides.forEach((s, i) => {
+            const a = document.createElement('a'); a.href = '#' + s.id; a.title = labels[i] || s.id;
+            dots.appendChild(a);
+        });
+        const dotEls = [...dots.children];
+
+        const progress = document.getElementById('progress');
+        function onScroll() {
+            const h = document.documentElement;
+            const pct = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+            progress.style.width = pct + '%';
+        }
+        window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+        const io = new IntersectionObserver((es) => {
+            es.forEach(e => {
+                if (e.isIntersecting) setActive(slides.indexOf(e.target));
+            });
+        }, { threshold: .5 });
+        slides.forEach(s => io.observe(s));
+
+        // ===== speaker notes (one entry per slide) =====
+        const notes = [
+            { t: 'Opening — the QE Hack PoC', b: [
+                'This is the Insight Syndicate QE Hack: an autonomous Quality Engineering agent.',
+                'One line: a Jira ticket goes in — generated tests, a pipeline run, and trusted evidence come out.',
+                'Built to drive the MVP for the Economic Crime Prevention Platform, with a path to Group-wide rollout.',
+                'Crucially, it runs entirely on tooling LBG already operates.' ] },
+            { t: 'The problem we are solving', b: [
+                'ECP products change fast across complex data flows, integrations and journeys.',
+                'Testing leans on manual effort, deep product knowledge and early, clear requirements.',
+                '4 labs and ~40 teams each solve the same testing problem independently.',
+                'Result: duplicated effort, inconsistent quality, slow feedback — and evidence rarely written back to tickets.' ] },
+            { t: 'The solution', b: [
+                'Give the agent a change — a Jira story / acceptance criteria — and it decides what to test and why.',
+                'It runs meaningful automated tests and writes auditable evidence straight onto the ticket.',
+                'Built once and offered as a template: a team of 1 engineer + 1 QE can adopt it in a single sprint.',
+                'Three pillars — Generate, Execute, Evidence. Deterministic PASS/FAIL; Gemini reasons, Harness gates.' ] },
+            { t: 'Architecture on GKE', b: [
+                'A single Deployment in the qe-hack-syndicate namespace.',
+                'It brokers Jira, GitHub and Harness, and reads the data pipeline it tests (GCS → dbt/BigQuery → Neo4j).',
+                'An ADK + Gemini orchestrator drives 6 specialist sub-agents and 8 toolsets.',
+                'All GCP access is read-only via Workload Identity — no JSON keys in the cluster.' ] },
+            { t: 'How it works — event driven', b: [
+                'Ticket created → Jira webhook → the agent reads the acceptance criteria.',
+                'It authors Cucumber features, creates linked Jira Test subtasks, and opens a GitHub PR.',
+                'Ticket moved to "Testing" → fires the Harness bdd_tests pipeline via a custom trigger.',
+                'Suites run, results sync back to the subtasks / Xray history; failures are triaged into follow-up PRs.' ] },
+            { t: 'Toolsets — already in the estate', b: [
+                'The headline: nothing new to buy.',
+                'Jira/Xray, GitHub, Harness, BigQuery, GCS, GKE, Neo4j and dbt are all already used at LBG.',
+                'That is exactly why this PoC is low-risk to land internally.',
+                'Workload Identity gives least-privilege, read-only access.' ] },
+            { t: 'Capabilities — six QE goals', b: [
+                'Static analysis, coding standards, integration, functional, non-functional — plus BDD authoring.',
+                'Every check is deterministic: a strict PASS / FAIL / ERROR.',
+                'Gemini does the reasoning and triage; Harness gates only on the deterministic status.' ] },
+            { t: 'Acceptance criteria — built to score', b: [
+                'Map the solution straight onto the seven judging criteria.',
+                'Valid product testing: deterministic suites assert real rules on live BigQuery & Neo4j.',
+                'Autonomous, easily implemented in LBG, documented with a user manual, understood by the whole squad.',
+                'Maintainability, scalability and a Group-wide template are designed in, not bolted on.' ] },
+            { t: 'The MVP squad', b: [
+                'A lean squad of four: Senior DevOps, Python backend, Senior QE, and a CJM.',
+                'They can take this PoC to a production-ready, end-to-end MVP in one to two quarters.',
+                'The CJM can run at ~0.5 FTE; engineering is the core of the build.' ] },
+            { t: 'People cost', b: [
+                'Fully-loaded UK hourly rates — base salary plus ~30% employer NI, pension and overheads.',
+                'Each engineer commits just 5–6 focused hours per week; ~£1,025–£1,230 for the whole squad weekly.',
+                '~£13k–£16k per quarter; ~£27k–£32k for a fully delivered, production-ready MVP.',
+                'That is a fraction of a single FTE — and a one-off build that every team then reuses.' ] },
+            { t: 'Cost to run the PoC', b: [
+                'All-in cloud spend is ~£150 / month — mostly GKE, load balancers and a little Vertex AI.',
+                'Harness, Jira, GitHub, Neo4j and dbt all run on free trial / free tier / open source.',
+                'Synthetic data is tiny and sits inside BigQuery & GCS free tiers.',
+                'A typical Hackathon run window is roughly £40–£50.' ] },
+            { t: 'Cost to run inside LBG', b: [
+                'Platform licences (Harness, Jira/Xray, GitHub Enterprise, GCP org) are already paid.',
+                'So the marginal cost is just a hardened, HA agent footprint: ~£2k–£3.5k / month.',
+                'Shared across ~40 teams, that is roughly £60 per team per month.',
+                'The "build once" model means per-team cost collapses as adoption grows.' ] },
+            { t: 'Path to MVP', b: [
+                'Q1: harden the core → prove it on one real ECP service → package the template and docs.',
+                'Q2: roll out to more teams, track value, and prepare the Group-wide case.',
+                'A team can adopt the template in one sprint; a production-ready MVP lands in 1–2 quarters.' ] },
+            { t: 'Why it lands at LBG', b: [
+                'Faster feedback, consistent quality and trusted evidence — on tools we already run.',
+                '~£27k–£32k of people cost; ~£2k–£3.5k / month to run; ~£60 per team.',
+                'Built once, adopted in a sprint, ready to scale Group-wide.',
+                'The ask: green-light the MVP.' ] }
+        ];
+        const nWhere = document.getElementById('notesWhere');
+        const nTitle = document.getElementById('notesTitle');
+        const nList = document.getElementById('notesList');
+        const countEl = document.getElementById('count');
+        const btnPrev = document.getElementById('btnPrev');
+        const btnNext = document.getElementById('btnNext');
+        const btnNotes = document.getElementById('btnNotes');
+        const notesPanel = document.getElementById('notesPanel');
+
+        let active = 0;
+        function setActive(i) {
+            active = i;
+            dotEls.forEach((d, j) => d.classList.toggle('active', j === i));
+            countEl.textContent = (i + 1) + ' / ' + slides.length;
+            btnPrev.disabled = i === 0;
+            btnNext.disabled = i === slides.length - 1;
+            const n = notes[i];
+            if (n) {
+                nWhere.textContent = 'Slide ' + (i + 1) + ' · ' + (labels[i] || '');
+                nTitle.textContent = n.t;
+                nList.innerHTML = n.b.map(x => '<li>' + x + '</li>').join('');
+            }
+        }
+
+        // navigation
+        function go(n) { const t = Math.max(0, Math.min(slides.length - 1, n)); slides[t].scrollIntoView({ behavior: 'smooth' }); }
+        function curr() {
+            const mid = window.scrollY + window.innerHeight / 2;
+            const f = slides.findIndex(s => s.offsetTop <= mid && s.offsetTop + s.offsetHeight > mid);
+            return f === -1 ? active : f;
+        }
+        btnPrev.addEventListener('click', () => go(curr() - 1));
+        btnNext.addEventListener('click', () => go(curr() + 1));
+        btnNotes.addEventListener('click', () => {
+            const open = notesPanel.classList.toggle('open');
+            btnNotes.classList.toggle('on', open);
+            btnNotes.setAttribute('aria-pressed', open);
+            notesPanel.setAttribute('aria-hidden', !open);
+        });
+
+        window.addEventListener('keydown', e => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (['ArrowDown', 'PageDown', ' ', 'ArrowRight'].includes(e.key)) { e.preventDefault(); go(curr() + 1); }
+            else if (['ArrowUp', 'PageUp', 'ArrowLeft'].includes(e.key)) { e.preventDefault(); go(curr() - 1); }
+            else if (e.key === 'Home') { e.preventDefault(); go(0); }
+            else if (e.key === 'End') { e.preventDefault(); go(slides.length - 1); }
+            else if (e.key === 'n' || e.key === 'N') { btnNotes.click(); }
+        });
+
+        setActive(0);
+    </script>
+</body>
+
+</html>
