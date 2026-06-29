@@ -114,6 +114,22 @@ def run_check(sql: str, column: str, equals) -> dict:
     }
 
 
+def run_value(sql: str, column: str = "value") -> dict:
+    """Execute a read-only query and return the scalar ``column`` of row 0.
+
+    Used by cross-system checks that capture a BigQuery value to compare against
+    another system. Returns ``{"status": "OK", "value": N}`` or an ERROR status.
+    """
+    res = run_query(sql)
+    if "error" in res:
+        return {"status": "ERROR", "value": None, "findings": [res["error"]], "sql": sql}
+    rows = res.get("rows") or []
+    if not rows or column not in rows[0]:
+        return {"status": "ERROR", "value": None,
+                "findings": [f"query returned no '{column}' column"], "rows": rows[:5], "sql": sql}
+    return {"status": "OK", "value": rows[0][column], "sql": sql}
+
+
 def table_row_count(table: str) -> dict:
     """Row count for a table in the configured dataset."""
     fq = SETTINGS.fq_table(table)

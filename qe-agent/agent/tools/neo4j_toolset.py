@@ -102,3 +102,19 @@ def run_check(query: str, column: str, equals) -> dict:
         "findings": [] if passed else [f"{column}={actual!r}, expected {equals!r}"],
         "cypher": query,
     }
+
+
+def run_value(query: str, column: str = "value") -> dict:
+    """Execute a read-only Cypher query and return the scalar ``column`` of row 0.
+
+    Used by cross-system checks that capture a Neo4j value to compare against
+    another system. Returns ``{"status": "OK", "value": N}`` or an ERROR status.
+    """
+    res = run_cypher(query)
+    if "error" in res:
+        return {"status": "ERROR", "value": None, "findings": [res["error"]], "cypher": query}
+    rows = res.get("rows") or []
+    if not rows or column not in rows[0]:
+        return {"status": "ERROR", "value": None,
+                "findings": [f"query returned no '{column}' column"], "rows": rows[:5], "cypher": query}
+    return {"status": "OK", "value": rows[0][column], "cypher": query}

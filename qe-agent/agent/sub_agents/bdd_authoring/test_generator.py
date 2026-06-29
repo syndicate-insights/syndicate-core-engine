@@ -42,6 +42,10 @@ KNOWN_MARTS = ("customer_enriched", "account_enriched", "address_enriched")
 GRAPH_MARKERS = ("neo4j", "graph", "node", "nodes", "relationship",
                  "relationships", "cypher")
 
+# AC keywords that mean "BigQuery side" — used to detect a *cross-system* AC
+# (graph AND BigQuery), which can't be one query and becomes a cross_check.
+BQ_MARKERS = ("bigquery", "mart", *KNOWN_MARTS)
+
 # Generation attempts and retry delay for transient Vertex errors. Multiple ACs
 # are generated back-to-back, so the 3rd+ call can hit a per-minute 429; we
 # retry up to 3 times, 5 seconds apart, rather than dropping the AC to @manual.
@@ -60,6 +64,17 @@ def _is_graph_ac(ac_text: str) -> bool:
     """True when the AC is about the Neo4j graph (so we generate Cypher)."""
     text = ac_text.lower()
     return any(m in text for m in GRAPH_MARKERS)
+
+
+def _is_cross_system_ac(ac_text: str) -> bool:
+    """True when the AC compares the Neo4j graph against BigQuery.
+
+    These can't be a single query, so we generate a cross_check: capture a value
+    from each system and compare them.
+    """
+    text = ac_text.lower()
+    return (any(m in text for m in GRAPH_MARKERS)
+            and any(m in text for m in BQ_MARKERS))
 
 
 def _candidate_tables(ac_text: str) -> list[str]:
@@ -144,6 +159,33 @@ Rules:
 - Prefer count(<violating pattern>) AS violations.
 """
 
+_CROSS_PROMPT = """\
+You are a data QA engineer. The acceptance criterion compares a value in the
+Neo4j graph against a value in BigQuery, so produce TWO read-only queries — one
+per system — that each return a single scalar named `value`, to be compared.
+
+Acceptance criterion:
+{ac}
+
+BigQuery tables and columns (use the fully-qualified backticked name exactly):
+{bq_schema}
+
+Neo4j graph model:
+{graph_schema}
+
+Rules:
+- Return ONLY JSON, no prose, matching exactly:
+  {{"kind":"cross_check","bq_sql":"<one SELECT/WITH returning AS value>",
+    "cypher":"<one read-only MATCH ... RETURN ... AS value>",
+    "compare":"eq","rationale":"<short why>"}}
+- bq_sql MUST be a single SELECT/WITH (no DML/DDL, no ';') returning one row
+  with a column named exactly `value`.
+- cypher MUST be read-only (no CREATE/MERGE/DELETE/SET/REMOVE/DROP/DETACH)
+  returning one row with a column named exactly `value`.
+- Both `value`s should be equal when the criterion HOLDS; "compare" is "eq".
+- Only reference real columns / labels / relationship types listed above.
+"""
+
 
 def _llm_generate(prompt: str) -> str:
     """Call Gemini and return raw text. Lazily imported so the module loads
@@ -186,32 +228,54 @@ def _valid_cypher(spec: dict) -> bool:
             and isinstance(spec.get("cypher"), str) and _valid_assert(spec))
 
 
+def _valid_cross(spec: dict) -> bool:
+    return (isinstance(spec, dict) and spec.get("kind") == "cross_check"
+            and isinstance(spec.get("bq_sql"), str)
+            and isinstance(spec.get("cypher"), str))
+
+
 def generate_check(ticket: str, ac_bullet: str) -> dict | None:
     """Generate + validate a read-only check for one AC bullet.
 
-    Picks a BigQuery (``bq_query``) check for data ACs, or a Neo4j (``cypher``)
-    check for graph ACs. Returns the validated spec, or ``None`` when no valid
-    check could be produced (so the caller emits an @manual scenario instead of
-    a wrong test).
+    Picks the check kind from the AC: ``cross_check`` (graph vs BigQuery),
+    ``cypher`` (graph only), or ``bq_query`` (data only). Returns the validated
+    spec, or ``None`` when no valid check could be produced (so the caller emits
+    an @manual scenario instead of a wrong test).
     """
-    if _is_graph_ac(ac_bullet):
+    if _is_cross_system_ac(ac_bullet):
+        # Compares Neo4j against BigQuery -> two queries + a comparison.
+        kind = "cross_check"
+        bq_schema = _schema_context(_candidate_tables(ac_bullet))
+        graph_schema = _graph_context()
+        if not bq_schema or not graph_schema:
+            logger.warning("generate_check: ticket=%s missing bq/graph schema for cross_check — skipping", ticket)
+            return None
+        prompt = _CROSS_PROMPT.format(ac=ac_bullet.strip(),
+                                      bq_schema=bq_schema, graph_schema=graph_schema)
+        valid = _valid_cross
+        def validate(spec: dict) -> dict:
+            d = bq.dry_run_query(spec["bq_sql"])
+            return d if not d.get("ok") else neo.explain(spec["cypher"])
+    elif _is_graph_ac(ac_bullet):
         kind = "cypher"
         schema = _graph_context()
-        prompt_tpl, valid = _CYPHER_PROMPT, _valid_cypher
+        if not schema:
+            logger.warning("generate_check: ticket=%s no graph context — skipping", ticket)
+            return None
+        prompt = _CYPHER_PROMPT.format(ac=ac_bullet.strip(), schema=schema)
+        valid = _valid_cypher
         def validate(spec: dict) -> dict:
             return neo.explain(spec["cypher"])
     else:
         kind = "bq_query"
         schema = _schema_context(_candidate_tables(ac_bullet))
-        prompt_tpl, valid = _BQ_PROMPT, _valid_bq
+        if not schema:
+            logger.warning("generate_check: ticket=%s no table schema — skipping", ticket)
+            return None
+        prompt = _BQ_PROMPT.format(ac=ac_bullet.strip(), schema=schema)
+        valid = _valid_bq
         def validate(spec: dict) -> dict:
             return bq.dry_run_query(spec["sql"])
-
-    if not schema:
-        logger.warning("generate_check: ticket=%s no schema/graph context for kind=%s — skipping",
-                       ticket, kind)
-        return None
-    prompt = prompt_tpl.format(ac=ac_bullet.strip(), schema=schema)
 
     for attempt in range(1, _MAX_ATTEMPTS + 1):
         try:
@@ -238,7 +302,7 @@ def generate_check(ticket: str, ac_bullet: str) -> dict | None:
                            ticket, kind, attempt, _MAX_ATTEMPTS, check.get("error"))
             continue
         logger.info("generate_check: ticket=%s produced %s check (%s)",
-                    ticket, kind, spec.get("table") or "neo4j")
+                    ticket, kind, spec.get("table") or kind)
         return spec
 
     logger.warning("generate_check: ticket=%s could not generate a valid check — skipping", ticket)

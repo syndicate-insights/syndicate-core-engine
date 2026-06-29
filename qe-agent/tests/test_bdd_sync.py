@@ -407,3 +407,48 @@ def test_generate_check_routes_data_ac_to_bq(monkeypatch):
     monkeypatch.setattr(tg, "_llm_generate", lambda p: spec)
     out = tg.generate_check("SYN-251", "customer_enriched must have no null customer_id")
     assert out and out["kind"] == "bq_query"
+
+
+# --- Cross-system (BigQuery vs Neo4j) checks ----------------------------------
+
+def test_feature_embeds_cross_check_three_steps():
+    check = {
+        "kind": "cross_check",
+        "bq_sql": "SELECT COUNT(DISTINCT customer_id) AS value FROM `p.d.customer_enriched`",
+        "cypher": "MATCH (c:Customer) RETURN count(c) AS value",
+        "compare": "eq",
+    }
+    feat = gherkin.feature_for_ticket(
+        "SYN-267", "x", ["Neo4j Customer count equals distinct customer_id in customer_enriched"],
+        test_keys=["SYN-270"], checks=[check],
+    )
+    assert "When I capture the BigQuery value:" in feat
+    assert "And I capture the Neo4j value:" in feat
+    assert "Then the BigQuery and Neo4j values should be equal" in feat
+    assert "COUNT(DISTINCT customer_id)" in feat and "MATCH (c:Customer)" in feat
+    assert "@manual" not in feat
+
+
+def test_generate_check_routes_cross_system_ac(monkeypatch):
+    from agent.sub_agents.bdd_authoring import test_generator as tg
+    import json as _json
+    monkeypatch.setattr(tg.bq, "table_schema",
+                        lambda t: {"table": f"p.d.{t}", "columns": [{"name": "customer_id", "type": "STRING"}]})
+    monkeypatch.setattr(tg.bq, "dry_run_query", lambda sql: {"ok": True, "bytes": 1})
+    monkeypatch.setattr(tg.neo, "graph_schema",
+                        lambda: {"labels": ["Customer"], "relationships": ["HAS_ACCOUNT"]})
+    monkeypatch.setattr(tg.neo, "explain", lambda q: {"ok": True})
+    spec = _json.dumps({"kind": "cross_check",
+                        "bq_sql": "SELECT COUNT(DISTINCT customer_id) AS value FROM `p.d.customer_enriched`",
+                        "cypher": "MATCH (c:Customer) RETURN count(c) AS value", "compare": "eq"})
+    monkeypatch.setattr(tg, "_llm_generate", lambda p: spec)
+    out = tg.generate_check(
+        "SYN-267", "number of Customer nodes must equal distinct customer_id in customer_enriched")
+    assert out and out["kind"] == "cross_check" and "bq_sql" in out and "cypher" in out
+
+
+def test_is_cross_system_ac_detection():
+    from agent.sub_agents.bdd_authoring import test_generator as tg
+    assert tg._is_cross_system_ac("Customer nodes must equal distinct customer_id in customer_enriched")
+    assert not tg._is_cross_system_ac("every Account node links to a Customer")
+    assert not tg._is_cross_system_ac("customer_enriched has no null customer_id")
