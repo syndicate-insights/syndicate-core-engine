@@ -407,3 +407,22 @@ def test_generate_check_routes_data_ac_to_bq(monkeypatch):
     monkeypatch.setattr(tg, "_llm_generate", lambda p: spec)
     out = tg.generate_check("SYN-251", "customer_enriched must have no null customer_id")
     assert out and out["kind"] == "bq_query"
+
+
+# --- AC bullet parsing: wrapped lines must be joined, not truncated -----------
+
+def test_extract_bullets_joins_wrapped_continuation_lines():
+    from agent.tools import jira_toolset
+    desc = (
+        "As a data consumer, I want ... reliable.\n\n"
+        "  Acceptance Criteria:\n\n"
+        "* (dbt) When address_enriched is built, Then full_address must equal line1, city,\n"
+        "postcode and country joined by commas for every row.\n"
+        "* (BigQuery) Then there must be zero rows where\n"
+        "customer_id is null.\n"
+    )
+    bullets = jira_toolset._extract_bullets(desc)
+    assert len(bullets) == 2
+    # The wrapped continuation must be present (was previously truncated).
+    assert "postcode and country joined by commas" in bullets[0]
+    assert "customer_id is null" in bullets[1]
