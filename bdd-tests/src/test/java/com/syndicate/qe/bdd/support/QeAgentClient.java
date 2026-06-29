@@ -2,6 +2,7 @@ package com.syndicate.qe.bdd.support;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -40,6 +41,15 @@ public final class QeAgentClient {
         return get("/qe/scenario/" + suite + "/" + scenarioId);
     }
 
+    /** Execute an agent-generated read-only BigQuery check and assert a column. */
+    public JsonNode runCheck(String sql, String column, long equals) {
+        ObjectNode body = MAPPER.createObjectNode();
+        body.put("sql", sql);
+        body.put("column", column);
+        body.put("equals", equals);
+        return post("/qe/query/check", body.toString());
+    }
+
     public JsonNode runSuite(String suite) {
         return get("/qe/suite/" + suite);
     }
@@ -55,6 +65,26 @@ public final class QeAgentClient {
                     .timeout(timeout)
                     .header("Accept", "application/json")
                     .GET()
+                    .build();
+            HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() / 100 != 2) {
+                throw new IllegalStateException(
+                        "QE agent " + path + " returned HTTP " + resp.statusCode() + ": " + resp.body());
+            }
+            return MAPPER.readTree(resp.body());
+        } catch (Exception e) {
+            throw new IllegalStateException("QE agent call failed for " + path + ": " + e.getMessage(), e);
+        }
+    }
+
+    private JsonNode post(String path, String jsonBody) {
+        try {
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + path))
+                    .timeout(timeout)
+                    .header("Accept", "application/json")
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();
             HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() / 100 != 2) {

@@ -25,7 +25,9 @@ def test_feature_tags_scenarios_with_test_keys():
 
 def test_feature_without_keys_has_no_subtask_tag():
     feat = gherkin.feature_for_ticket("SYN-99", "Some summary", ["first AC"])
-    assert "@JiraGenerated @SYN-99\n" in feat
+    # No test key and no generated check -> parent tag plus @manual.
+    assert "@JiraGenerated @SYN-99 @manual" in feat
+    assert "@SYN-101" not in feat
 
 
 def _stub_jira(monkeypatch, subtasks):
@@ -253,34 +255,59 @@ def test_domain_for_ticket_only_functional_or_integration():
         assert gherkin.domain_for_ticket("SYN-X", summ) in ("Functional", "Integration")
 
 
-# --- Scenario-suite mapping must use the agent's registry keys ----------------
+# --- Generated-check embedding (agentic authoring) ----------------------------
 
-def test_bullet_to_gwt_emits_valid_suite_names():
-    """Every generated step must name a suite the agent runner knows, else the
-    BDD step fails with "Unknown suite '<name>'"."""
-    valid = {"static", "standards", "integration", "functional", "nonfunctional"}
-    bullets = [
-        "p99 latency SLA under 5s",
-        "system must be reliable; logging of failures",
-        "rows ingested into neo4j graph",
-        "raw rows become enriched",
-        "sql passes sqlfluff lint",
-        "no hardcoded secret credential",
-        "every model has a primary key and unique test",
-        "validate customer enriched completeness",
-        # The SYN-133 AC2 that regressed: 'logged' must NOT route to nonfunctional.
-        "a customer record has a null email field, then the row should be excluded from the mart and logged in processed_files_metadata",
-    ]
-    for b in bullets:
-        steps = gherkin._bullet_to_gwt(b)
-        suite = steps[0].split('"')[1]
-        assert suite in valid, f"invalid suite {suite!r} for bullet {b!r}"
+def test_feature_embeds_generated_bq_check():
+    """A generated bq_query check is embedded as an inline BigQuery-check step."""
+    check = {
+        "kind": "bq_query",
+        "table": "customer_enriched",
+        "sql": "SELECT COUNTIF(phone_number != REGEXP_REPLACE(phone, r'[^0-9]','')) AS violations\nFROM `p.d.customer_enriched`",
+        "assert": {"column": "violations", "equals": 0},
+    }
+    feat = gherkin.feature_for_ticket(
+        "SYN-300", "phone check", ["phone_number must be digits-only"],
+        test_keys=["SYN-301"], checks=[check],
+    )
+    assert "When I run the BigQuery check:" in feat
+    assert "COUNTIF(phone_number" in feat
+    assert 'Then the result column "violations" should be 0' in feat
+    assert "@manual" not in feat
 
 
-def test_bullet_to_gwt_logged_stays_functional():
-    steps = gherkin._bullet_to_gwt(
-        "the row should be excluded from the mart and logged in processed_files_metadata")
-    assert steps[0] == 'Given the test suite is "functional"'
+def test_feature_marks_ungenerable_ac_manual():
+    """An AC with no generated check becomes a @manual, non-passing scenario."""
+    feat = gherkin.feature_for_ticket(
+        "SYN-300", "x", ["something unverifiable"],
+        test_keys=["SYN-301"], checks=[None],
+    )
+    assert "@manual" in feat
+    assert "this scenario requires manual verification" in feat
+    assert "BigQuery check" not in feat
+
+
+def test_generate_check_validates_and_returns_spec(monkeypatch):
+    from agent.sub_agents.bdd_authoring import test_generator as tg
+    spec = {"kind": "bq_query", "table": "customer_enriched",
+            "sql": "SELECT COUNTIF(1=2) AS violations FROM `p.d.customer_enriched`",
+            "assert": {"column": "violations", "equals": 0}}
+    monkeypatch.setattr(tg.bq, "table_schema",
+                        lambda t: {"table": f"p.d.{t}", "columns": [{"name": "phone", "type": "STRING"}]})
+    monkeypatch.setattr(tg, "_llm_generate", lambda prompt: __import__("json").dumps(spec))
+    monkeypatch.setattr(tg.bq, "dry_run_query", lambda sql: {"ok": True, "bytes": 10})
+    out = tg.generate_check("SYN-300", "phone_number must be digits-only")
+    assert out and out["assert"]["column"] == "violations"
+
+
+def test_generate_check_skips_when_dry_run_fails(monkeypatch):
+    from agent.sub_agents.bdd_authoring import test_generator as tg
+    spec = {"kind": "bq_query", "sql": "SELECT bad FROM nope",
+            "assert": {"column": "violations", "equals": 0}}
+    monkeypatch.setattr(tg.bq, "table_schema",
+                        lambda t: {"table": f"p.d.{t}", "columns": [{"name": "x", "type": "STRING"}]})
+    monkeypatch.setattr(tg, "_llm_generate", lambda prompt: __import__("json").dumps(spec))
+    monkeypatch.setattr(tg.bq, "dry_run_query", lambda sql: {"ok": False, "error": "no such column"})
+    assert tg.generate_check("SYN-300", "anything") is None
 
 
 # --- Authoring idempotency (no duplicate subtasks/PRs on webhook retries) -----

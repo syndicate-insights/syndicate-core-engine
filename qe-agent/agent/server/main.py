@@ -102,6 +102,30 @@ def run_scenario_and_sync(suite: str, scenario_id: str, ticket: str = "",
     return out
 
 
+@app.post("/qe/query/check")
+async def query_check(request: Request) -> dict:
+    """Execute an agent-generated, read-only BigQuery check and assert a result.
+
+    The BDD pack's generated scenarios POST the embedded SQL here. Body:
+        {"sql": "SELECT COUNTIF(...) AS violations FROM `...`",
+         "column": "violations", "equals": 0}
+    Returns a deterministic ``status`` (PASS/FAIL/ERROR) plus actual/expected,
+    which the Cucumber step gates on. Read-only is enforced in run_query.
+    """
+    from agent.tools import bigquery_toolset as bq
+
+    body = await request.json()
+    sql = (body or {}).get("sql")
+    column = (body or {}).get("column", "violations")
+    equals = (body or {}).get("equals", 0)
+    if not sql or not isinstance(sql, str):
+        raise HTTPException(status_code=400, detail="missing 'sql' in request body")
+    logger.info("query_check: column=%s equals=%r sql=%s", column, equals, sql[:200])
+    result = bq.run_check(sql, column, equals)
+    logger.info("query_check: status=%s actual=%r", result.get("status"), result.get("actual"))
+    return result
+
+
 # --- BDD authoring / Jira / Harness -----------------------------------------
 
 @app.get("/qe/jira/{ticket}/acceptance-criteria")
