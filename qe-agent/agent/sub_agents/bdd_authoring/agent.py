@@ -17,7 +17,7 @@ from google.adk.tools import FunctionTool
 from agent.config import SETTINGS
 from agent.observability import agent_callbacks
 from agent.scenarios import catalog, runner
-from agent.sub_agents.bdd_authoring import gherkin
+from agent.sub_agents.bdd_authoring import gherkin, test_generator
 from agent.tools import github_toolset as gh
 from agent.tools import harness_toolset as harness
 from agent.tools import jira_toolset as jira
@@ -48,7 +48,13 @@ def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
     logger.info("author_bdd_scenarios: ticket=%s summary=%r bullets=%d", ticket, summary, len(bullets))
     domain = gherkin.domain_for_ticket(ticket, summary)
     logger.info("author_bdd_scenarios: ticket=%s domain=%s", ticket, domain)
-    feature_text = gherkin.feature_for_ticket(ticket, summary, bullets)
+    # Generate the actual verification (read-only BigQuery check) for each AC.
+    # A None entry means no valid check could be generated -> emitted as a
+    # @manual scenario rather than a wrong/false-passing test.
+    checks = [test_generator.generate_check(ticket, b) for b in bullets]
+    generated = sum(1 for c in checks if c)
+    logger.info("author_bdd_scenarios: ticket=%s generated %d/%d AC checks", ticket, generated, len(bullets))
+    feature_text = gherkin.feature_for_ticket(ticket, summary, bullets, checks=checks)
     feature_path = f"{BDD_FEATURE_ROOT}/{domain}/{gherkin.slugify(ticket)}_{gherkin.slugify(summary, 30)}.feature"
     logger.info("author_bdd_scenarios: ticket=%s feature_path=%s", ticket, feature_path)
 
@@ -105,8 +111,10 @@ def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
                 len(result["check_issues"]), ticket)
 
     # 2. Re-render the feature with each scenario tagged by its Jira Test subtask
-    #    key (@PROJ-123) so the results sync can target subtasks directly.
-    feature_text = gherkin.feature_for_ticket(ticket, summary, bullets, test_keys=test_keys)
+    #    key (@PROJ-123) so the results sync can target subtasks directly. The
+    #    generated checks are unchanged — only the subtask tags are added.
+    feature_text = gherkin.feature_for_ticket(ticket, summary, bullets,
+                                              test_keys=test_keys, checks=checks)
     result["feature"] = feature_text
     # 3. Branch + write feature file + open PR against the syndicate-core-engine repo.
     logger.info("author_bdd_scenarios: opening PR for ticket=%s feature_path=%s", ticket, feature_path)
@@ -143,7 +151,9 @@ def update_bdd_from_failure(ticket: str, plan_execution_id: str | None = None) -
         return {"ticket": ticket, "harness": execution, "error": ac}
     summary = ac.get("summary") or ticket
     domain = gherkin.domain_for_ticket(ticket, summary)
-    feature_text = gherkin.feature_for_ticket(ticket, summary, ac.get("bullets", []))
+    bullets = ac.get("bullets", [])
+    checks = [test_generator.generate_check(ticket, b) for b in bullets]
+    feature_text = gherkin.feature_for_ticket(ticket, summary, bullets, checks=checks)
     feature_path = f"{BDD_FEATURE_ROOT}/{domain}/{gherkin.slugify(ticket)}_{gherkin.slugify(summary, 30)}.feature"
     pr = gh.author_feature_pr(
         ticket=ticket,
