@@ -452,3 +452,22 @@ def test_is_cross_system_ac_detection():
     assert tg._is_cross_system_ac("Customer nodes must equal distinct customer_id in customer_enriched")
     assert not tg._is_cross_system_ac("every Account node links to a Customer")
     assert not tg._is_cross_system_ac("customer_enriched has no null customer_id")
+
+
+# --- AC bullet parsing: wrapped lines must be joined, not truncated -----------
+
+def test_extract_bullets_joins_wrapped_continuation_lines():
+    from agent.tools import jira_toolset
+    desc = (
+        "As a data consumer, I want ... reliable.\n\n"
+        "  Acceptance Criteria:\n\n"
+        "* (dbt) When address_enriched is built, Then full_address must equal line1, city,\n"
+        "postcode and country joined by commas for every row.\n"
+        "* (BigQuery) Then there must be zero rows where\n"
+        "customer_id is null.\n"
+    )
+    bullets = jira_toolset._extract_bullets(desc)
+    assert len(bullets) == 2
+    # The wrapped continuation must be present (was previously truncated).
+    assert "postcode and country joined by commas" in bullets[0]
+    assert "customer_id is null" in bullets[1]
