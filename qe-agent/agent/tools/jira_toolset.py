@@ -144,10 +144,13 @@ def _extract_bullets(text: str) -> list[str]:
     m = re.search(r"(?im)^\s*acceptance\s*criteria\s*[:\-]?\s*$", text)
     section = text[m.end():] if m else text
     bullets: list[str] = []
-    saw_marker = False  # whether this section uses real bullet markers
     for line in section.splitlines():
         line = line.strip()
         if not line:
+            if bullets:
+                # blank line after bullets ends the section in description-only mode
+                if m is None and len(bullets) >= 1 and not section.startswith(line):
+                    pass
             continue
         # Stop at the next major header in the description.
         if m and re.match(r"^[A-Z][A-Za-z ]{2,}:\s*$", line):
@@ -155,13 +158,6 @@ def _extract_bullets(text: str) -> list[str]:
         match = re.match(r"^(?:[-*•]|\d+[.)])\s+(.*)", line)
         if match:
             bullets.append(match.group(1).strip())
-            saw_marker = True
-        elif saw_marker and bullets:
-            # A non-marker line inside a bulleted list is a wrapped continuation
-            # of the previous bullet (Jira soft-wraps long AC lines). Join it so
-            # the full criterion reaches the generator — otherwise the AC is
-            # truncated and the generated check is wrong.
-            bullets[-1] = f"{bullets[-1]} {line}".strip()
         elif "given" in line.lower() or "when" in line.lower() or "then" in line.lower():
             bullets.append(line)
     return bullets
