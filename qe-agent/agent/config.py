@@ -35,7 +35,7 @@ class Settings:
     # --- Vertex AI / Gemini ---
     use_vertex: bool = field(default_factory=lambda: _env("GOOGLE_GENAI_USE_VERTEXAI", "1") == "1")
     vertex_location: str = field(default_factory=lambda: _env("GOOGLE_CLOUD_LOCATION", "us-central1"))
-    model: str = field(default_factory=lambda: _env("QE_AGENT_MODEL", "gemini-2.0-flash"))
+    model: str = field(default_factory=lambda: _env("QE_AGENT_MODEL", "gemini-2.5-flash"))
 
     # --- Neo4j ---
     neo4j_uri: str = field(default_factory=lambda: _env("NEO4J_URI", "bolt://neo4j.qe-hack-syndicate.svc.cluster.local:7687"))
