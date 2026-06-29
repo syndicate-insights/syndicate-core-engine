@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 
 from agent.config import SETTINGS
 from agent.tools import bigquery_toolset as bq
@@ -34,6 +35,19 @@ logger = logging.getLogger(__name__)
 
 # The data marts the agent can write checks against.
 KNOWN_MARTS = ("customer_enriched", "account_enriched", "address_enriched")
+
+# Generation attempts and retry delay for transient Vertex errors. Multiple ACs
+# are generated back-to-back, so the 3rd+ call can hit a per-minute 429; we
+# retry up to 3 times, 5 seconds apart, rather than dropping the AC to @manual.
+_MAX_ATTEMPTS = 3
+_RETRY_DELAY_SECONDS = 5
+_TRANSIENT_MARKERS = ("429", "resource_exhausted", "rate limit", "quota",
+                      "503", "unavailable", "try again")
+
+
+def _is_transient(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return any(m in msg for m in _TRANSIENT_MARKERS)
 
 
 def _candidate_tables(ac_text: str) -> list[str]:
@@ -136,21 +150,29 @@ def generate_check(ticket: str, ac_bullet: str) -> dict | None:
         return None
     prompt = _PROMPT.format(ac=ac_bullet.strip(), schema=schema)
 
-    for attempt in (1, 2):
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
         try:
             raw = _llm_generate(prompt)
         except Exception as exc:  # noqa: BLE001
-            logger.error("generate_check: ticket=%s LLM error (attempt %d): %s", ticket, attempt, exc)
+            transient = _is_transient(exc)
+            logger.warning("generate_check: ticket=%s LLM error (attempt %d/%d, transient=%s): %s",
+                           ticket, attempt, _MAX_ATTEMPTS, transient, exc)
+            # Retry transient throttles (e.g. 429) with a fixed delay; give up
+            # on permanent errors or once attempts are exhausted.
+            if transient and attempt < _MAX_ATTEMPTS:
+                time.sleep(_RETRY_DELAY_SECONDS)
+                continue
             return None
         spec = _parse_spec(raw)
         if not spec or not _valid_shape(spec):
-            logger.warning("generate_check: ticket=%s invalid spec (attempt %d): %s", ticket, attempt, raw[:200])
+            logger.warning("generate_check: ticket=%s invalid spec (attempt %d/%d): %s",
+                           ticket, attempt, _MAX_ATTEMPTS, raw[:200])
             continue
         # Validate the SQL is genuinely runnable + read-only + bounded.
         dry = bq.dry_run_query(spec["sql"])
         if not dry.get("ok"):
-            logger.warning("generate_check: ticket=%s dry-run failed (attempt %d): %s",
-                           ticket, attempt, dry.get("error"))
+            logger.warning("generate_check: ticket=%s dry-run failed (attempt %d/%d): %s",
+                           ticket, attempt, _MAX_ATTEMPTS, dry.get("error"))
             continue
         logger.info("generate_check: ticket=%s produced check on %s (bytes=%s)",
                     ticket, spec.get("table"), dry.get("bytes"))

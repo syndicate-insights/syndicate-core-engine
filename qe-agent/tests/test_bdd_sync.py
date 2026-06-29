@@ -324,3 +324,40 @@ def test_already_authored_false_without_bdd_subtasks(monkeypatch):
     assert jira_toolset.already_authored("SYN-133") is False
     monkeypatch.setattr(jira_toolset, "_find_test_subtasks", lambda t: [])
     assert jira_toolset.already_authored("SYN-133") is False
+
+
+def test_generate_check_retries_transient_429(monkeypatch):
+    from agent.sub_agents.bdd_authoring import test_generator as tg
+    import json as _json
+    monkeypatch.setattr(tg.bq, "table_schema",
+                        lambda t: {"table": f"p.d.{t}", "columns": [{"name": "phone", "type": "STRING"}]})
+    monkeypatch.setattr(tg.bq, "dry_run_query", lambda sql: {"ok": True, "bytes": 10})
+    sleeps = []
+    monkeypatch.setattr(tg.time, "sleep", lambda s: sleeps.append(s))
+    good = _json.dumps({"kind": "bq_query", "table": "customer_enriched",
+                        "sql": "SELECT COUNTIF(1=2) AS violations FROM `p.d.customer_enriched`",
+                        "assert": {"column": "violations", "equals": 0}})
+    seq = iter([Exception("429 RESOURCE_EXHAUSTED"), Exception("429 Too Many Requests"), good])
+
+    def fake(prompt):
+        v = next(seq)
+        if isinstance(v, Exception):
+            raise v
+        return v
+
+    monkeypatch.setattr(tg, "_llm_generate", fake)
+    out = tg.generate_check("SYN-1", "phone digits")
+    assert out and out["assert"]["column"] == "violations"
+    assert sleeps == [5, 5]  # retried twice, 5s apart
+
+
+def test_generate_check_no_retry_on_permanent_error(monkeypatch):
+    from agent.sub_agents.bdd_authoring import test_generator as tg
+    monkeypatch.setattr(tg.bq, "table_schema",
+                        lambda t: {"table": f"p.d.{t}", "columns": [{"name": "x", "type": "STRING"}]})
+    sleeps = []
+    monkeypatch.setattr(tg.time, "sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr(tg, "_llm_generate",
+                        lambda p: (_ for _ in ()).throw(Exception("400 INVALID_ARGUMENT")))
+    assert tg.generate_check("SYN-2", "x") is None
+    assert sleeps == []  # permanent error: no retry
