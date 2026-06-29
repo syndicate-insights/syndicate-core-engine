@@ -24,7 +24,7 @@ data:
   NEO4J_USER: "neo4j"
   GOOGLE_GENAI_USE_VERTEXAI: "1"
   GOOGLE_CLOUD_LOCATION: "us-central1"
-  QE_AGENT_MODEL: "gemini-2.0-flash"
+  QE_AGENT_MODEL: "gemini-2.5-flash"
   REPO_ROOT: "/workspace/syndicate-core-engine"
   # Non-functional SLA thresholds (seconds).
   DBT_JOB_SLA_SECONDS: "3600"
