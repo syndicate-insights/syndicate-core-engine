@@ -1,0 +1,4 @@
+# Maven build output — generated, must not be tracked. Stale compiled
+# .feature copies under target/test-classes previously caused deleted
+# tickets' scenarios to re-run in CI.
+target/
