@@ -46,3 +46,59 @@ def relationship_count(rel_type: str) -> dict:
 
 def list_constraints() -> dict:
     return run_cypher("SHOW CONSTRAINTS YIELD name, labelsOrTypes, properties, type RETURN *")
+
+
+def graph_schema() -> dict:
+    """Node labels + relationship types, for grounding generated Cypher checks."""
+    labels = run_cypher("CALL db.labels() YIELD label RETURN collect(label) AS labels")
+    rels = run_cypher(
+        "CALL db.relationshipTypes() YIELD relationshipType "
+        "RETURN collect(relationshipType) AS rels"
+    )
+    return {
+        "labels": (labels.get("rows") or [{}])[0].get("labels", []) if "error" not in labels else [],
+        "relationships": (rels.get("rows") or [{}])[0].get("rels", []) if "error" not in rels else [],
+    }
+
+
+def explain(query: str) -> dict:
+    """Validate a read-only Cypher query without executing it (EXPLAIN).
+
+    Used at authoring time so an LLM-generated check is confirmed parseable +
+    read-only before it lands in a PR. Returns {"ok": True} or {"ok": False,...}.
+    """
+    lowered = query.lower()
+    if any(kw in lowered for kw in _WRITE_KEYWORDS):
+        return {"ok": False, "error": "Only read-only Cypher is permitted by the QE agent."}
+    try:
+        with _driver().session() as session:
+            session.run(f"EXPLAIN {query}").consume()
+        return {"ok": True}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": str(exc)}
+
+
+def run_check(query: str, column: str, equals) -> dict:
+    """Execute a read-only Cypher check and assert ``column`` of row 0 == ``equals``.
+
+    Mirrors bigquery_toolset.run_check; returns a deterministic PASS/FAIL/ERROR
+    status for Harness to gate on.
+    """
+    res = run_cypher(query)
+    if "error" in res:
+        return {"status": "ERROR", "expected": equals, "actual": None,
+                "findings": [res["error"]], "cypher": query}
+    rows = res.get("rows") or []
+    if not rows or column not in rows[0]:
+        return {"status": "ERROR", "expected": equals, "actual": None,
+                "findings": [f"check query returned no '{column}' column"],
+                "rows": rows[:5], "cypher": query}
+    actual = rows[0][column]
+    passed = actual == equals
+    return {
+        "status": "PASS" if passed else "FAIL",
+        "expected": equals,
+        "actual": actual,
+        "findings": [] if passed else [f"{column}={actual!r}, expected {equals!r}"],
+        "cypher": query,
+    }

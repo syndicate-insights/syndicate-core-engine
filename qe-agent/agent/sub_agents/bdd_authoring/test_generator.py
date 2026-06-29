@@ -30,11 +30,17 @@ import time
 
 from agent.config import SETTINGS
 from agent.tools import bigquery_toolset as bq
+from agent.tools import neo4j_toolset as neo
 
 logger = logging.getLogger(__name__)
 
 # The data marts the agent can write checks against.
 KNOWN_MARTS = ("customer_enriched", "account_enriched", "address_enriched")
+
+# AC keywords that mean "verify the Neo4j graph" -> generate a Cypher check
+# instead of a BigQuery one.
+GRAPH_MARKERS = ("neo4j", "graph", "node", "nodes", "relationship",
+                 "relationships", "cypher")
 
 # Generation attempts and retry delay for transient Vertex errors. Multiple ACs
 # are generated back-to-back, so the 3rd+ call can hit a per-minute 429; we
@@ -48,6 +54,12 @@ _TRANSIENT_MARKERS = ("429", "resource_exhausted", "rate limit", "quota",
 def _is_transient(exc: Exception) -> bool:
     msg = str(exc).lower()
     return any(m in msg for m in _TRANSIENT_MARKERS)
+
+
+def _is_graph_ac(ac_text: str) -> bool:
+    """True when the AC is about the Neo4j graph (so we generate Cypher)."""
+    text = ac_text.lower()
+    return any(m in text for m in GRAPH_MARKERS)
 
 
 def _candidate_tables(ac_text: str) -> list[str]:
@@ -77,7 +89,18 @@ def _schema_context(tables: list[str]) -> str:
     return "\n".join(lines)
 
 
-_PROMPT = """\
+def _graph_context() -> str:
+    """Render the Neo4j node labels + relationship types for the prompt."""
+    s = neo.graph_schema()
+    labels = s.get("labels") or []
+    rels = s.get("relationships") or []
+    if not labels and not rels:
+        return ""
+    return (f"Node labels: {', '.join(labels) or '(none)'}\n"
+            f"Relationship types: {', '.join(rels) or '(none)'}")
+
+
+_BQ_PROMPT = """\
 You are a data QA engineer. Convert ONE Jira acceptance criterion into a single
 read-only BigQuery check.
 
@@ -97,6 +120,28 @@ Rules:
   (e.g. COUNT/COUNTIF of violating rows), so equals is almost always 0.
 - Only reference columns that exist in the tables above.
 - Prefer COUNTIF(<violation condition>) AS violations.
+"""
+
+_CYPHER_PROMPT = """\
+You are a graph QA engineer. Convert ONE Jira acceptance criterion into a single
+read-only Cypher check against Neo4j.
+
+Acceptance criterion:
+{ac}
+
+Graph model:
+{schema}
+
+Rules:
+- Return ONLY JSON, no prose, matching exactly:
+  {{"kind":"cypher","cypher":"<one read-only MATCH ... RETURN query>",
+    "assert":{{"column":"<name>","equals":0}},"rationale":"<short why>"}}
+- The Cypher MUST be read-only (no CREATE/MERGE/DELETE/SET/REMOVE/DROP/DETACH).
+- It MUST return exactly one row containing the assert column.
+- Design the check so the assert column equals 0 when the criterion HOLDS
+  (e.g. count of orphan/violating nodes), so equals is almost always 0.
+- Only use the node labels and relationship types listed above.
+- Prefer count(<violating pattern>) AS violations.
 """
 
 
@@ -126,29 +171,47 @@ def _parse_spec(raw: str) -> dict | None:
         return None
 
 
-def _valid_shape(spec: dict) -> bool:
-    return (
-        isinstance(spec, dict)
-        and spec.get("kind") == "bq_query"
-        and isinstance(spec.get("sql"), str)
-        and isinstance(spec.get("assert"), dict)
-        and isinstance(spec["assert"].get("column"), str)
-        and "equals" in spec["assert"]
-    )
+def _valid_assert(spec: dict) -> bool:
+    a = spec.get("assert")
+    return isinstance(a, dict) and isinstance(a.get("column"), str) and "equals" in a
+
+
+def _valid_bq(spec: dict) -> bool:
+    return (isinstance(spec, dict) and spec.get("kind") == "bq_query"
+            and isinstance(spec.get("sql"), str) and _valid_assert(spec))
+
+
+def _valid_cypher(spec: dict) -> bool:
+    return (isinstance(spec, dict) and spec.get("kind") == "cypher"
+            and isinstance(spec.get("cypher"), str) and _valid_assert(spec))
 
 
 def generate_check(ticket: str, ac_bullet: str) -> dict | None:
-    """Generate + validate a read-only BigQuery check for one AC bullet.
+    """Generate + validate a read-only check for one AC bullet.
 
-    Returns the check spec, or ``None`` when no valid check could be produced
-    (so the caller skips it rather than emitting a wrong test).
+    Picks a BigQuery (``bq_query``) check for data ACs, or a Neo4j (``cypher``)
+    check for graph ACs. Returns the validated spec, or ``None`` when no valid
+    check could be produced (so the caller emits an @manual scenario instead of
+    a wrong test).
     """
-    tables = _candidate_tables(ac_bullet)
-    schema = _schema_context(tables)
+    if _is_graph_ac(ac_bullet):
+        kind, query_field = "cypher", "cypher"
+        schema = _graph_context()
+        prompt_tpl, valid = _CYPHER_PROMPT, _valid_cypher
+        def validate(spec: dict) -> dict:
+            return neo.explain(spec["cypher"])
+    else:
+        kind, query_field = "bq_query", "sql"
+        schema = _schema_context(_candidate_tables(ac_bullet))
+        prompt_tpl, valid = _BQ_PROMPT, _valid_bq
+        def validate(spec: dict) -> dict:
+            return bq.dry_run_query(spec["sql"])
+
     if not schema:
-        logger.warning("generate_check: ticket=%s no schema for tables=%s — skipping", ticket, tables)
+        logger.warning("generate_check: ticket=%s no schema/graph context for kind=%s — skipping",
+                       ticket, kind)
         return None
-    prompt = _PROMPT.format(ac=ac_bullet.strip(), schema=schema)
+    prompt = prompt_tpl.format(ac=ac_bullet.strip(), schema=schema)
 
     for attempt in range(1, _MAX_ATTEMPTS + 1):
         try:
@@ -164,18 +227,18 @@ def generate_check(ticket: str, ac_bullet: str) -> dict | None:
                 continue
             return None
         spec = _parse_spec(raw)
-        if not spec or not _valid_shape(spec):
-            logger.warning("generate_check: ticket=%s invalid spec (attempt %d/%d): %s",
-                           ticket, attempt, _MAX_ATTEMPTS, raw[:200])
+        if not spec or not valid(spec):
+            logger.warning("generate_check: ticket=%s invalid %s spec (attempt %d/%d): %s",
+                           ticket, kind, attempt, _MAX_ATTEMPTS, raw[:200])
             continue
-        # Validate the SQL is genuinely runnable + read-only + bounded.
-        dry = bq.dry_run_query(spec["sql"])
-        if not dry.get("ok"):
-            logger.warning("generate_check: ticket=%s dry-run failed (attempt %d/%d): %s",
-                           ticket, attempt, _MAX_ATTEMPTS, dry.get("error"))
+        # Validate the query is genuinely runnable + read-only before trusting it.
+        check = validate(spec)
+        if not check.get("ok"):
+            logger.warning("generate_check: ticket=%s %s validation failed (attempt %d/%d): %s",
+                           ticket, kind, attempt, _MAX_ATTEMPTS, check.get("error"))
             continue
-        logger.info("generate_check: ticket=%s produced check on %s (bytes=%s)",
-                    ticket, spec.get("table"), dry.get("bytes"))
+        logger.info("generate_check: ticket=%s produced %s check (%s)",
+                    ticket, kind, spec.get("table") or "neo4j")
         return spec
 
     logger.warning("generate_check: ticket=%s could not generate a valid check — skipping", ticket)

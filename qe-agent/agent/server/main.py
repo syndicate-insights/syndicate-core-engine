@@ -126,6 +126,30 @@ async def query_check(request: Request) -> dict:
     return result
 
 
+@app.post("/qe/cypher/check")
+async def cypher_check(request: Request) -> dict:
+    """Execute an agent-generated, read-only Cypher check and assert a result.
+
+    The BDD pack's generated Neo4j scenarios POST the embedded Cypher here. Body:
+        {"cypher": "MATCH (a:Account) WHERE NOT (:Customer)-[:HAS_ACCOUNT]->(a)
+                    RETURN count(a) AS violations",
+         "column": "violations", "equals": 0}
+    Returns a deterministic PASS/FAIL/ERROR. Read-only is enforced in run_cypher.
+    """
+    from agent.tools import neo4j_toolset as neo
+
+    body = await request.json()
+    cypher = (body or {}).get("cypher")
+    column = (body or {}).get("column", "violations")
+    equals = (body or {}).get("equals", 0)
+    if not cypher or not isinstance(cypher, str):
+        raise HTTPException(status_code=400, detail="missing 'cypher' in request body")
+    logger.info("cypher_check: column=%s equals=%r cypher=%s", column, equals, cypher[:200])
+    result = neo.run_check(cypher, column, equals)
+    logger.info("cypher_check: status=%s actual=%r", result.get("status"), result.get("actual"))
+    return result
+
+
 # --- BDD authoring / Jira / Harness -----------------------------------------
 
 @app.get("/qe/jira/{ticket}/acceptance-criteria")

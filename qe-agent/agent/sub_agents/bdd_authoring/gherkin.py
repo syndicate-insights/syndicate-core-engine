@@ -40,19 +40,26 @@ def _check_steps(check: dict | None) -> list[str]:
     else (no check generated) becomes a pending manual-verification step so the
     scenario never silently passes.
     """
-    if check and check.get("kind") == "bq_query" and check.get("sql"):
-        column = (check.get("assert") or {}).get("column", "violations")
-        equals = (check.get("assert") or {}).get("equals", 0)
-        sql = check["sql"].strip()
-        indented_sql = "\n".join("      " + ln for ln in sql.splitlines())
-        return [
-            "    When I run the BigQuery check:",
-            '      """',
-            indented_sql,
-            '      """',
-            f'    Then the result column "{column}" should be {equals}',
-        ]
-    return ["    Then this scenario requires manual verification"]
+    check = check or {}
+    column = (check.get("assert") or {}).get("column", "violations")
+    equals = (check.get("assert") or {}).get("equals", 0)
+
+    if check.get("kind") == "bq_query" and check.get("sql"):
+        body = "\n".join("      " + ln for ln in check["sql"].strip().splitlines())
+        step = "    When I run the BigQuery check:"
+    elif check.get("kind") == "cypher" and check.get("cypher"):
+        body = "\n".join("      " + ln for ln in check["cypher"].strip().splitlines())
+        step = "    When I run the Neo4j check:"
+    else:
+        return ["    Then this scenario requires manual verification"]
+
+    return [
+        step,
+        '      """',
+        body,
+        '      """',
+        f'    Then the result column "{column}" should be {equals}',
+    ]
 
 
 def feature_for_ticket(ticket: str, summary: str, bullets: list[str],

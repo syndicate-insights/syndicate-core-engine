@@ -50,6 +50,15 @@ public final class QeAgentClient {
         return post("/qe/query/check", body.toString());
     }
 
+    /** Execute an agent-generated read-only Neo4j Cypher check and assert a column. */
+    public JsonNode runCypherCheck(String cypher, String column, long equals) {
+        ObjectNode body = MAPPER.createObjectNode();
+        body.put("cypher", cypher);
+        body.put("column", column);
+        body.put("equals", equals);
+        return post("/qe/cypher/check", body.toString());
+    }
+
     public JsonNode runSuite(String suite) {
         return get("/qe/suite/" + suite);
     }
