@@ -24,6 +24,8 @@ public class QeScenarioSteps {
     private String currentSuite;
     private String lastQuery;
     private String lastQueryKind;   // "bigquery" or "neo4j"
+    private Long capturedBqValue;
+    private Long capturedNeoValue;
 
     @Given("the QE Quality Agent is reachable")
     public void the_qe_agent_is_reachable() {
@@ -60,6 +62,33 @@ public class QeScenarioSteps {
                         lastQueryKind, column, res.path("actual"),
                         res.path("expected"), res.path("findings"))
                 .isEqualTo("PASS");
+    }
+
+    // --- Cross-system checks (capture a value from each system, compare) -----
+
+    @When("I capture the BigQuery value:")
+    public void i_capture_the_bigquery_value(String sql) {
+        JsonNode res = agent.queryValue(sql);
+        assertThat(res.path("status").asText("ERROR"))
+                .as("BigQuery value error: %s", res.path("findings")).isEqualTo("OK");
+        this.capturedBqValue = res.path("value").asLong();
+    }
+
+    @When("I capture the Neo4j value:")
+    public void i_capture_the_neo4j_value(String cypher) {
+        JsonNode res = agent.cypherValue(cypher);
+        assertThat(res.path("status").asText("ERROR"))
+                .as("Neo4j value error: %s", res.path("findings")).isEqualTo("OK");
+        this.capturedNeoValue = res.path("value").asLong();
+    }
+
+    @Then("the BigQuery and Neo4j values should be equal")
+    public void the_bigquery_and_neo4j_values_should_be_equal() {
+        assertThat(capturedBqValue).as("a BigQuery value must be captured first").isNotNull();
+        assertThat(capturedNeoValue).as("a Neo4j value must be captured first").isNotNull();
+        assertThat(capturedBqValue)
+                .as("BigQuery value (%s) should equal Neo4j value (%s)", capturedBqValue, capturedNeoValue)
+                .isEqualTo(capturedNeoValue);
     }
 
     @Then("this scenario requires manual verification")

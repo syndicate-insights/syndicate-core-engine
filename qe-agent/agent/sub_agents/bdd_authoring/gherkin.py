@@ -33,33 +33,40 @@ def domain_for_ticket(ticket: str, summary: str) -> str:
     return "Functional"
 
 
+def _docstring(query: str) -> list[str]:
+    """Render a query as an indented Gherkin docstring block."""
+    body = "\n".join("      " + ln for ln in query.strip().splitlines())
+    return ['      """', body, '      """']
+
+
 def _check_steps(check: dict | None) -> list[str]:
     """Render the executable steps for one AC from its generated check spec.
 
-    A valid ``bq_query`` spec becomes an embedded-SQL BigQuery check; anything
-    else (no check generated) becomes a pending manual-verification step so the
-    scenario never silently passes.
+    Supports three kinds:
+      * ``bq_query``  -> one embedded BigQuery check
+      * ``cypher``    -> one embedded Neo4j check
+      * ``cross_check`` -> capture a BigQuery value + a Neo4j value, compare
+    Anything else (no check generated) becomes a pending manual-verification
+    step so the scenario never silently passes.
     """
     check = check or {}
     column = (check.get("assert") or {}).get("column", "violations")
     equals = (check.get("assert") or {}).get("equals", 0)
 
     if check.get("kind") == "bq_query" and check.get("sql"):
-        body = "\n".join("      " + ln for ln in check["sql"].strip().splitlines())
-        step = "    When I run the BigQuery check:"
-    elif check.get("kind") == "cypher" and check.get("cypher"):
-        body = "\n".join("      " + ln for ln in check["cypher"].strip().splitlines())
-        step = "    When I run the Neo4j check:"
-    else:
-        return ["    Then this scenario requires manual verification"]
+        return (["    When I run the BigQuery check:"] + _docstring(check["sql"])
+                + [f'    Then the result column "{column}" should be {equals}'])
 
-    return [
-        step,
-        '      """',
-        body,
-        '      """',
-        f'    Then the result column "{column}" should be {equals}',
-    ]
+    if check.get("kind") == "cypher" and check.get("cypher"):
+        return (["    When I run the Neo4j check:"] + _docstring(check["cypher"])
+                + [f'    Then the result column "{column}" should be {equals}'])
+
+    if check.get("kind") == "cross_check" and check.get("bq_sql") and check.get("cypher"):
+        return (["    When I capture the BigQuery value:"] + _docstring(check["bq_sql"])
+                + ["    And I capture the Neo4j value:"] + _docstring(check["cypher"])
+                + ["    Then the BigQuery and Neo4j values should be equal"])
+
+    return ["    Then this scenario requires manual verification"]
 
 
 def feature_for_ticket(ticket: str, summary: str, bullets: list[str],

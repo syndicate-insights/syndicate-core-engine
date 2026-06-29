@@ -59,6 +59,20 @@ public final class QeAgentClient {
         return post("/qe/cypher/check", body.toString());
     }
 
+    /** Capture a scalar BigQuery value (column "value") for a cross-system check. */
+    public JsonNode queryValue(String sql) {
+        ObjectNode body = MAPPER.createObjectNode();
+        body.put("sql", sql);
+        return post("/qe/query/value", body.toString());
+    }
+
+    /** Capture a scalar Neo4j value (column "value") for a cross-system check. */
+    public JsonNode cypherValue(String cypher) {
+        ObjectNode body = MAPPER.createObjectNode();
+        body.put("cypher", cypher);
+        return post("/qe/cypher/value", body.toString());
+    }
+
     public JsonNode runSuite(String suite) {
         return get("/qe/suite/" + suite);
     }

@@ -150,6 +150,38 @@ async def cypher_check(request: Request) -> dict:
     return result
 
 
+@app.post("/qe/query/value")
+async def query_value(request: Request) -> dict:
+    """Run a read-only BigQuery query and return the scalar ``column`` (default
+    ``value``). Used by cross-system checks to capture a value for comparison."""
+    from agent.tools import bigquery_toolset as bq
+
+    body = await request.json()
+    sql = (body or {}).get("sql")
+    column = (body or {}).get("column", "value")
+    if not sql or not isinstance(sql, str):
+        raise HTTPException(status_code=400, detail="missing 'sql' in request body")
+    result = bq.run_value(sql, column)
+    logger.info("query_value: status=%s value=%r", result.get("status"), result.get("value"))
+    return result
+
+
+@app.post("/qe/cypher/value")
+async def cypher_value(request: Request) -> dict:
+    """Run a read-only Cypher query and return the scalar ``column`` (default
+    ``value``). Used by cross-system checks to capture a Neo4j value."""
+    from agent.tools import neo4j_toolset as neo
+
+    body = await request.json()
+    cypher = (body or {}).get("cypher")
+    column = (body or {}).get("column", "value")
+    if not cypher or not isinstance(cypher, str):
+        raise HTTPException(status_code=400, detail="missing 'cypher' in request body")
+    result = neo.run_value(cypher, column)
+    logger.info("cypher_value: status=%s value=%r", result.get("status"), result.get("value"))
+    return result
+
+
 # --- BDD authoring / Jira / Harness -----------------------------------------
 
 @app.get("/qe/jira/{ticket}/acceptance-criteria")
