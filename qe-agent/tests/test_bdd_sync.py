@@ -361,3 +361,49 @@ def test_generate_check_no_retry_on_permanent_error(monkeypatch):
                         lambda p: (_ for _ in ()).throw(Exception("400 INVALID_ARGUMENT")))
     assert tg.generate_check("SYN-2", "x") is None
     assert sleeps == []  # permanent error: no retry
+
+
+# --- Neo4j / Cypher check generation ------------------------------------------
+
+def test_feature_embeds_generated_cypher_check():
+    check = {
+        "kind": "cypher",
+        "cypher": "MATCH (a:Account) WHERE NOT (:Customer)-[:HAS_ACCOUNT]->(a)\nRETURN count(a) AS violations",
+        "assert": {"column": "violations", "equals": 0},
+    }
+    feat = gherkin.feature_for_ticket(
+        "SYN-251", "graph", ["Every Account node must link to a Customer"],
+        test_keys=["SYN-254"], checks=[check],
+    )
+    assert "When I run the Neo4j check:" in feat
+    assert "HAS_ACCOUNT" in feat
+    assert 'Then the result column "violations" should be 0' in feat
+    assert "@manual" not in feat
+
+
+def test_generate_check_routes_graph_ac_to_cypher(monkeypatch):
+    from agent.sub_agents.bdd_authoring import test_generator as tg
+    import json as _json
+    monkeypatch.setattr(tg.neo, "graph_schema",
+                        lambda: {"labels": ["Customer", "Account"], "relationships": ["HAS_ACCOUNT"]})
+    monkeypatch.setattr(tg.neo, "explain", lambda q: {"ok": True})
+    spec = _json.dumps({"kind": "cypher",
+                        "cypher": "MATCH (a:Account) WHERE NOT (:Customer)-[:HAS_ACCOUNT]->(a) RETURN count(a) AS violations",
+                        "assert": {"column": "violations", "equals": 0}})
+    monkeypatch.setattr(tg, "_llm_generate", lambda p: spec)
+    out = tg.generate_check("SYN-251", "When the Neo4j graph is queried, every Account links to a Customer")
+    assert out and out["kind"] == "cypher" and "MATCH" in out["cypher"]
+
+
+def test_generate_check_routes_data_ac_to_bq(monkeypatch):
+    from agent.sub_agents.bdd_authoring import test_generator as tg
+    import json as _json
+    monkeypatch.setattr(tg.bq, "table_schema",
+                        lambda t: {"table": f"p.d.{t}", "columns": [{"name": "customer_id", "type": "STRING"}]})
+    monkeypatch.setattr(tg.bq, "dry_run_query", lambda sql: {"ok": True, "bytes": 5})
+    spec = _json.dumps({"kind": "bq_query", "table": "customer_enriched",
+                        "sql": "SELECT COUNTIF(customer_id IS NULL) AS violations FROM `p.d.customer_enriched`",
+                        "assert": {"column": "violations", "equals": 0}})
+    monkeypatch.setattr(tg, "_llm_generate", lambda p: spec)
+    out = tg.generate_check("SYN-251", "customer_enriched must have no null customer_id")
+    assert out and out["kind"] == "bq_query"
