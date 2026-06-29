@@ -195,13 +195,13 @@ def generate_check(ticket: str, ac_bullet: str) -> dict | None:
     a wrong test).
     """
     if _is_graph_ac(ac_bullet):
-        kind, query_field = "cypher", "cypher"
+        kind = "cypher"
         schema = _graph_context()
         prompt_tpl, valid = _CYPHER_PROMPT, _valid_cypher
         def validate(spec: dict) -> dict:
             return neo.explain(spec["cypher"])
     else:
-        kind, query_field = "bq_query", "sql"
+        kind = "bq_query"
         schema = _schema_context(_candidate_tables(ac_bullet))
         prompt_tpl, valid = _BQ_PROMPT, _valid_bq
         def validate(spec: dict) -> dict:
