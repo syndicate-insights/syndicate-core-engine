@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Insight Syndicate · QE Hack — Autonomous Quality Engineering Agent</title>
+    <title>Helios · Autonomous Quality Engineering AI Agent — Insight Syndicate QE Hack</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,7 +12,7 @@
         rel="stylesheet" />
     <style>
         :root {
-            /* Lloyds Technology Centre brand palette (from PowerPoint theme) */
+            /* Lloyds Banking Group brand palette (from PowerPoint theme) */
             --green: #00855D;
             /* accent1 — Lloyds green (primary) */
             --green-light: #16A77C;
@@ -141,6 +141,14 @@
             font-size: 15px;
             font-weight: 800;
             box-shadow: 0 6px 16px -6px rgba(0, 133, 93, .7);
+        }
+
+        .brand .logo {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+            display: block;
+            flex: none;
         }
 
         .brand small {
@@ -316,30 +324,21 @@
             margin-bottom: 8px
         }
 
-        .notes-panel ul {
-            list-style: none;
-            display: grid;
-            gap: 8px;
-            max-width: 92ch
+        .notes-panel .teleprompter {
+            max-width: 86ch;
+            margin: 4px auto 0;
         }
 
-        .notes-panel li {
-            position: relative;
-            padding-left: 20px;
-            font-size: 14px;
-            color: var(--ink-2);
-            line-height: 1.5
+        .notes-panel .teleprompter p {
+            font-size: 18px;
+            line-height: 1.65;
+            color: var(--ink);
+            margin: 0 0 16px;
+            font-weight: 500;
         }
 
-        .notes-panel li::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 8px;
-            width: 7px;
-            height: 7px;
-            border-radius: 2px;
-            background: var(--green-bright)
+        .notes-panel .teleprompter p:last-child {
+            margin-bottom: 0;
         }
 
         /* ===== dot nav ===== */
@@ -990,6 +989,7 @@
             margin-top: 20px;
             flex-wrap: wrap;
         }
+
         .ma-group {
             flex: 1;
             min-width: 150px;
@@ -1001,11 +1001,13 @@
             flex-direction: column;
             gap: 8px;
         }
+
         .ma-group.core {
             flex: 1.5;
             background: linear-gradient(180deg, rgba(43, 192, 143, .12), rgba(0, 133, 93, .06));
             border-color: rgba(0, 133, 93, .35);
         }
+
         .ma-label {
             font-size: 10.5px;
             letter-spacing: .08em;
@@ -1013,6 +1015,7 @@
             font-weight: 800;
             color: var(--green);
         }
+
         .ma-box {
             display: flex;
             align-items: center;
@@ -1025,37 +1028,44 @@
             padding: 8px 10px;
             background: #fff;
         }
+
         .ma-box .ico {
             width: 16px;
             height: 16px;
             color: var(--green);
         }
+
         .ma-sub {
             font-size: 11px;
             color: var(--muted);
             font-weight: 500;
         }
+
         .ma-arrow {
             align-self: center;
             color: var(--green-bright);
             font-weight: 800;
             font-size: 20px;
         }
+
         .ma-foot {
             margin-top: 10px;
             font-size: 12px;
             color: var(--muted);
             font-weight: 600;
         }
+
         .ma-foot strong {
             color: var(--green-deep);
         }
+
         .chips {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             margin-top: 14px;
         }
+
         .chip {
             display: inline-flex;
             align-items: center;
@@ -1068,8 +1078,90 @@
             border-radius: 999px;
             padding: 7px 13px;
         }
+
         .chip b {
             color: var(--green-deep);
+        }
+
+        .chips.code .chip {
+            font-family: "Spline Sans Mono", ui-monospace, monospace;
+            font-size: 12px;
+            color: var(--green-deep);
+        }
+
+        /* ===== code walkthrough panel ===== */
+        .codepanel {
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(2, 71, 49, .2);
+            box-shadow: 0 18px 50px rgba(13, 31, 22, .16);
+            background: #0d1f16;
+            align-self: start;
+        }
+
+        .codepanel .cp-bar {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 14px;
+            background: #0a1812;
+            color: rgba(255, 255, 255, .5);
+            font: 600 12px/1 "Spline Sans Mono", ui-monospace, monospace;
+            letter-spacing: .04em;
+        }
+
+        .codepanel .cp-bar i {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .codepanel pre {
+            margin: 0;
+            padding: 16px 18px;
+            color: #d7f5e7;
+            font: 13px/1.62 "Spline Sans Mono", ui-monospace, monospace;
+            white-space: pre;
+            overflow: auto;
+        }
+
+        .codepanel pre .c {
+            color: #5fcf99;
+        }
+
+        .codepanel pre .k {
+            color: #8fd0ff;
+            font-weight: 700;
+        }
+
+        /* ===== live demo stage ===== */
+        .demo-stage {
+            margin: 26px auto 0;
+            max-width: 820px;
+            border-radius: 22px;
+            padding: 40px 36px;
+            background: linear-gradient(135deg, rgba(0, 133, 93, .12), rgba(107, 65, 234, .08));
+            border: 1px solid rgba(0, 133, 93, .3);
+            text-align: center;
+        }
+
+        .demo-stage .play {
+            width: 86px;
+            height: 86px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--green);
+            color: #fff;
+            box-shadow: 0 16px 42px rgba(0, 133, 93, .42);
+            margin-bottom: 22px;
+        }
+
+        .demo-stage .play .ico {
+            width: 34px;
+            height: 34px;
         }
 
         /* ===== acceptance-criteria cards ===== */
@@ -1079,15 +1171,18 @@
             gap: 12px;
             margin-top: 20px;
         }
+
         .crit .card {
             padding: 16px 17px;
         }
+
         .crit .top {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 7px;
         }
+
         .crit .num {
             font-size: 11px;
             font-weight: 800;
@@ -1096,14 +1191,17 @@
             border-radius: 7px;
             padding: 2px 7px;
         }
+
         .crit .ico {
             width: 19px;
             height: 19px;
             color: var(--green);
         }
+
         .crit h3 {
             font-size: 14.5px;
         }
+
         .crit p {
             color: var(--muted);
             font-size: 12.5px;
@@ -1201,6 +1299,12 @@
             margin: 0 auto 18px
         }
 
+        footer.end .logo {
+            width: 42px;
+            height: 42px;
+            flex: none;
+        }
+
         footer.end p {
             color: rgba(255, 255, 255, .6);
             font-size: 13px;
@@ -1249,13 +1353,31 @@
                 size: 13.333in 7.5in;
                 margin: 0;
             }
-            *, *::before, *::after {
+
+            *,
+            *::before,
+            *::after {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
-            html, body { background: #fff !important; }
-            .topbar, .progress, .dots, .controls, .notes-panel, .blob { display: none !important; }
-            .deck { scroll-snap-type: none !important; }
+
+            html,
+            body {
+                background: #fff !important;
+            }
+
+            .topbar,
+            .progress,
+            .dots,
+            .controls,
+            .notes-panel,
+            .blob {
+                display: none !important;
+            }
+
+            .deck {
+                scroll-snap-type: none !important;
+            }
 
             section.slide {
                 width: 13.333in;
@@ -1271,33 +1393,106 @@
                 display: flex;
                 align-items: center;
             }
-            section.slide:last-of-type { page-break-after: avoid; break-after: auto; }
-            #hero { background:
-                radial-gradient(120% 120% at 80% 0%, rgba(43,192,143,.22), transparent 55%),
-                radial-gradient(100% 100% at 0% 100%, rgba(0,133,93,.16), transparent 50%),
-                linear-gradient(180deg, var(--green-soft), #fff) !important; }
 
-            .wrap { max-width: none !important; width: 100% !important; }
+            section.slide:last-of-type {
+                page-break-after: avoid;
+                break-after: auto;
+            }
+
+            #hero {
+                background:
+                    radial-gradient(120% 120% at 80% 0%, rgba(43, 192, 143, .22), transparent 55%),
+                    radial-gradient(100% 100% at 0% 100%, rgba(0, 133, 93, .16), transparent 50%),
+                    linear-gradient(180deg, var(--green-soft), #fff) !important;
+            }
+
+            .wrap {
+                max-width: none !important;
+                width: 100% !important;
+            }
 
             /* tighten dense slides so nothing clips on a fixed page */
-            h1 { font-size: 52px !important; }
-            h2 { font-size: 33px !important; margin-bottom: 12px !important; }
-            .lead { font-size: 15.5px !important; }
-            .eyebrow { margin-bottom: 14px !important; }
-            .grid { gap: 12px !important; }
-            .card { padding: 16px !important; }
-            .card p { font-size: 12.5px !important; }
-            .stats, .tagrow, .flowstrip, .banner, .team { margin-top: 16px !important; }
-            .steps { gap: 9px !important; }
-            .step-row { padding: 11px 14px !important; }
-            .member { padding: 15px !important; }
-            table.tbl { font-size: 12px !important; }
-            table.tbl th, table.tbl td { padding: 8px 12px !important; }
-            .two, .split { gap: 24px !important; }
-            .hero-foot { margin-top: 26px !important; padding-top: 16px !important; }
-            footer.end { display: none !important; }
-            .archfig { margin-top: 12px !important; }
-            .archfig img { max-height: 5.05in !important; padding: 8px !important; box-shadow: none !important; }
+            h1 {
+                font-size: 52px !important;
+            }
+
+            h2 {
+                font-size: 33px !important;
+                margin-bottom: 12px !important;
+            }
+
+            .lead {
+                font-size: 15.5px !important;
+            }
+
+            .eyebrow {
+                margin-bottom: 14px !important;
+            }
+
+            .grid {
+                gap: 12px !important;
+            }
+
+            .card {
+                padding: 16px !important;
+            }
+
+            .card p {
+                font-size: 12.5px !important;
+            }
+
+            .stats,
+            .tagrow,
+            .flowstrip,
+            .banner,
+            .team {
+                margin-top: 16px !important;
+            }
+
+            .steps {
+                gap: 9px !important;
+            }
+
+            .step-row {
+                padding: 11px 14px !important;
+            }
+
+            .member {
+                padding: 15px !important;
+            }
+
+            table.tbl {
+                font-size: 12px !important;
+            }
+
+            table.tbl th,
+            table.tbl td {
+                padding: 8px 12px !important;
+            }
+
+            .two,
+            .split {
+                gap: 24px !important;
+            }
+
+            .hero-foot {
+                margin-top: 26px !important;
+                padding-top: 16px !important;
+            }
+
+            footer.end {
+                display: none !important;
+            }
+
+            .archfig {
+                margin-top: 12px !important;
+            }
+
+            .archfig img {
+                max-height: 5.05in !important;
+                padding: 8px !important;
+                box-shadow: none !important;
+            }
         }
     </style>
 </head>
@@ -1306,18 +1501,20 @@
 
     <div class="topbar">
         <div class="brand">
-            <span class="mark">Q</span>
-            <span>QE Agent
-                <small>Insight Syndicate · Lloyds Technology Centre</small>
+            <img class="logo" src="assets/img/helios-mark.png" alt="Helios logo" />
+            <span>Helios
+                <small>QE Agent · Insight Syndicate · Lloyds Banking Group</small>
             </span>
         </div>
         <nav>
             <a href="#problem">Problem</a>
             <a href="#solution">Solution</a>
             <a href="#architecture">Architecture</a>
-            <a href="#flow">How it works</a>
+            <a href="#code">Code</a>
             <a href="#tools">Toolsets</a>
+            <a href="#flow">How it works</a>
             <a href="#capabilities">Capabilities</a>
+            <a href="#demo">Demo</a>
             <a href="#criteria">Criteria</a>
             <a href="#team">Team</a>
             <a href="#people-cost">People cost</a>
@@ -1337,9 +1534,15 @@
             <div class="blob b1"></div>
             <div class="blob b2"></div>
             <div class="wrap">
-                <span class="eyebrow">Insight Syndicate · Quality Engineering Hackathon</span>
-                <h1>An autonomous<br /><span style="color:var(--green)">Quality Engineering</span> agent.</h1>
-                <p class="lead" style="margin-top:24px">
+                <span class="eyebrow">Autonomous Quality Engineering · built to scale across LBG</span>
+                <h1>Meet <img src="assets/img/helios-mark.png" alt="Helios logo"
+                        style="height:1.05em;width:auto;vertical-align:-0.22em;margin:0 .06em" /> <span
+                        style="color:var(--green)">Helios</span>.<br />An autonomous
+                    Quality Engineering AI Agent.
+                </h1>
+                <p style="margin-top:14px;font-style:italic;color:var(--muted);font-size:clamp(15px,1.7vw,19px)">
+                    Helios — for the sun and illumination: clarity and visibility in quality automation.</p>
+                <p class="lead" style="margin-top:18px">
                     From a single Jira ticket to <strong>generated test scenarios</strong>, <strong>triggered
                         pipelines</strong>
                     and <strong>trusted, auditable evidence written straight back to the ticket</strong> — with minimal
@@ -1373,6 +1576,10 @@
                         <div class="v">Group-wide rollout</div>
                     </div>
                 </div>
+                <p style="margin-top:22px;font-size:13.5px;color:var(--muted)">
+                    <strong style="color:var(--ink)">Insight Syndicate</strong> · Soumya Samal · Astom Ahashie · Michal
+                    Jakub Kolanski
+                </p>
             </div>
         </section>
 
@@ -1430,16 +1637,17 @@
                 <div class="sec-head">
                     <h2>An intelligent assistant that tests the change for you.</h2>
                     <p class="lead">
-                        Give the agent a product change — a Jira story, acceptance criteria, an API or config update —
+                        Give <strong>Helios</strong> a product change — a Jira story, acceptance criteria, an API or config update —
                         and it decides <em>what</em> to test and <em>why</em>, runs meaningful automated tests, and
                         produces
                         clear evidence stakeholders can trust. Built once and offered as a standard template:
-                        a team of <strong>1 engineer + 1 QE can adopt it in a single sprint</strong>.
+                        a <strong>single QE can adopt it in one sprint — no extra engineer needed</strong>.
                     </p>
                 </div>
                 <div class="grid g3">
                     <div class="card">
-                        <div class="ic t-green"><span class="ico" style="--i:url(assets/icons/generate.svg)"></span></div>
+                        <div class="ic t-green"><span class="ico" style="--i:url(assets/icons/generate.svg)"></span>
+                        </div>
                         <h3>Generate</h3>
                         <p>Reads acceptance criteria and authors Cucumber/BDD scenarios plus Jira <em>Test</em> subtasks
                             — opening a GitHub PR with the new features.</p>
@@ -1451,7 +1659,8 @@
                             running deterministic + BDD suites against the live pipeline.</p>
                     </div>
                     <div class="card">
-                        <div class="ic t-purple"><span class="ico" style="--i:url(assets/icons/evidence.svg)"></span></div>
+                        <div class="ic t-purple"><span class="ico" style="--i:url(assets/icons/evidence.svg)"></span>
+                        </div>
                         <h3>Evidence</h3>
                         <p>Writes pass/fail results back onto the ticket — updating Xray or regular subtasks — and
                             triages failures into follow-up PRs. Fully auditable.</p>
@@ -1462,27 +1671,34 @@
                 <div class="mini-arch">
                     <div class="ma-group">
                         <div class="ma-label">Sources of truth</div>
-                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/tickets.svg)"></span>Jira / Xray</div>
-                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/links.svg)"></span>GitHub</div>
+                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/tickets.svg)"></span>Jira /
+                            Xray</div>
+                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/links.svg)"></span>GitHub
+                        </div>
                     </div>
                     <div class="ma-arrow">→</div>
                     <div class="ma-group core">
-                        <div class="ma-label">GKE · QE Agent</div>
-                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/ai.svg)"></span>ADK + Gemini orchestrator</div>
+                        <div class="ma-label">GKE · Helios</div>
+                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/ai.svg)"></span>ADK + Gemini
+                            orchestrator</div>
                         <div class="ma-sub">6 sub-agents · 8 toolsets · read-only Workload Identity</div>
                     </div>
                     <div class="ma-arrow">→</div>
                     <div class="ma-group">
                         <div class="ma-label">Execute &amp; gate</div>
-                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/switch.svg)"></span>Harness pipelines</div>
+                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/switch.svg)"></span>Harness
+                            pipelines</div>
                     </div>
                     <div class="ma-arrow">→</div>
                     <div class="ma-group">
                         <div class="ma-label">Evidence</div>
-                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/evidence.svg)"></span>Results on ticket</div>
+                        <div class="ma-box"><span class="ico" style="--i:url(assets/icons/evidence.svg)"></span>Results
+                            on ticket</div>
                     </div>
                 </div>
-                <div class="ma-foot">Pipeline under test: <strong>GCS → dbt / BigQuery → Neo4j</strong> — all on GKE in the <span class="mono">qe-hack-syndicate</span> namespace. <span style="color:var(--muted)">(Full view on the next slide.)</span></div>
+                <div class="ma-foot">Pipeline under test: <strong>GCS → dbt / BigQuery → Neo4j</strong> — all on GKE in
+                    the <span class="mono">qe-hack-syndicate</span> namespace. <span style="color:var(--muted)">(Full
+                        view on the next slide.)</span></div>
                 <div class="chips">
                     <span class="chip"><b>Deterministic</b> · strict PASS / FAIL / ERROR</span>
                     <span class="chip"><b>Low adoption risk</b> · only tooling LBG already runs</span>
@@ -1496,17 +1712,129 @@
             <div class="wrap">
                 <span class="eyebrow">Architecture · deployed on GKE</span>
                 <h2>One agent, three connected worlds.</h2>
-                <p class="lead">The agent runs as a single Deployment in the <span class="mono">qe-hack-syndicate</span>
+                <p class="lead">Helios runs as a single Deployment in the <span class="mono">qe-hack-syndicate</span>
                     namespace on GKE, brokering Jira, GitHub and Harness while reading the data pipeline it tests
                     (GCS → dbt/BigQuery → Neo4j) and reasoning with Gemini on Vertex.</p>
                 <figure class="archfig">
                     <img src="assets/img/architecture.png"
-                        alt="QE Agent architecture on Google Cloud Platform: GKE namespace hosting the synthetic data generator, dbt, Neo4j and the Model Context Protocol server; Cloud Storage, BigQuery and Dataflow feeding the graph; Vertex Studio with Gemini; and the Harness QE pipeline running connectivity, SAST and functional testing stages with results written back to Jira and GitHub." />
+                        alt="Helios architecture on Google Cloud Platform: GKE namespace hosting the synthetic data generator, dbt, Neo4j and the Model Context Protocol server; Cloud Storage, BigQuery and Dataflow feeding the graph; Vertex Studio with Gemini; and the Harness QE pipeline running connectivity, SAST and functional testing stages with results written back to Jira and GitHub." />
                 </figure>
             </div>
         </section>
 
-        <!-- 5 · FLOW -->
+        <!-- 5 · CODE WALKTHROUGH -->
+        <section class="slide" id="code">
+            <div class="wrap">
+                <span class="eyebrow">Under the hood · code, agents &amp; toolsets</span>
+                <h2>One codebase: an orchestrator, six sub-agents, eight toolsets.</h2>
+                <p class="lead">A quick walk through the repo — the ADK + Gemini orchestrator delegates each quality
+                    goal to a specialist sub-agent, every one backed by deterministic toolsets.</p>
+                <div class="two" style="margin-top:18px">
+                    <div class="codepanel">
+                        <div class="cp-bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i
+                                style="background:#28c840"></i> qe-agent/agent</div>
+                        <pre><span class="k">agent/</span>
+├─ root_agent.py        <span class="c"># ADK + Gemini orchestrator</span>
+├─ config.py            <span class="c"># models · project · toolset wiring</span>
+├─ results.py           <span class="c"># PASS / FAIL / ERROR contract</span>
+├─ <span class="k">scenarios/</span>           <span class="c"># 6 deterministic QE suites</span>
+│   ├─ static_analysis.py
+│   ├─ coding_standards.py
+│   ├─ integration.py
+│   ├─ functional.py
+│   ├─ non_functional.py
+│   └─ runner.py
+├─ <span class="k">sub_agents/</span>          <span class="c"># specialist Gemini agents</span>
+├─ <span class="k">tools/</span>               <span class="c"># gcs·bq·neo4j·dbt·k8s·jira…</span>
+└─ server/jira_webhook.py</pre>
+                    </div>
+                    <div>
+                        <div class="ma-label">Orchestrator → six specialist sub-agents</div>
+                        <div class="chips code" style="margin-top:10px">
+                            <span class="chip">static_analysis</span>
+                            <span class="chip">coding_standards</span>
+                            <span class="chip">integration</span>
+                            <span class="chip">functional</span>
+                            <span class="chip">non_functional</span>
+                            <span class="chip">bdd_authoring</span>
+                        </div>
+                        <div class="ma-label" style="margin-top:18px">Eight deterministic toolsets (read-only)</div>
+                        <div class="chips code" style="margin-top:10px">
+                            <span class="chip">gcs</span>
+                            <span class="chip">bigquery</span>
+                            <span class="chip">neo4j</span>
+                            <span class="chip">k8s</span>
+                            <span class="chip">dbt</span>
+                            <span class="chip">jira</span>
+                            <span class="chip">harness</span>
+                            <span class="chip">github</span>
+                        </div>
+                        <p class="note">Live walkthrough — <span class="mono">root_agent.py</span>, the <span
+                                class="mono">sub_agents/</span> package and the <span class="mono">tools/</span> MCP
+                            layer. Gemini reasons; the toolsets return a strict PASS / FAIL / ERROR.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6 · TOOLSETS -->
+        <section class="slide" id="tools">
+            <div class="wrap">
+                <span class="eyebrow">Toolsets · already in the LBG estate</span>
+                <h2>Nothing new to buy. Everything is reused.</h2>
+                <p class="lead">Every integration the agent depends on is tooling LBG already runs in production — which
+                    is exactly why this PoC is straightforward to land internally.</p>
+                <div class="grid g4" style="margin-top:24px">
+                    <div class="card">
+                        <div class="ic t-orange"><span class="ico" style="--i:url(assets/icons/tickets.svg)"></span>
+                        </div>
+                        <h3>Jira / Xray</h3>
+                        <p>Source of acceptance criteria, status transitions and the home for test evidence.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-deep"><span class="ico" style="--i:url(assets/icons/links.svg)"></span></div>
+                        <h3>GitHub</h3>
+                        <p>Code, generated features and agent-authored pull requests.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-magenta"><span class="ico" style="--i:url(assets/icons/switch.svg)"></span>
+                        </div>
+                        <h3>Harness</h3>
+                        <p>CI/CD pipelines that execute and gate every test suite.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-blue"><span class="ico" style="--i:url(assets/icons/graph.svg)"></span></div>
+                        <h3>BigQuery</h3>
+                        <p>Raw → enriched data the functional &amp; integration suites assert against.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-green"><span class="ico" style="--i:url(assets/icons/document.svg)"></span>
+                        </div>
+                        <h3>Cloud Storage</h3>
+                        <p>Raw CSV landing zone for the synthetic data pipeline.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-blue"><span class="ico" style="--i:url(assets/icons/cloud.svg)"></span></div>
+                        <h3>GKE</h3>
+                        <p>Hosts the agent, the data pipeline cronjobs and Neo4j.</p>
+                    </div>
+                    <div class="card">
+                        <div class="ic t-purple"><span class="ico" style="--i:url(assets/icons/technology.svg)"></span>
+                        </div>
+                        <h3>Neo4j + dbt</h3>
+                        <p>Graph model &amp; transforms — validated end-to-end by the agent.</p>
+                    </div>
+                    <div class="card"
+                        style="background:linear-gradient(135deg,rgba(0,133,93,.1),rgba(107,65,234,.08));border-color:rgba(0,133,93,.3)">
+                        <div class="ic t-green"><span class="ico" style="--i:url(assets/icons/shield.svg)"></span></div>
+                        <h3>Workload Identity</h3>
+                        <p>Least-privilege, read-only GCP access — no JSON keys in cluster.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7 · FLOW -->
         <section class="slide" id="flow">
             <div class="wrap">
                 <span class="eyebrow">How it works · event-driven</span>
@@ -1559,60 +1887,7 @@
             </div>
         </section>
 
-        <!-- 6 · TOOLSETS -->
-        <section class="slide" id="tools">
-            <div class="wrap">
-                <span class="eyebrow">Toolsets · already in the LBG estate</span>
-                <h2>Nothing new to buy. Everything is reused.</h2>
-                <p class="lead">Every integration the agent depends on is tooling LBG already runs in production — which
-                    is exactly why this PoC is straightforward to land internally.</p>
-                <div class="grid g4" style="margin-top:24px">
-                    <div class="card">
-                        <div class="ic t-orange"><span class="ico" style="--i:url(assets/icons/tickets.svg)"></span></div>
-                        <h3>Jira / Xray</h3>
-                        <p>Source of acceptance criteria, status transitions and the home for test evidence.</p>
-                    </div>
-                    <div class="card">
-                        <div class="ic t-deep"><span class="ico" style="--i:url(assets/icons/links.svg)"></span></div>
-                        <h3>GitHub</h3>
-                        <p>Code, generated features and agent-authored pull requests.</p>
-                    </div>
-                    <div class="card">
-                        <div class="ic t-magenta"><span class="ico" style="--i:url(assets/icons/switch.svg)"></span></div>
-                        <h3>Harness</h3>
-                        <p>CI/CD pipelines that execute and gate every test suite.</p>
-                    </div>
-                    <div class="card">
-                        <div class="ic t-blue"><span class="ico" style="--i:url(assets/icons/graph.svg)"></span></div>
-                        <h3>BigQuery</h3>
-                        <p>Raw → enriched data the functional &amp; integration suites assert against.</p>
-                    </div>
-                    <div class="card">
-                        <div class="ic t-green"><span class="ico" style="--i:url(assets/icons/document.svg)"></span></div>
-                        <h3>Cloud Storage</h3>
-                        <p>Raw CSV landing zone for the synthetic data pipeline.</p>
-                    </div>
-                    <div class="card">
-                        <div class="ic t-blue"><span class="ico" style="--i:url(assets/icons/cloud.svg)"></span></div>
-                        <h3>GKE</h3>
-                        <p>Hosts the agent, the data pipeline cronjobs and Neo4j.</p>
-                    </div>
-                    <div class="card">
-                        <div class="ic t-purple"><span class="ico" style="--i:url(assets/icons/technology.svg)"></span></div>
-                        <h3>Neo4j + dbt</h3>
-                        <p>Graph model &amp; transforms — validated end-to-end by the agent.</p>
-                    </div>
-                    <div class="card"
-                        style="background:linear-gradient(135deg,rgba(0,133,93,.1),rgba(107,65,234,.08));border-color:rgba(0,133,93,.3)">
-                        <div class="ic t-green"><span class="ico" style="--i:url(assets/icons/shield.svg)"></span></div>
-                        <h3>Workload Identity</h3>
-                        <p>Least-privilege, read-only GCP access — no JSON keys in cluster.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 7 · CAPABILITIES -->
+        <!-- 8 · CAPABILITIES -->
         <section class="slide" id="capabilities">
             <div class="wrap">
                 <span class="eyebrow">Capabilities · six QE goals</span>
@@ -1631,13 +1906,15 @@
                         <p>Model naming, documented sources, pinned images, resource limits, FK consistency.</p>
                     </div>
                     <div class="card">
-                        <div class="ic t-magenta"><span class="ico" style="--i:url(assets/icons/switch.svg)"></span></div>
+                        <div class="ic t-magenta"><span class="ico" style="--i:url(assets/icons/switch.svg)"></span>
+                        </div>
                         <div class="kicker">I1–I5</div>
                         <h3 style="margin-top:6px">Integration testing</h3>
                         <p>GCS↔BigQuery parity, no orphan FKs, Neo4j nodes &amp; relationships, watermark integrity.</p>
                     </div>
                     <div class="card">
-                        <div class="ic t-orange"><span class="ico" style="--i:url(assets/icons/execute.svg)"></span></div>
+                        <div class="ic t-orange"><span class="ico" style="--i:url(assets/icons/execute.svg)"></span>
+                        </div>
                         <div class="kicker">F1–F6</div>
                         <h3 style="margin-top:6px">Functional testing</h3>
                         <p>Business rules — investment classification, address &amp; phone normalisation, dbt tests.</p>
@@ -1661,6 +1938,28 @@
             </div>
         </section>
 
+        <!-- 9 · DEMO -->
+        <section class="slide" id="demo">
+            <div class="wrap" style="text-align:center">
+                <span class="eyebrow" style="justify-content:center">Live demo</span>
+                <h2>Let's watch it run, end to end.</h2>
+                <p class="lead" style="margin-left:auto;margin-right:auto;max-width:64ch">From a single Jira ticket to
+                    trusted evidence — the full loop, live against the running PoC.</p>
+                <div class="demo-stage">
+                    <span class="play"><span class="ico" style="--i:url(assets/icons/play.svg)"></span></span>
+                    <div class="flowstrip" style="justify-content:center;flex-wrap:wrap">
+                        <span class="step">Create Jira ticket</span><span class="arr">→</span>
+                        <span class="step">Agent authors BDD + PR</span><span class="arr">→</span>
+                        <span class="step">Move to "Testing"</span><span class="arr">→</span>
+                        <span class="step">Harness runs the suites</span><span class="arr">→</span>
+                        <span class="step">Evidence back on the ticket</span>
+                    </div>
+                    <p class="muted" style="font-size:13.5px;margin-top:18px">Demo environment · the live PoC in the
+                        <span class="mono">qe-hack-syndicate</span> namespace on GKE.</p>
+                </div>
+            </div>
+        </section>
+
         <!-- 8 · ACCEPTANCE CRITERIA -->
         <section class="slide" id="criteria">
             <div class="wrap">
@@ -1669,44 +1968,60 @@
                 <p class="lead">The seven judging criteria mapped to concrete evidence already in the solution.</p>
                 <div class="crit">
                     <div class="card">
-                        <div class="top"><span class="num">2.1</span><span class="ico" style="--i:url(assets/icons/evidence.svg)"></span></div>
+                        <div class="top"><span class="num">2.1</span><span class="ico"
+                                style="--i:url(assets/icons/evidence.svg)"></span></div>
                         <h3>Valid product testing</h3>
-                        <p>Six deterministic suites assert real business rules against live BigQuery &amp; Neo4j data — strict PASS/FAIL, no false confidence.</p>
+                        <p>Six deterministic suites assert real business rules against live BigQuery &amp; Neo4j data —
+                            strict PASS/FAIL, no false confidence.</p>
                     </div>
                     <div class="card">
-                        <div class="top"><span class="num">2.2</span><span class="ico" style="--i:url(assets/icons/ai.svg)"></span></div>
+                        <div class="top"><span class="num">2.2</span><span class="ico"
+                                style="--i:url(assets/icons/ai.svg)"></span></div>
                         <h3>Autonomy</h3>
-                        <p>A Jira webhook drives authoring, pipeline execution and result write-back with no human in the loop; failures auto-triage into PRs.</p>
+                        <p>A Jira webhook drives authoring, pipeline execution and result write-back with no human in
+                            the loop; failures auto-triage into PRs.</p>
                     </div>
                     <div class="card">
-                        <div class="top"><span class="num">2.3</span><span class="ico" style="--i:url(assets/icons/switch.svg)"></span></div>
+                        <div class="top"><span class="num">2.3</span><span class="ico"
+                                style="--i:url(assets/icons/switch.svg)"></span></div>
                         <h3>Easy LBG implementation</h3>
-                        <p>Runs only on tooling LBG already operates — Jira/Xray, GitHub, Harness, GKE, BigQuery. A team adopts the template in one sprint.</p>
+                        <p>Runs only on tooling LBG already operates — Jira/Xray, GitHub, Harness, GKE, BigQuery. A team
+                            adopts the template in one sprint.</p>
                     </div>
                     <div class="card">
-                        <div class="top"><span class="num">2.4</span><span class="ico" style="--i:url(assets/icons/document.svg)"></span></div>
+                        <div class="top"><span class="num">2.4</span><span class="ico"
+                                style="--i:url(assets/icons/document.svg)"></span></div>
                         <h3>User-friendly &amp; User Manual</h3>
-                        <p>Plain <span class="mono">/qe</span> REST API and a thin <span class="mono">qe-cli</span>, backed by a full user manual — README, integration guide, IAM &amp; run-books.</p>
+                        <p>Plain <span class="mono">/qe</span> REST API and a thin <span class="mono">qe-cli</span>,
+                            backed by a full user manual — README, integration guide, IAM &amp; run-books.</p>
                     </div>
                     <div class="card">
-                        <div class="top"><span class="num">2.5</span><span class="ico" style="--i:url(assets/icons/people3.svg)"></span></div>
+                        <div class="top"><span class="num">2.5</span><span class="ico"
+                                style="--i:url(assets/icons/people3.svg)"></span></div>
                         <h3>Whole-team understanding</h3>
-                        <p>Deterministic design and documented runbooks mean every one of the four squad members can explain, run and extend the agent.</p>
+                        <p>Deterministic design and documented runbooks mean every one of the four squad members can
+                            explain, run and extend the agent.</p>
                     </div>
                     <div class="card">
-                        <div class="top"><span class="num">2.6</span><span class="ico" style="--i:url(assets/icons/growth.svg)"></span></div>
+                        <div class="top"><span class="num">2.6</span><span class="ico"
+                                style="--i:url(assets/icons/growth.svg)"></span></div>
                         <h3>Maintainability &amp; scalability</h3>
-                        <p>Single shared codebase, pinned images, Workload Identity, config-driven per team. Built once; scales to ~40 teams at marginal cost.</p>
+                        <p>Single shared codebase, pinned images, Workload Identity, config-driven per team. Built once;
+                            scales to ~40 teams at marginal cost.</p>
                     </div>
                     <div class="card">
-                        <div class="top"><span class="num">2.7</span><span class="ico" style="--i:url(assets/icons/trophy.svg)"></span></div>
+                        <div class="top"><span class="num">2.7</span><span class="ico"
+                                style="--i:url(assets/icons/trophy.svg)"></span></div>
                         <h3>Group-wide enhancements</h3>
-                        <p>Multi-tenant templating, pluggable toolsets, a model-agnostic LLM layer and a central evidence dashboard for the Group-wide entry.</p>
+                        <p>Multi-tenant templating, pluggable toolsets, a model-agnostic LLM layer and a central
+                            evidence dashboard for the Group-wide entry.</p>
                     </div>
-                    <div class="card" style="background:linear-gradient(135deg,rgba(43,192,143,.14),rgba(0,133,93,.06));border-color:rgba(0,133,93,.35)">
+                    <div class="card"
+                        style="background:linear-gradient(135deg,rgba(43,192,143,.14),rgba(0,133,93,.06));border-color:rgba(0,133,93,.35)">
                         <div class="top"><span class="ico" style="--i:url(assets/icons/star.svg)"></span></div>
                         <h3>Designed against the scorecard</h3>
-                        <p>Every slide that follows — team, cost, run cost and roadmap — maps directly back to criteria 2.3, 2.5, 2.6 and 2.7.</p>
+                        <p>Every slide that follows — team, cost, run cost and roadmap — maps directly back to criteria
+                            2.3, 2.5, 2.6 and 2.7.</p>
                     </div>
                 </div>
             </div>
@@ -1718,10 +2033,12 @@
                 <span class="eyebrow">Delivering the MVP inside LBG</span>
                 <h2>A focused squad of four.</h2>
                 <p class="lead">A lean, cross-functional team can take this PoC to a production-ready, end-to-end MVP in
-                    <strong>one to two quarters</strong>.</p>
+                    <strong>one to two quarters</strong>.
+                </p>
                 <div class="team" style="margin-top:24px">
                     <div class="member">
-                        <div class="av" style="background:var(--blue)"><span class="ico" style="--i:url(assets/icons/personcog.svg)"></span></div>
+                        <div class="av" style="background:var(--blue)"><span class="ico"
+                                style="--i:url(assets/icons/personcog.svg)"></span></div>
                         <h3>Senior DevOps Engineer</h3>
                         <div class="role">Platform &amp; delivery</div>
                         <ul>
@@ -1731,7 +2048,8 @@
                         </ul>
                     </div>
                     <div class="member">
-                        <div class="av" style="background:var(--green)"><span class="ico" style="--i:url(assets/icons/laptop.svg)"></span></div>
+                        <div class="av" style="background:var(--green)"><span class="ico"
+                                style="--i:url(assets/icons/laptop.svg)"></span></div>
                         <h3>Backend Engineer</h3>
                         <div class="role">Python developer</div>
                         <ul>
@@ -1741,7 +2059,8 @@
                         </ul>
                     </div>
                     <div class="member">
-                        <div class="av" style="background:var(--purple)"><span class="ico" style="--i:url(assets/icons/shield.svg)"></span></div>
+                        <div class="av" style="background:var(--purple)"><span class="ico"
+                                style="--i:url(assets/icons/shield.svg)"></span></div>
                         <h3>Senior Quality Engineer</h3>
                         <div class="role">Test strategy &amp; BDD</div>
                         <ul>
@@ -1751,7 +2070,8 @@
                         </ul>
                     </div>
                     <div class="member">
-                        <div class="av" style="background:var(--orange)"><span class="ico" style="--i:url(assets/icons/people3.svg)"></span></div>
+                        <div class="av" style="background:var(--orange)"><span class="ico"
+                                style="--i:url(assets/icons/people3.svg)"></span></div>
                         <h3>Customer Journey Manager</h3>
                         <div class="role">Product &amp; adoption</div>
                         <ul>
@@ -1870,7 +2190,7 @@
                                 <td class="num">£35</td>
                             </tr>
                             <tr>
-                                <td>Vertex AI — Gemini (agent calls)</td>
+                                <td>Vertex AI — Gemini 2.5 Flash (agent calls)</td>
                                 <td><span class="pill gcp">GCP</span></td>
                                 <td class="num">£20</td>
                             </tr>
@@ -1921,10 +2241,11 @@
                             </div>
                         </div>
                         <div class="card" style="margin-top:18px">
-                            <h3 style="margin-bottom:8px">Why so cheap?</h3>
-                            <p class="muted" style="font-size:14.5px">Synthetic data is tiny (well within BigQuery &amp;
-                                GCS free tiers), Gemini calls are modest and read-only, and every third-party platform
-                                runs on a free trial or open-source edition.</p>
+                            <h3 style="margin-bottom:8px">Model choice for the PoC</h3>
+                            <p class="muted" style="font-size:14.5px">The PoC runs on <strong>Gemini 2.5 Flash</strong> on
+                                Vertex AI — fast and cost-efficient, and more than capable for authoring and triage.
+                                Synthetic data is tiny, and every third-party platform runs on a free trial or
+                                open-source edition. The MVP later steps up to the latest Gemini Pro model.</p>
                         </div>
                     </div>
                 </div>
@@ -1939,7 +2260,8 @@
                 <span class="eyebrow">Run cost · deployed inside LBG</span>
                 <h2>At production scale, cost per team collapses.</h2>
                 <p class="lead">In LBG the platform licences (Harness, Jira/Xray, GitHub Enterprise, GCP org) are
-                    already paid — so the marginal cost is a hardened, HA agent footprint shared across many teams.</p>
+                    already paid — so the marginal cost is a hardened, HA agent footprint shared across many teams.
+                    Sizing assumes <strong>~200 pipeline runs/day across ECP</strong> (~4,400 / month).</p>
                 <div class="two" style="margin-top:18px">
                     <table class="tbl">
                         <thead>
@@ -1953,32 +2275,32 @@
                             <tr>
                                 <td>GKE (regional, HA agent + supporting)</td>
                                 <td>Shared cluster, marginal</td>
-                                <td class="num">£700</td>
+                                <td class="num">£500</td>
                             </tr>
                             <tr>
                                 <td>Neo4j (AuraDB Pro / HA cluster)</td>
                                 <td>Production graph</td>
-                                <td class="num">£600</td>
+                                <td class="num">£400</td>
                             </tr>
                             <tr>
-                                <td>Vertex AI — Gemini at scale</td>
-                                <td>~40 teams authoring/triaging</td>
-                                <td class="num">£450</td>
+                                <td>Vertex AI — Gemini (authoring + triage)</td>
+                                <td>~4,400 runs/mo, ~30% LLM-assisted</td>
+                                <td class="num">£200</td>
                             </tr>
                             <tr>
                                 <td>BigQuery (scaled data + queries)</td>
                                 <td>Storage + on-demand</td>
-                                <td class="num">£300</td>
+                                <td class="num">£200</td>
                             </tr>
                             <tr>
                                 <td>Networking, LBs &amp; egress</td>
                                 <td>HA ingress</td>
-                                <td class="num">£150</td>
+                                <td class="num">£120</td>
                             </tr>
                             <tr>
                                 <td>Logging, monitoring &amp; secrets</td>
                                 <td>Observability</td>
-                                <td class="num">£100</td>
+                                <td class="num">£80</td>
                             </tr>
                             <tr>
                                 <td>Harness · Jira/Xray · GitHub Enterprise</td>
@@ -1988,34 +2310,35 @@
                             <tr class="total">
                                 <td>Marginal platform cost</td>
                                 <td></td>
-                                <td class="num">≈ £2,300 / month</td>
+                                <td class="num">≈ £1,500 / month</td>
                             </tr>
                         </tbody>
                     </table>
                     <div>
                         <div class="banner" style="grid-template-columns:1fr 1fr">
                             <div class="b bg-blue">
-                                <div class="n">£2k–£3.5k</div>
+                                <div class="n">&lt; £1.6k</div>
                                 <div class="l">per month, whole platform</div>
                                 <div class="s">Shared across all adopting teams</div>
                             </div>
                             <div class="b bg-green">
-                                <div class="n">~£60</div>
+                                <div class="n">~£40</div>
                                 <div class="l">marginal cost per team / month</div>
                                 <div class="s">At ~40 teams on the shared template</div>
                             </div>
                         </div>
                         <div class="card" style="margin-top:18px">
-                            <h3 style="margin-bottom:8px">The "build once" economics</h3>
-                            <p class="muted" style="font-size:14.5px">Because the core services are built once and
-                                reused, each additional team adds only Gemini usage and a little compute. A single team
-                                can onboard in <strong>one sprint</strong> — making the per-team ROI compelling as
-                                adoption grows.</p>
+                            <h3 style="margin-bottom:8px">Model strategy &amp; build-once economics</h3>
+                            <p class="muted" style="font-size:14.5px">The PoC runs on <strong>Gemini 2.5 Flash</strong>;
+                                for the MVP we step up to <strong>the latest Gemini Pro</strong> model for deeper
+                                reasoning at scale. Gemini is invoked only for authoring and failure triage, so each
+                                extra team adds just a little usage and compute — onboarding in <strong>one
+                                    sprint</strong>.</p>
                         </div>
                     </div>
                 </div>
-                <p class="note">* Licences already owned by LBG; shown as zero marginal cost. Figures are indicative
-                    planning estimates, not a procurement quote.</p>
+                <p class="note">* Licences already owned by LBG; shown as zero marginal cost. Assumes ~200 pipeline
+                    runs/day across ECP (~4,400/month). Indicative planning estimates, not a procurement quote.</p>
             </div>
         </section>
 
@@ -2075,7 +2398,7 @@
                 <p class="lead" style="margin:22px auto 0;max-width:60ch">
                     A lean squad delivers a reusable MVP in 1–2 quarters for around <strong>£27k–£32k</strong> of
                     people cost — just 5–6 hours each per week —
-                    running for <strong>~£2–3.5k a month</strong> across the whole platform — roughly <strong>£60 per
+                    running for <strong>under £1.6k a month</strong> across the whole platform — roughly <strong>£40 per
                         team</strong>.
                     Built once, adopted in a sprint, and ready to scale Group-wide.
                 </p>
@@ -2101,7 +2424,7 @@
             <span class="where" id="notesWhere"></span>
         </div>
         <div class="ntitle" id="notesTitle"></div>
-        <ul id="notesList"></ul>
+        <div id="notesList" class="teleprompter"></div>
     </div>
 
     <!-- navigation controls -->
@@ -2109,7 +2432,7 @@
         <button class="ghost" id="btnPrev" title="Previous slide (←)" aria-label="Previous slide">
             <span class="ico" style="--i:url(assets/icons/prev.svg)"></span> Prev
         </button>
-        <span class="count" id="count">1 / 14</span>
+        <span class="count" id="count">1 / 16</span>
         <button id="btnNext" title="Next slide (→)">
             Next <span class="ico" style="--i:url(assets/icons/next.svg)"></span>
         </button>
@@ -2120,9 +2443,9 @@
 
     <footer class="end">
         <div class="brand" style="justify-content:center;color:#fff">
-            <span class="mark">Q</span>
-            <span style="color:#fff">Quality Engineering Agent
-                <small style="color:rgba(255,255,255,.55)">Insight Syndicate · Lloyds Technology Centre</small>
+            <img class="logo" src="assets/img/helios-mark.png" alt="Helios logo" />
+            <span style="color:#fff">Helios · Quality Engineering AI Agent
+                <small style="color:rgba(255,255,255,.55)">Insight Syndicate · Lloyds Banking Group</small>
             </span>
         </div>
         <p>Proof of concept for the Economic Crime Prevention Platform · driving the MVP toward Group-wide adoption.</p>
@@ -2131,7 +2454,7 @@
     <script>
         const slides = [...document.querySelectorAll('section.slide')];
         const dots = document.getElementById('dots');
-        const labels = ['Intro', 'Problem', 'Solution', 'Architecture', 'Flow', 'Toolsets', 'Capabilities', 'Criteria', 'Team', 'People', 'PoC', 'LBG', 'Roadmap', 'Close'];
+        const labels = ['Intro', 'Problem', 'Solution', 'Architecture', 'Code', 'Toolsets', 'Flow', 'Capabilities', 'Demo', 'Criteria', 'Team', 'People', 'PoC', 'LBG', 'Roadmap', 'Close'];
         slides.forEach((s, i) => {
             const a = document.createElement('a'); a.href = '#' + s.id; a.title = labels[i] || s.id;
             dots.appendChild(a);
@@ -2155,73 +2478,133 @@
 
         // ===== speaker notes (one entry per slide) =====
         const notes = [
-            { t: 'Opening — the QE Hack PoC', b: [
-                'This is the Insight Syndicate QE Hack: an autonomous Quality Engineering agent.',
-                'One line: a Jira ticket goes in — generated tests, a pipeline run, and trusted evidence come out.',
-                'Built to drive the MVP for the Economic Crime Prevention Platform, with a path to Group-wide rollout.',
-                'Crucially, it runs entirely on tooling LBG already operates.' ] },
-            { t: 'The problem we are solving', b: [
-                'ECP products change fast across complex data flows, integrations and journeys.',
-                'Testing leans on manual effort, deep product knowledge and early, clear requirements.',
-                '4 labs and ~40 teams each solve the same testing problem independently.',
-                'Result: duplicated effort, inconsistent quality, slow feedback — and evidence rarely written back to tickets.' ] },
-            { t: 'The solution', b: [
-                'Give the agent a change — a Jira story / acceptance criteria — and it decides what to test and why.',
-                'It runs meaningful automated tests and writes auditable evidence straight onto the ticket.',
-                'Built once and offered as a template: a team of 1 engineer + 1 QE can adopt it in a single sprint.',
-                'Three pillars — Generate, Execute, Evidence. Deterministic PASS/FAIL; Gemini reasons, Harness gates.' ] },
-            { t: 'Architecture on GKE', b: [
-                'A single Deployment in the qe-hack-syndicate namespace.',
-                'It brokers Jira, GitHub and Harness, and reads the data pipeline it tests (GCS → dbt/BigQuery → Neo4j).',
-                'An ADK + Gemini orchestrator drives 6 specialist sub-agents and 8 toolsets.',
-                'All GCP access is read-only via Workload Identity — no JSON keys in the cluster.' ] },
-            { t: 'How it works — event driven', b: [
-                'Ticket created → Jira webhook → the agent reads the acceptance criteria.',
-                'It authors Cucumber features, creates linked Jira Test subtasks, and opens a GitHub PR.',
-                'Ticket moved to "Testing" → fires the Harness bdd_tests pipeline via a custom trigger.',
-                'Suites run, results sync back to the subtasks / Xray history; failures are triaged into follow-up PRs.' ] },
-            { t: 'Toolsets — already in the estate', b: [
-                'The headline: nothing new to buy.',
-                'Jira/Xray, GitHub, Harness, BigQuery, GCS, GKE, Neo4j and dbt are all already used at LBG.',
-                'That is exactly why this PoC is low-risk to land internally.',
-                'Workload Identity gives least-privilege, read-only access.' ] },
-            { t: 'Capabilities — six QE goals', b: [
-                'Static analysis, coding standards, integration, functional, non-functional — plus BDD authoring.',
-                'Every check is deterministic: a strict PASS / FAIL / ERROR.',
-                'Gemini does the reasoning and triage; Harness gates only on the deterministic status.' ] },
-            { t: 'Acceptance criteria — built to score', b: [
-                'Map the solution straight onto the seven judging criteria.',
-                'Valid product testing: deterministic suites assert real rules on live BigQuery & Neo4j.',
-                'Autonomous, easily implemented in LBG, documented with a user manual, understood by the whole squad.',
-                'Maintainability, scalability and a Group-wide template are designed in, not bolted on.' ] },
-            { t: 'The MVP squad', b: [
-                'A lean squad of four: Senior DevOps, Python backend, Senior QE, and a CJM.',
-                'They can take this PoC to a production-ready, end-to-end MVP in one to two quarters.',
-                'The CJM can run at ~0.5 FTE; engineering is the core of the build.' ] },
-            { t: 'People cost', b: [
-                'Fully-loaded UK hourly rates — base salary plus ~30% employer NI, pension and overheads.',
-                'Each engineer commits just 5–6 focused hours per week; ~£1,025–£1,230 for the whole squad weekly.',
-                '~£13k–£16k per quarter; ~£27k–£32k for a fully delivered, production-ready MVP.',
-                'That is a fraction of a single FTE — and a one-off build that every team then reuses.' ] },
-            { t: 'Cost to run the PoC', b: [
-                'All-in cloud spend is ~£150 / month — mostly GKE, load balancers and a little Vertex AI.',
-                'Harness, Jira, GitHub, Neo4j and dbt all run on free trial / free tier / open source.',
-                'Synthetic data is tiny and sits inside BigQuery & GCS free tiers.',
-                'A typical Hackathon run window is roughly £40–£50.' ] },
-            { t: 'Cost to run inside LBG', b: [
-                'Platform licences (Harness, Jira/Xray, GitHub Enterprise, GCP org) are already paid.',
-                'So the marginal cost is just a hardened, HA agent footprint: ~£2k–£3.5k / month.',
-                'Shared across ~40 teams, that is roughly £60 per team per month.',
-                'The "build once" model means per-team cost collapses as adoption grows.' ] },
-            { t: 'Path to MVP', b: [
-                'Q1: harden the core → prove it on one real ECP service → package the template and docs.',
-                'Q2: roll out to more teams, track value, and prepare the Group-wide case.',
-                'A team can adopt the template in one sprint; a production-ready MVP lands in 1–2 quarters.' ] },
-            { t: 'Why it lands at LBG', b: [
-                'Faster feedback, consistent quality and trusted evidence — on tools we already run.',
-                '~£27k–£32k of people cost; ~£2k–£3.5k / month to run; ~£60 per team.',
-                'Built once, adopted in a sprint, ready to scale Group-wide.',
-                'The ask: green-light the MVP.' ] }
+            {
+                t: 'Opening — meet Helios', b: [
+                    'So, let us introduce what we built.',
+                    'This is Helios — an autonomous Quality Engineering AI agent.',
+                    'The name says it: Helios, the sun — illumination, clarity and visibility across quality automation.',
+                    'The idea is simple: a Jira ticket goes in, and out comes a set of generated tests, a real pipeline run, and trusted evidence.',
+                    'We built it to drive the MVP for the Economic Crime Prevention Platform, with a clear path to rolling it out Group-wide.',
+                    'And the part we really want you to hold onto is this — it runs entirely on tooling that LBG already operates.']
+            },
+            {
+                t: 'The problem we are solving', b: [
+                    'Let us start with the problem we are solving.',
+                    'ECP products change fast, across complex data flows, integrations, and customer journeys.',
+                    'Today, testing leans heavily on manual effort, deep product knowledge, and having clear requirements early.',
+                    'And here is the real issue — four labs and around forty teams are each solving this same testing problem on their own.',
+                    'The result is duplicated effort, inconsistent quality, and slow feedback — and the evidence rarely makes it back onto the ticket.']
+            },
+            {
+                t: 'The solution', b: [
+                    'So here is our solution.',
+                    'You give the agent a change — a Jira story with its acceptance criteria — and it works out what to test, and why.',
+                    'It runs meaningful automated tests, and writes auditable evidence straight back onto the ticket.',
+                    'We built it once, as a template, so a single QE can adopt it in one sprint — no extra engineer needed.',
+                    'There are three pillars to remember — Generate, Execute, and Evidence.',
+                    'Every result is a deterministic pass or fail; Gemini does the reasoning, and Harness does the gating.']
+            },
+            {
+                t: 'Architecture on GKE', b: [
+                    'Let us show you how it is put together.',
+                    'The whole agent runs as a single deployment in the qe-hack-syndicate namespace.',
+                    'From there, it brokers Jira, GitHub, and Harness, and it reads the very data pipeline it is testing — that is GCS, into dbt and BigQuery, and on into Neo4j.',
+                    'At its core, an ADK and Gemini orchestrator drives six specialist sub-agents and eight toolsets.',
+                    'And importantly, every bit of GCP access is read-only, through Workload Identity — there are no JSON keys sitting in the cluster.']
+            },
+            {
+                t: 'Under the hood — code & agents', b: [
+                    'Let us quickly take you under the hood.',
+                    'Everything lives in one codebase — a single ADK and Gemini orchestrator that delegates to six specialist sub-agents.',
+                    'Each sub-agent owns one quality goal, and is backed by deterministic toolsets for GCS, BigQuery, Neo4j, dbt, Kubernetes, Jira, Harness, and GitHub.',
+                    'The orchestrator reasons about what to run; the toolsets do the actual, repeatable work and return a strict pass, fail, or error.',
+                    'We will walk through the root agent, the sub-agents package, and the tools layer in the repo.']
+            },
+            {
+                t: 'Toolsets — already in the estate', b: [
+                    'We want to spend a moment on the toolsets, because this is the headline.',
+                    'There is nothing new to buy here.',
+                    'Jira and Xray, GitHub, Harness, BigQuery, GCS, GKE, Neo4j, and dbt — these are all already used across LBG.',
+                    'And that is exactly why this is so low-risk to land internally.',
+                    'Workload Identity gives us least-privilege, read-only access throughout.']
+            },
+            {
+                t: 'How it works — event driven', b: [
+                    'Now let us walk you through how it actually works, end to end.',
+                    'A ticket is created, that fires a Jira webhook, and the agent reads the acceptance criteria.',
+                    'It then authors the Cucumber features, creates linked Jira test subtasks, and opens a GitHub pull request.',
+                    'When the ticket is moved to Testing, that triggers the Harness BDD pipeline automatically.',
+                    'The suites run, the results sync straight back to the subtasks and Xray history, and any failures are triaged into follow-up pull requests.']
+            },
+            {
+                t: 'Capabilities — six QE goals', b: [
+                    'Let us talk about what it can actually check.',
+                    'There are six quality goals — static analysis, coding standards, integration, functional, and non-functional — plus BDD authoring on top.',
+                    'Every single check is deterministic: a strict pass, fail, or error.',
+                    'Gemini handles the reasoning and the triage, but Harness only ever gates on that deterministic status.']
+            },
+            {
+                t: 'Live demo — see it run', b: [
+                    'Now for the fun part — let us show you the agent actually running.',
+                    'We will create a Jira ticket, and you will watch the agent read the acceptance criteria and author the BDD scenarios.',
+                    'It opens a pull request, and when we move the ticket to Testing, the Harness pipeline fires automatically.',
+                    'The suites run, and the pass-or-fail evidence lands straight back on the ticket.',
+                    'That is the whole loop — a ticket goes in, and a tested change with trusted evidence comes out.']
+            },
+            {
+                t: 'Acceptance criteria — built to score', b: [
+                    'Now, we deliberately built this to score against the hackathon criteria.',
+                    'We have mapped the solution straight onto all seven judging measures.',
+                    'On valid product testing — our deterministic suites assert real business rules against live BigQuery and Neo4j data.',
+                    'It is autonomous, it is easily implemented inside LBG, it is documented with a full user manual, and it is understood by the whole squad.',
+                    'And maintainability, scalability, and a Group-wide template were designed in from the start — not bolted on at the end.']
+            },
+            {
+                t: 'The MVP squad', b: [
+                    'So who builds this?',
+                    'It is a lean squad of four — a Senior DevOps engineer, a Python backend engineer, a Senior QE, and a Customer Journey Manager.',
+                    'This team can take the PoC all the way to a production-ready, end-to-end MVP in one to two quarters.',
+                    'The CJM can run at around half a full-time role — the engineering is the core of the build.']
+            },
+            {
+                t: 'People cost', b: [
+                    'Let us put some numbers on the people cost.',
+                    'These are fully-loaded UK hourly rates — base salary, plus around thirty percent for employer NI, pension, and overheads.',
+                    'Each engineer commits just five to six focused hours a week, which comes to roughly one thousand to twelve hundred and thirty pounds for the whole squad, every week.',
+                    'That is about thirteen to sixteen thousand pounds a quarter, and around twenty-seven to thirty-two thousand for a fully delivered, production-ready MVP.',
+                    'So this is genuinely a fraction of a single full-time hire — and remember, it is a one-off build that every team then reuses.']
+            },
+            {
+                t: 'Cost to run the PoC', b: [
+                    'So what does it cost to actually run the PoC?',
+                    'All-in cloud spend is about a hundred and fifty pounds a month — mostly GKE, load balancers, and a little Vertex AI.',
+                    'For the PoC we run Gemini 2.5 Flash — it is fast, cost-efficient, and more than capable for authoring and triage.',
+                    'Harness, Jira, GitHub, Neo4j, and dbt all run on free trials, free tiers, or open source.',
+                    'And a typical hackathon run window only costs around forty to fifty pounds.']
+            },
+            {
+                t: 'Cost to run inside LBG', b: [
+                    'Now let us scale that thinking up to LBG.',
+                    'The platform licences — Harness, Jira and Xray, GitHub Enterprise, the GCP org — are already paid for.',
+                    'If we assume around two hundred pipeline runs a day across ECP, the marginal footprint comes in under sixteen hundred pounds a month.',
+                    'Shared across roughly forty teams, that is only about forty pounds per team, per month.',
+                    'And for the MVP we step up from Flash to the latest Gemini Pro model, for deeper reasoning at scale — the per-team cost still collapses as adoption grows.']
+            },
+            {
+                t: 'Path to MVP', b: [
+                    'Here is the path to the MVP.',
+                    'In the first quarter, we harden the core, prove it on one real ECP service, and package up the template and the docs.',
+                    'In the second quarter, we roll it out to more teams, track the value it delivers, and prepare the Group-wide case.',
+                    'A team can adopt the template in a single sprint, and a production-ready MVP lands within one to two quarters.']
+            },
+            {
+                t: 'Why it lands at LBG', b: [
+                    'So, to bring it all together — why does this land at LBG?',
+                    'It gives us faster feedback, more consistent quality, and trusted evidence — all on tools we already run.',
+                    'It is around twenty-seven to thirty-two thousand pounds of people cost, under sixteen hundred a month to run, and about forty pounds per team.',
+                    'Built once, adopted in a sprint, and ready to scale Group-wide.',
+                    'And the ask is simple: green-light the MVP.']
+            }
         ];
         const nWhere = document.getElementById('notesWhere');
         const nTitle = document.getElementById('notesTitle');
@@ -2243,7 +2626,7 @@
             if (n) {
                 nWhere.textContent = 'Slide ' + (i + 1) + ' · ' + (labels[i] || '');
                 nTitle.textContent = n.t;
-                nList.innerHTML = n.b.map(x => '<li>' + x + '</li>').join('');
+                nList.innerHTML = n.b.map(x => '<p>' + x + '</p>').join('');
             }
         }
 
