@@ -226,11 +226,28 @@ def _after_model(callback_context: Any = None, llm_response: Any = None, **_: An
     usage = getattr(llm_response, "usage_metadata", None)
     tokens = ""
     if usage is not None:
+        prompt = getattr(usage, "prompt_token_count", None)
+        output = getattr(usage, "candidates_token_count", None)
+        total = getattr(usage, "total_token_count", None)
         tokens = (
-            f" tokens(prompt={getattr(usage, 'prompt_token_count', '?')}"
-            f" out={getattr(usage, 'candidates_token_count', '?')}"
-            f" total={getattr(usage, 'total_token_count', '?')})"
+            f" tokens(prompt={prompt if prompt is not None else '?'}"
+            f" out={output if output is not None else '?'}"
+            f" total={total if total is not None else '?'})"
         )
+        # Accumulate into the process-wide tracker that /qe/usage/tokens serves.
+        try:
+            from agent.usage import TRACKER
+
+            model = getattr(callback_context, "model", None) or _model_from_response(llm_response)
+            TRACKER.record(
+                model=model,
+                source=source,
+                prompt_tokens=prompt,
+                output_tokens=output,
+                total_tokens=total,
+            )
+        except Exception:  # noqa: BLE001  # never let usage tracking break a run
+            pass
     # Surface any function calls the model decided to make.
     calls = _function_calls(llm_response)
     call_str = ""
@@ -314,6 +331,15 @@ def _safe(contents: Any) -> Any:
     except Exception:  # noqa: BLE001
         return contents
     return out
+
+
+def _model_from_response(llm_response: Any) -> str:
+    """Best-effort model id from a genai/ADK response (falls back to config)."""
+    for attr in ("model_version", "model"):
+        val = getattr(llm_response, attr, None)
+        if val:
+            return str(val)
+    return os.environ.get("QE_AGENT_MODEL", "gemini-2.5-flash")
 
 
 def _function_calls(llm_response: Any) -> list[str]:
