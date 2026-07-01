@@ -21,6 +21,7 @@ from agent.sub_agents.bdd_authoring import gherkin, test_generator
 from agent.tools import github_toolset as gh
 from agent.tools import harness_toolset as harness
 from agent.tools import jira_toolset as jira
+from agent.usage import track_run
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,11 @@ def author_bdd_scenarios(ticket: str, dry_run: bool = False) -> dict:
     explain the result back to the user.
     """
     logger.info("author_bdd_scenarios: start ticket=%s dry_run=%s", ticket, dry_run)
+    with track_run(ticket, label=ticket):
+        return _author_bdd_scenarios(ticket, dry_run)
+
+
+def _author_bdd_scenarios(ticket: str, dry_run: bool) -> dict:
     ac = jira.acceptance_criteria(ticket)
     if "error" in ac:
         logger.error("author_bdd_scenarios: AC fetch failed ticket=%s error=%s", ticket, ac)
@@ -142,6 +148,11 @@ def update_bdd_from_failure(ticket: str, plan_execution_id: str | None = None) -
     The agent's LLM step uses this to decide whether to update the scenarios
     (most common when AC has shifted) or leave them and flag a regression.
     """
+    with track_run(ticket, label=ticket):
+        return _update_bdd_from_failure(ticket, plan_execution_id)
+
+
+def _update_bdd_from_failure(ticket: str, plan_execution_id: str | None = None) -> dict:
     if plan_execution_id:
         execution = harness.get_execution(plan_execution_id)
     else:

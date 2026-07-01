@@ -234,7 +234,9 @@ def _after_model(callback_context: Any = None, llm_response: Any = None, **_: An
             f" out={output if output is not None else '?'}"
             f" total={total if total is not None else '?'})"
         )
-        # Accumulate into the process-wide tracker that /qe/usage/tokens serves.
+        # Accumulate into the per-run tracker that /qe/usage/* serves. When an
+        # authoring run is open (webhook path) records attribute to that ticket;
+        # otherwise they group under this ADK invocation id.
         try:
             from agent.usage import TRACKER
 
@@ -242,6 +244,7 @@ def _after_model(callback_context: Any = None, llm_response: Any = None, **_: An
             TRACKER.record(
                 model=model,
                 source=source,
+                invocation_id=str(getattr(callback_context, "invocation_id", None) or "") or None,
                 prompt_tokens=prompt,
                 output_tokens=output,
                 total_tokens=total,
