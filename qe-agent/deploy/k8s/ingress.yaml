@@ -1,10 +1,12 @@
 # Public Ingress for the QE Quality Agent's Jira webhook.
 #
-# Jira Cloud cannot reach a ClusterIP Service. We expose ONLY the webhook path
-# via a path-prefix Ingress (the rest of the API stays in-cluster only).
-# TLS is terminated at the GCP Load Balancer using the pre-shared GCP SSL
-# certificate named `qe-agent` (created via GCP Console or gcloud compute
-# ssl-certificates). Set the ingress host rule to match the cert's domain.
+# Jira Cloud cannot reach a ClusterIP Service. We expose the webhook path plus
+# the read-only token-usage endpoints; the rest of the API stays in-cluster only.
+# The mutating POST /qe/usage/reset is deliberately NOT exposed here (call it via
+# `kubectl port-forward`). TLS is terminated at the GCP Load Balancer using the
+# pre-shared GCP SSL certificate named `qe-agent` (created via GCP Console or
+# gcloud compute ssl-certificates). Set the ingress host rule to match the cert's
+# domain.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -29,6 +31,29 @@ spec:
                   number: 8080
           - path: /healthz
             pathType: Exact
+            backend:
+              service:
+                name: qe-quality-agent
+                port:
+                  number: 8080
+          # Read-only per-run token/quota usage (for the cost/usage view).
+          - path: /qe/usage/tokens
+            pathType: Exact
+            backend:
+              service:
+                name: qe-quality-agent
+                port:
+                  number: 8080
+          - path: /qe/usage/quota
+            pathType: Exact
+            backend:
+              service:
+                name: qe-quality-agent
+                port:
+                  number: 8080
+          # Prefix so both /qe/usage/runs and /qe/usage/runs/{ticket} are served.
+          - path: /qe/usage/runs
+            pathType: Prefix
             backend:
               service:
                 name: qe-quality-agent
