@@ -198,7 +198,30 @@ def _llm_generate(prompt: str) -> str:
         contents=prompt,
         config={"response_mime_type": "application/json", "temperature": 0},
     )
+    _record_usage(resp)
     return resp.text or ""
+
+
+def _record_usage(resp: object) -> None:
+    """Attribute this Gemini call's token usage to the current run (best-effort).
+
+    ``test_generator`` calls Gemini directly (outside the ADK agent loop), so it
+    reports its own usage here — otherwise the authoring flow, which is the bulk
+    of the token spend, would go untracked. Never raises.
+    """
+    try:
+        from agent.usage import TRACKER
+
+        usage = getattr(resp, "usage_metadata", None)
+        TRACKER.record(
+            model=SETTINGS.model,
+            source="bdd_authoring.test_generator",
+            prompt_tokens=getattr(usage, "prompt_token_count", None),
+            output_tokens=getattr(usage, "candidates_token_count", None),
+            total_tokens=getattr(usage, "total_token_count", None),
+        )
+    except Exception:  # noqa: BLE001  # tracking must never break generation
+        pass
 
 
 def _parse_spec(raw: str) -> dict | None:

@@ -58,35 +58,61 @@ def healthz() -> dict:
     return {"status": "ok"}
 
 
-# --- Token / quota usage ----------------------------------------------------
+# --- Token / quota usage (per run) ------------------------------------------
 #
-# Every Gemini call the agent makes is accumulated by the observability
-# `_after_model` callback into `agent.usage.TRACKER`. These endpoints expose
-# that running tally so we can track exactly how many tokens our implementation
-# consumes (for the cost/quota story and per-run demos).
+# Each agent activation is tracked as a "run" keyed by its Jira ticket. Every
+# Gemini call made while that run is open — the direct call in test_generator
+# and any ADK model calls — is attributed to it. These endpoints expose the
+# per-run token spend and quota so we can see exactly what each ticket costs.
 
 @app.get("/qe/usage/tokens")
 def usage_tokens() -> dict:
-    """Full token-usage JSON payload: totals plus per-model and per-agent breakdown."""
+    """Per-run token usage: the current run plus recent run history."""
     from agent.usage import TRACKER
 
     result = TRACKER.snapshot()
-    logger.info("usage_tokens: total=%s calls=%s",
-                result["totals"]["total_tokens"], result["totals"]["calls"])
+    current = result.get("current_run") or {}
+    logger.info("usage_tokens: current_run=%s total=%s calls=%s",
+                current.get("run_id"), current.get("total_tokens"), current.get("calls"))
     return result
 
 
 @app.get("/qe/usage/quota")
 def usage_quota() -> dict:
-    """Quota view: tokens used vs the configured QE_TOKEN_QUOTA budget."""
+    """Per-run quota view for the most recent run (used vs QE_TOKEN_QUOTA budget)."""
     from agent.usage import TRACKER
 
-    return TRACKER.quota()
+    current = TRACKER.current()
+    if current is None:
+        return {"status": "ok", "scope": "per_run", "current_run": None,
+                "detail": "no runs recorded yet"}
+    return {"status": "ok", "scope": "per_run", "run_id": current["run_id"],
+            "label": current["label"], "total_tokens": current["total_tokens"],
+            **current["quota"]}
+
+
+@app.get("/qe/usage/runs")
+def usage_runs(limit: int = 20) -> dict:
+    """List recent runs with their per-run token totals and quota."""
+    from agent.usage import TRACKER
+
+    return {"status": "ok", "scope": "per_run", "runs": TRACKER.recent(limit)}
+
+
+@app.get("/qe/usage/runs/{run_id}")
+def usage_run(run_id: str) -> dict:
+    """Per-run token usage for a single run (run_id is the Jira ticket)."""
+    from agent.usage import TRACKER
+
+    run = TRACKER.run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail=f"no usage recorded for run {run_id!r}")
+    return {"status": "ok", "scope": "per_run", **run}
 
 
 @app.post("/qe/usage/reset")
 def usage_reset() -> dict:
-    """Reset the in-memory token counters (e.g. to isolate a single demo run)."""
+    """Reset the in-memory run history (e.g. to isolate a single demo)."""
     from agent.usage import TRACKER
 
     logger.info("usage_reset called")
