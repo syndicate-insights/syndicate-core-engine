@@ -1515,9 +1515,7 @@
             <a href="#flow">How it works</a>
             <a href="#capabilities">Capabilities</a>
             <a href="#demo">Demo</a>
-            <a href="#criteria">Criteria</a>
             <a href="#team">Team</a>
-            <a href="#people-cost">People cost</a>
             <a href="#poc-cost">PoC cost</a>
             <a href="#prod-cost">LBG cost</a>
             <a href="#roadmap">Roadmap</a>
@@ -1597,7 +1595,7 @@
                         </p>
                         <div class="stats">
                             <div class="stat">
-                                <div class="n">4</div>
+                                <div class="n">6</div>
                                 <div class="l">labs across the platform</div>
                             </div>
                             <div class="stat">
@@ -1605,7 +1603,7 @@
                                 <div class="l">teams solving the same testing problem independently</div>
                             </div>
                             <div class="stat">
-                                <div class="n">100%</div>
+                                <div class="n">60%</div>
                                 <div class="l">manual test design today before a change can ship with confidence</div>
                             </div>
                         </div>
@@ -1960,73 +1958,6 @@
             </div>
         </section>
 
-        <!-- 8 · ACCEPTANCE CRITERIA -->
-        <section class="slide" id="criteria">
-            <div class="wrap">
-                <span class="eyebrow">Hackathon acceptance criteria</span>
-                <h2>Built to score on every measure.</h2>
-                <p class="lead">The seven judging criteria mapped to concrete evidence already in the solution.</p>
-                <div class="crit">
-                    <div class="card">
-                        <div class="top"><span class="num">2.1</span><span class="ico"
-                                style="--i:url(assets/icons/evidence.svg)"></span></div>
-                        <h3>Valid product testing</h3>
-                        <p>Six deterministic suites assert real business rules against live BigQuery &amp; Neo4j data —
-                            strict PASS/FAIL, no false confidence.</p>
-                    </div>
-                    <div class="card">
-                        <div class="top"><span class="num">2.2</span><span class="ico"
-                                style="--i:url(assets/icons/ai.svg)"></span></div>
-                        <h3>Autonomy</h3>
-                        <p>A Jira webhook drives authoring, pipeline execution and result write-back with no human in
-                            the loop; failures auto-triage into PRs.</p>
-                    </div>
-                    <div class="card">
-                        <div class="top"><span class="num">2.3</span><span class="ico"
-                                style="--i:url(assets/icons/switch.svg)"></span></div>
-                        <h3>Easy LBG implementation</h3>
-                        <p>Runs only on tooling LBG already operates — Jira/Xray, GitHub, Harness, GKE, BigQuery. A team
-                            adopts the template in one sprint.</p>
-                    </div>
-                    <div class="card">
-                        <div class="top"><span class="num">2.4</span><span class="ico"
-                                style="--i:url(assets/icons/document.svg)"></span></div>
-                        <h3>User-friendly &amp; User Manual</h3>
-                        <p>Plain <span class="mono">/qe</span> REST API and a thin <span class="mono">qe-cli</span>,
-                            backed by a full user manual — README, integration guide, IAM &amp; run-books.</p>
-                    </div>
-                    <div class="card">
-                        <div class="top"><span class="num">2.5</span><span class="ico"
-                                style="--i:url(assets/icons/people3.svg)"></span></div>
-                        <h3>Whole-team understanding</h3>
-                        <p>Deterministic design and documented runbooks mean every one of the four squad members can
-                            explain, run and extend the agent.</p>
-                    </div>
-                    <div class="card">
-                        <div class="top"><span class="num">2.6</span><span class="ico"
-                                style="--i:url(assets/icons/growth.svg)"></span></div>
-                        <h3>Maintainability &amp; scalability</h3>
-                        <p>Single shared codebase, pinned images, Workload Identity, config-driven per team. Built once;
-                            scales to ~40 teams at marginal cost.</p>
-                    </div>
-                    <div class="card">
-                        <div class="top"><span class="num">2.7</span><span class="ico"
-                                style="--i:url(assets/icons/trophy.svg)"></span></div>
-                        <h3>Group-wide enhancements</h3>
-                        <p>Multi-tenant templating, pluggable toolsets, a model-agnostic LLM layer and a central
-                            evidence dashboard for the Group-wide entry.</p>
-                    </div>
-                    <div class="card"
-                        style="background:linear-gradient(135deg,rgba(43,192,143,.14),rgba(0,133,93,.06));border-color:rgba(0,133,93,.35)">
-                        <div class="top"><span class="ico" style="--i:url(assets/icons/star.svg)"></span></div>
-                        <h3>Designed against the scorecard</h3>
-                        <p>Every slide that follows — team, cost, run cost and roadmap — maps directly back to criteria
-                            2.3, 2.5, 2.6 and 2.7.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <!-- 8 · TEAM -->
         <section class="slide" id="team">
             <div class="wrap">
@@ -2085,80 +2016,6 @@
                     Deterministic design + documented runbooks mean every member fully understands and can operate the
                     solution.
                 </p>
-            </div>
-        </section>
-
-        <!-- 9 · PEOPLE COST -->
-        <section class="slide" id="people-cost">
-            <div class="wrap">
-                <span class="eyebrow">Investment · people cost (UK market)</span>
-                <h2>A few focused hours a week — not full-time headcount.</h2>
-                <div class="two" style="margin-top:18px">
-                    <div>
-                        <table class="tbl">
-                            <thead>
-                                <tr>
-                                    <th>Role</th>
-                                    <th class="num">Loaded £/hr</th>
-                                    <th class="num">5–6 hrs/wk</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Senior DevOps Engineer</td>
-                                    <td class="num">£55</td>
-                                    <td class="num">£275–£330</td>
-                                </tr>
-                                <tr>
-                                    <td>Backend (Python) Engineer</td>
-                                    <td class="num">£48</td>
-                                    <td class="num">£240–£288</td>
-                                </tr>
-                                <tr>
-                                    <td>Senior Quality Engineer</td>
-                                    <td class="num">£52</td>
-                                    <td class="num">£260–£312</td>
-                                </tr>
-                                <tr>
-                                    <td>Customer Journey Manager</td>
-                                    <td class="num">£50</td>
-                                    <td class="num">£250–£300</td>
-                                </tr>
-                                <tr class="total">
-                                    <td>Full squad / week</td>
-                                    <td class="num">£205/hr</td>
-                                    <td class="num">£1,025–£1,230</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <p class="note">Fully-loaded hourly = base salary + ~30% employer NI, pension &amp; overheads,
-                            over ~1,800 productive hours/yr. UK 2025/26 perm rates, financial-services / fintech market.
-                            Each engineer commits just 5–6 focused hours per week.</p>
-                    </div>
-                    <div>
-                        <div class="banner" style="grid-template-columns:1fr 1fr">
-                            <div class="b bg-green">
-                                <div class="n">~£13k–£16k</div>
-                                <div class="l">per quarter (~13 weeks)</div>
-                                <div class="s">Whole squad, 5–6 hrs each per week</div>
-                            </div>
-                            <div class="b bg-purple">
-                                <div class="n">~£27k–£32k</div>
-                                <div class="l">2-quarter MVP (end-to-end)</div>
-                                <div class="s">Production-ready, full squad</div>
-                            </div>
-                        </div>
-                        <div class="card" style="margin-top:18px">
-                            <h3 style="margin-bottom:10px">A fraction of a single FTE</h3>
-                            <p class="muted" style="font-size:14.5px">At 5–6 hours each per week, the all-in people cost
-                                lands around
-                                <strong style="color:var(--green-deep)">£27k–£32k</strong> for a fully delivered,
-                                production-ready MVP — well under one full-time engineer for a quarter, and a one-off
-                                build that every team then reuses.
-                            </p>
-                        </div>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -2396,8 +2253,7 @@
                 <h2 style="font-size:clamp(30px,4.4vw,52px)">Faster feedback, consistent quality,<br />trusted evidence
                     — on tools we already run.</h2>
                 <p class="lead" style="margin:22px auto 0;max-width:60ch">
-                    A lean squad delivers a reusable MVP in 1–2 quarters for around <strong>£27k–£32k</strong> of
-                    people cost — just 5–6 hours each per week —
+                    A lean squad delivers a reusable MVP in 1 quarter - allocating just 5–6 hours each per week —
                     running for <strong>under £1.6k a month</strong> across the whole platform — roughly <strong>£40 per
                         team</strong>.
                     Built once, adopted in a sprint, and ready to scale Group-wide.
@@ -2454,7 +2310,7 @@
     <script>
         const slides = [...document.querySelectorAll('section.slide')];
         const dots = document.getElementById('dots');
-        const labels = ['Intro', 'Problem', 'Solution', 'Architecture', 'Code', 'Toolsets', 'Flow', 'Capabilities', 'Demo', 'Criteria', 'Team', 'People', 'PoC', 'LBG', 'Roadmap', 'Close'];
+        const labels = ['Intro', 'Problem', 'Solution', 'Architecture', 'Code', 'Toolsets', 'Flow', 'Capabilities', 'Demo', 'Team', 'PoC', 'LBG', 'Roadmap', 'Close'];
         slides.forEach((s, i) => {
             const a = document.createElement('a'); a.href = '#' + s.id; a.title = labels[i] || s.id;
             dots.appendChild(a);
@@ -2552,27 +2408,11 @@
                     'That is the whole loop — a ticket goes in, and a tested change with trusted evidence comes out.']
             },
             {
-                t: 'Acceptance criteria — built to score', b: [
-                    'Now, we deliberately built this to score against the hackathon criteria.',
-                    'We have mapped the solution straight onto all seven judging measures.',
-                    'On valid product testing — our deterministic suites assert real business rules against live BigQuery and Neo4j data.',
-                    'It is autonomous, it is easily implemented inside LBG, it is documented with a full user manual, and it is understood by the whole squad.',
-                    'And maintainability, scalability, and a Group-wide template were designed in from the start — not bolted on at the end.']
-            },
-            {
                 t: 'The MVP squad', b: [
                     'So who builds this?',
                     'It is a lean squad of four — a Senior DevOps engineer, a Python backend engineer, a Senior QE, and a Customer Journey Manager.',
                     'This team can take the PoC all the way to a production-ready, end-to-end MVP in one to two quarters.',
                     'The CJM can run at around half a full-time role — the engineering is the core of the build.']
-            },
-            {
-                t: 'People cost', b: [
-                    'Let us put some numbers on the people cost.',
-                    'These are fully-loaded UK hourly rates — base salary, plus around thirty percent for employer NI, pension, and overheads.',
-                    'Each engineer commits just five to six focused hours a week, which comes to roughly one thousand to twelve hundred and thirty pounds for the whole squad, every week.',
-                    'That is about thirteen to sixteen thousand pounds a quarter, and around twenty-seven to thirty-two thousand for a fully delivered, production-ready MVP.',
-                    'So this is genuinely a fraction of a single full-time hire — and remember, it is a one-off build that every team then reuses.']
             },
             {
                 t: 'Cost to run the PoC', b: [
