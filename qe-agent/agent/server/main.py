@@ -58,6 +58,41 @@ def healthz() -> dict:
     return {"status": "ok"}
 
 
+# --- Token / quota usage ----------------------------------------------------
+#
+# Every Gemini call the agent makes is accumulated by the observability
+# `_after_model` callback into `agent.usage.TRACKER`. These endpoints expose
+# that running tally so we can track exactly how many tokens our implementation
+# consumes (for the cost/quota story and per-run demos).
+
+@app.get("/qe/usage/tokens")
+def usage_tokens() -> dict:
+    """Full token-usage JSON payload: totals plus per-model and per-agent breakdown."""
+    from agent.usage import TRACKER
+
+    result = TRACKER.snapshot()
+    logger.info("usage_tokens: total=%s calls=%s",
+                result["totals"]["total_tokens"], result["totals"]["calls"])
+    return result
+
+
+@app.get("/qe/usage/quota")
+def usage_quota() -> dict:
+    """Quota view: tokens used vs the configured QE_TOKEN_QUOTA budget."""
+    from agent.usage import TRACKER
+
+    return TRACKER.quota()
+
+
+@app.post("/qe/usage/reset")
+def usage_reset() -> dict:
+    """Reset the in-memory token counters (e.g. to isolate a single demo run)."""
+    from agent.usage import TRACKER
+
+    logger.info("usage_reset called")
+    return TRACKER.reset()
+
+
 @app.get("/qe/scenarios")
 def list_scenarios() -> dict:
     """List all available suites and their scenario ids."""
